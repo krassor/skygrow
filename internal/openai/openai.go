@@ -53,6 +53,6 @@ func (GPTBot *GPTBot) CreateChatCompletion(gptInput string) (string, error) {
 		return "", fmt.Errorf("Error GPTBot.CreateChatCompletion: %w", err)
 	}
 
-	response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPromt tokens usage%vTotal tokens usage\n%v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
+	response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPromt tokens usage%v\nTotal tokens usage: %v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
 	return response, nil
 }
