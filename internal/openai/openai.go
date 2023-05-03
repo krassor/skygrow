@@ -22,6 +22,7 @@ func NewGPTBot() *GPTBot {
 	}
 
 	client := openai.NewClient(openAiToken)
+	log.Info().Msgf("Connecting to openAI")
 	return &GPTBot{
 		openAIClient: client,
 	}
