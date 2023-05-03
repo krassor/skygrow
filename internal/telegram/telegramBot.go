@@ -40,7 +40,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 	//TODO: make goroutine with check update channel close
 	for update := range updates {
-
+		log.Info().Msgf("Input message: %v", update.Message)
 		if update.Message == nil { // ignore any non-Message updates
 			log.Warn().Msgf("tgbot warn: Not message: %v", update.Message)
 			continue
@@ -48,6 +48,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 		// Проверяем, если сообщение адресовано самому боту
 		if update.Message.Chat.ID == bot.tgbot.Self.ID {
+			log.Info().Msgf("Self message: %s", update.Message.Text)
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
 				log.Error().Msgf("Error tgbot.update: %w", err)
@@ -61,6 +62,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 		// если сообщение адресовано каналу, в котором находится бот
 		if update.Message.Chat.IsChannel() && update.Message.Chat.UserName == bot.tgbot.Self.UserName {
+			log.Info().Msgf("Channel message from: %s", update.Message.From.UserName)
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
 				log.Error().Msgf("Error tgbot.update: %w", err)
@@ -74,6 +76,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 		// Проверяем, если сообщение является ответом на сообщение бота
 		if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == bot.tgbot.Self.ID {
+			log.Info().Msgf("Reply message from: %s", update.Message.From.UserName)
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
 				log.Error().Msgf("Error tgbot.update: %w", err)
