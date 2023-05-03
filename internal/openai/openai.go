@@ -33,12 +33,12 @@ func (GPTBot *GPTBot) CreateChatCompletion(gptInput string) (string, error) {
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:       openai.GPT3Dot5Turbo,
-			Temperature: 1,
+			Temperature: 0.5,
 			N:           1,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
-					Content: "ты опытный специалист по выращиванию марихуаны и конопли. Отвечай только на вопросы по выращиванию растений. На остальные вопросы отвечай, что ты только гровер и не знаешь ответы на другие вопросы",
+					Content: "ты опытный специалист по выращиванию марихуаны и конопли. Отвечай только на вопросы по выращиванию растений, оборудованию для выращивания. Отвечай как можно конкретнее. На остальные вопросы отвечай, что ты только гровер и не знаешь ответы на другие вопросы",
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -51,5 +51,7 @@ func (GPTBot *GPTBot) CreateChatCompletion(gptInput string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Error GPTBot.CreateChatCompletion: %w", err)
 	}
-	return resp.Choices[0].Message.Content, nil
+
+	response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPromt tokens usage%vTotal tokens usage\n%v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
+	return response, nil
 }

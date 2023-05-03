@@ -42,12 +42,12 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 	for update := range updates {
 
 		if update.Message == nil { // ignore any non-Message updates
-			log.Warn().Msgf("tgbot warn: Not message: %s", update.Message)
+			log.Warn().Msgf("tgbot warn: Not message: %v", update.Message)
 			continue
 		}
 
-		if !update.Message.IsCommand() { // ignore any non-command Messages
-
+		// Проверяем, если сообщение адресовано самому боту
+		if update.Message.Chat.ID == bot.tgbot.Self.ID {
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
 				log.Error().Msgf("Error tgbot.update: %w", err)
@@ -59,10 +59,39 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 			continue
 		}
 
-		log.Info().Msgf("tgbot.update receive command from %s: %s, text: %s", update.Message.From, update.Message.Command(), update.Message.Text)
+		// если сообщение адресовано каналу, в котором находится бот
+		if update.Message.Chat.IsChannel() && update.Message.Chat.UserName == bot.tgbot.Self.UserName {
+			replyText, err := bot.sendMessageToOpenAI(update.Message)
+			if err != nil {
+				log.Error().Msgf("Error tgbot.update: %w", err)
+			}
+			err = bot.sendReplyMessage(update.Message, replyText)
+			if err != nil {
+				log.Error().Msgf("Error tgbot.update: %w", err)
+			}
+			continue
+		}
 
-		if err := bot.commandHandle(update.Message); err != nil {
-			log.Error().Msgf("Error tgbot.update: %w", err)
+		// Проверяем, если сообщение является ответом на сообщение бота
+		if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == bot.tgbot.Self.ID {
+			replyText, err := bot.sendMessageToOpenAI(update.Message)
+			if err != nil {
+				log.Error().Msgf("Error tgbot.update: %w", err)
+			}
+			err = bot.sendReplyMessage(update.Message, replyText)
+			if err != nil {
+				log.Error().Msgf("Error tgbot.update: %w", err)
+			}
+			continue
+		}
+
+		//Check if message is a command
+		if update.Message.IsCommand() {
+			log.Info().Msgf("tgbot.update receive command from %s: %s, text: %s", update.Message.From, update.Message.Command(), update.Message.Text)
+
+			if err := bot.commandHandle(update.Message); err != nil {
+				log.Error().Msgf("Error tgbot.update: %w", err)
+			}
 		}
 
 	}
