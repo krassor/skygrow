@@ -41,6 +41,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 	//TODO: make goroutine with check update channel close
 	for update := range updates {
 		log.Info().Msgf("Input message: %v", update.Message)
+
 		if update.Message == nil { // ignore any non-Message updates
 			log.Warn().Msgf("tgbot warn: Not message: %v", update.Message)
 			continue
@@ -95,6 +96,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 			if err := bot.commandHandle(update.Message); err != nil {
 				log.Error().Msgf("Error tgbot.update: %w", err)
 			}
+			continue
 		}
 
 	}
