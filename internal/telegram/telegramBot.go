@@ -48,7 +48,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 		}
 
 		// Проверяем, если сообщение адресовано самому боту
-		if update.Message.Chat.ID == bot.tgbot.Self.ID {
+		if update.Message.Chat.IsPrivate() {
 			log.Info().Msgf("Self message: %s", update.Message.Text)
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
@@ -62,8 +62,9 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 		}
 
 		// если сообщение адресовано каналу, в котором находится бот
-		if update.Message.Chat.IsChannel() && update.Message.Chat.UserName == bot.tgbot.Self.UserName {
+		if (update.Message.Chat.IsChannel() || update.Message.Chat.IsGroup() || update.Message.Chat.IsSuperGroup()) && bot.checkBotMention(update.Message) {
 			log.Info().Msgf("Channel message from: %s", update.Message.From.UserName)
+
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
 				log.Error().Msgf("Error tgbot.update: %w", err)
@@ -102,7 +103,22 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 	}
 	log.Info().Msgf("exit tgbot routine")
 }
+func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
+	for _, entity := range msg.Entities {
+		// Проверяем тип упоминания - если это упоминание, то
+		// получаем само упоминание и обрабатываем его
+		if entity.Type == "mention" {
 
+			mention := msg.Text[entity.Offset+1 : entity.Offset+entity.Length]
+			if mention == bot.tgbot.Self.UserName {
+				return true
+			}
+			log.Info().Msgf("Mentioned user: %s", mention)
+			// Здесь можно написать логику для обработки упоминания
+		}
+	}
+	return false
+}
 func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 
 	// Extract the command from the Message.
