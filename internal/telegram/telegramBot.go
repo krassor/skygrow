@@ -63,7 +63,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 		// если сообщение адресовано каналу, в котором находится бот
 		if (update.Message.Chat.IsChannel() || update.Message.Chat.IsGroup() || update.Message.Chat.IsSuperGroup()) && bot.checkBotMention(update.Message) {
-			log.Info().Msgf("Channel: %s. message from: %s", update.Message.Chat.Title, update.Message.From.UserName)
+			log.Info().Msgf("Channel: %s. Message from: %s", update.Message.Chat.Title, update.Message.From.UserName)
 
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
@@ -109,7 +109,7 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 		// получаем само упоминание и обрабатываем его
 		if entity.Type == "mention" {
 
-			mention := msg.Text[entity.Offset : entity.Offset+entity.Length]
+			mention := msg.Text[2*entity.Offset : 2*entity.Offset+entity.Length]
 			if mention == bot.tgbot.Self.UserName {
 				return true
 			}
