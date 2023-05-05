@@ -104,20 +104,22 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 	log.Info().Msgf("exit tgbot routine")
 }
 func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
+	result := false
 	for _, entity := range msg.Entities {
 		// Проверяем тип упоминания - если это упоминание, то
 		// получаем само упоминание и обрабатываем его
 		if entity.Type == "mention" {
-
-			mention := msg.Text[2*entity.Offset : 2*entity.Offset+entity.Length]
+			mention := msg.Text[entity.Offset+1 : entity.Offset+entity.Length]
+			log.Info().Msgf("checkMention: %v %v", mention, bot.tgbot.Self.UserName)
 			if mention == bot.tgbot.Self.UserName {
-				return true
+				log.Info().Msgf("Mentioned user: %s", mention)
+				result = true
+				break
 			}
-			log.Info().Msgf("Mentioned user: %s", mention)
-			// Здесь можно написать логику для обработки упоминания
+
 		}
 	}
-	return false
+	return result
 }
 
 func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
