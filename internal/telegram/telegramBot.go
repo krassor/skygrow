@@ -40,7 +40,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 	//TODO: make goroutine with check update channel close
 	for update := range updates {
-		//log.Info().Msgf("Input message: %v\nChatID:%v\nBotSelfID:%v\n", update.Message, update.Message.Chat.UserName, bot.tgbot.Self.UserName)
+		log.Info().Msgf("Input message: %v", update.Message)
 
 		if update.Message == nil { // ignore any non-Message updates
 			log.Warn().Msgf("tgbot warn: Not message: %v", update.Message)
@@ -63,7 +63,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 		// если сообщение адресовано каналу, в котором находится бот
 		if (update.Message.Chat.IsChannel() || update.Message.Chat.IsGroup() || update.Message.Chat.IsSuperGroup()) && bot.checkBotMention(update.Message) {
-			log.Info().Msgf("Channel message from: %s", update.Message.From.UserName)
+			log.Info().Msgf("Channel: %s. message from: %s", update.Message.Chat.Title, update.Message.From.UserName)
 
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
@@ -109,7 +109,7 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 		// получаем само упоминание и обрабатываем его
 		if entity.Type == "mention" {
 
-			mention := msg.Text[entity.Offset+1 : entity.Offset+entity.Length]
+			mention := msg.Text[entity.Offset : entity.Offset+entity.Length]
 			if mention == bot.tgbot.Self.UserName {
 				return true
 			}
@@ -119,6 +119,7 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 	}
 	return false
 }
+
 func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 
 	// Extract the command from the Message.
