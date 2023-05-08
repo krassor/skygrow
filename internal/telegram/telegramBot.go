@@ -11,6 +11,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+
+
 type Bot struct {
 	tgbot  *tgbotapi.BotAPI
 	gptBot *openai.GPTBot
@@ -52,11 +54,11 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 			log.Info().Msgf("Self message: %s", update.Message.Text)
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %w", err)
+				log.Error().Msgf("Error tgbot.update: %v", err)
 			}
 			err = bot.sendReplyMessage(update.Message, replyText)
 			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %w", err)
+				log.Error().Msgf("Error tgbot.update: %v", err)
 			}
 			continue
 		}
@@ -67,11 +69,11 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %w", err)
+				log.Error().Msgf("Error tgbot.update: %v", err)
 			}
 			err = bot.sendReplyMessage(update.Message, replyText)
 			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %w", err)
+				log.Error().Msgf("Error tgbot.update: %v", err)
 			}
 			continue
 		}
@@ -81,11 +83,11 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 			log.Info().Msgf("Reply message from: %s", update.Message.From.UserName)
 			replyText, err := bot.sendMessageToOpenAI(update.Message)
 			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %w", err)
+				log.Error().Msgf("Error tgbot.update: %v", err)
 			}
 			err = bot.sendReplyMessage(update.Message, replyText)
 			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %w", err)
+				log.Error().Msgf("Error tgbot.update: %v", err)
 			}
 			continue
 		}
@@ -95,7 +97,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 			log.Info().Msgf("tgbot.update receive command from %s: %s, text: %s", update.Message.From, update.Message.Command(), update.Message.Text)
 
 			if err := bot.commandHandle(update.Message); err != nil {
-				log.Error().Msgf("Error tgbot.update: %w", err)
+				log.Error().Msgf("Error tgbot.update: %v", err)
 			}
 			continue
 		}
@@ -150,7 +152,7 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 func (bot *Bot) sendMessageToOpenAI(msg *tgbotapi.Message) (string, error) {
 	msgText := strings.TrimPrefix(msg.Text, "/askbot ")
 
-	reply, err := bot.gptBot.CreateChatCompletion(msgText)
+	reply, err := bot.gptBot.CreateChatCompletion(msg.From.UserName, msgText)
 	if err != nil {
 		return "", fmt.Errorf("Error bot.sendMessageToOpenAI: %w", err)
 	}
@@ -164,7 +166,7 @@ func (bot *Bot) sendReplyMessage(inputMsg *tgbotapi.Message, replyText string) e
 
 	_, err := bot.tgbot.Send(replyMsg)
 	if err != nil {
-		return fmt.Errorf("Error tgbot.sendRelyMessage: %w", err)
+		return fmt.Errorf("Error tgbot.sendReplyMessage: %w", err)
 	}
 	return nil
 }

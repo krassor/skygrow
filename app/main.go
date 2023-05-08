@@ -7,6 +7,7 @@ import (
 	"github.com/krassor/skygrow/internal/graceful"
 	"github.com/krassor/skygrow/internal/logger"
 	"github.com/krassor/skygrow/internal/openai"
+	"github.com/krassor/skygrow/internal/repository"
 	telegramBot "github.com/krassor/skygrow/internal/telegram"
 )
 
@@ -14,7 +15,9 @@ func main() {
 
 	logger.InitLogger()
 
-	gptBot := openai.NewGPTBot()
+	repo := repository.NewRepository()
+
+	gptBot := openai.NewGPTBot(repo)
 	tgBot := telegramBot.NewBot(gptBot)
 
 	maxSecond := 15 * time.Second
