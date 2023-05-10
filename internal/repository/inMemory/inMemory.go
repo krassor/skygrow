@@ -3,12 +3,14 @@ package inMemory
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	openai "github.com/sashabaranov/go-openai"
 )
 
 type InMemoryRepository struct {
 	InMemoryMap map[string][]openai.ChatCompletionMessage
+	mutex       sync.RWMutex
 }
 
 func NewInMemoryRepository() *InMemoryRepository {
@@ -26,7 +28,8 @@ func (r *InMemoryRepository) SaveUserMessage(ctx context.Context, username strin
 	if username == "" {
 		return fmt.Errorf("SaveUserMessage error: Empty key \"username\"")
 	}
-
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.InMemoryMap[username] = append(r.InMemoryMap[username], message)
 
 	return nil
@@ -40,6 +43,9 @@ func (r *InMemoryRepository) IsUserExist(ctx context.Context, username string) (
 	if username == "" {
 		return false, fmt.Errorf("IsUserExist error: Empty key \"username\"")
 	}
+
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 
 	_, ok := r.InMemoryMap[username]
 	if ok {
@@ -59,6 +65,9 @@ func (r *InMemoryRepository) LoadUserMessages(ctx context.Context, username stri
 		return nil, fmt.Errorf("LoadUserMessages error: Empty key \"username\"")
 	}
 
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	val, ok := r.InMemoryMap[username]
 	if ok {
 		return val, nil
@@ -75,6 +84,9 @@ func (r *InMemoryRepository) DeleteFirstPromt(ctx context.Context, username stri
 	if username == "" {
 		return nil, fmt.Errorf("DeleteFirstPromt error: Empty key \"username\"")
 	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
 	messageSlice, ok := r.InMemoryMap[username]
 	if ok {
