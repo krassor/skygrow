@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"unicode/utf16"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/krassor/skygrow/internal/openai"
@@ -84,8 +85,14 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 		// Проверяем тип упоминания - если это упоминание, то
 		// получаем само упоминание и обрабатываем его
 		if entity.Type == "mention" {
-			mention := msg.Text[entity.Offset+1 : entity.Offset+entity.Length]
-			log.Info().Msgf("checkMention: %v %v", mention, bot.tgbot.Self.UserName)
+			// Encode it into utf16
+			utf16EncodedString := utf16.Encode([]rune(msg.Text))
+			// Decode just the piece of string I need
+			runeString := utf16.Decode(utf16EncodedString[entity.Offset : entity.Offset+entity.Length])
+			// Transform []rune into string
+			mention := string(runeString)
+
+			log.Info().Msgf("checkMention: %v, Bot name: %v", mention, bot.tgbot.Self.UserName)
 			if mention == bot.tgbot.Self.UserName {
 				log.Info().Msgf("Mentioned user: %s", mention)
 				result = true
