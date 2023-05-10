@@ -15,7 +15,7 @@ func main() {
 
 	logger.InitLogger()
 
-	repo := repository.NewRepository()
+	repo := repository.NewMessageRepository()
 
 	gptBot := openai.NewGPTBot(repo)
 	tgBot := telegramBot.NewBot(gptBot)

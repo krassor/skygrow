@@ -12,10 +12,11 @@ import (
 type MessageRepository interface {
 	SaveUserMessage(ctx context.Context, username string, message openai.ChatCompletionMessage) error
 	LoadUserMessages(ctx context.Context, username string) ([]openai.ChatCompletionMessage, error)
+	DeleteFirstPromt(ctx context.Context, username string) ([]openai.ChatCompletionMessage, error)
 	IsUserExist(ctx context.Context, username string) (bool, error)
 }
 
-func NewRepository() MessageRepository {
+func NewMessageRepository() MessageRepository {
 	db_type, ok := os.LookupEnv("USER_MESSAGE_DB_TYPE")
 	if !ok {
 		log.Error().Msgf("Cannot find USER_MESSAGE_DB_TYPE env")
@@ -27,7 +28,7 @@ func NewRepository() MessageRepository {
 		r := inMemory.NewInMemoryRepository()
 		return r
 	default:
-		log.Error().Msgf("Unsupported database type")
+		log.Error().Msgf("USER_MESSAGE_DB_TYPE env error: Unsupported database type")
 		return nil
 	}
 }

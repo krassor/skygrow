@@ -11,8 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-
-
 type Bot struct {
 	tgbot  *tgbotapi.BotAPI
 	gptBot *openai.GPTBot
@@ -51,44 +49,19 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 
 		// Проверяем, если сообщение адресовано самому боту
 		if update.Message.Chat.IsPrivate() {
-			log.Info().Msgf("Self message: %s", update.Message.Text)
-			replyText, err := bot.sendMessageToOpenAI(update.Message)
-			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %v", err)
-			}
-			err = bot.sendReplyMessage(update.Message, replyText)
-			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %v", err)
-			}
+			bot.privateHandler(update.Message)
 			continue
 		}
 
 		// если сообщение адресовано каналу, в котором находится бот
 		if (update.Message.Chat.IsChannel() || update.Message.Chat.IsGroup() || update.Message.Chat.IsSuperGroup()) && bot.checkBotMention(update.Message) {
-			log.Info().Msgf("Channel: %s. Message from: %s", update.Message.Chat.Title, update.Message.From.UserName)
-
-			replyText, err := bot.sendMessageToOpenAI(update.Message)
-			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %v", err)
-			}
-			err = bot.sendReplyMessage(update.Message, replyText)
-			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %v", err)
-			}
+			bot.channelHandler(update.Message)
 			continue
 		}
 
 		// Проверяем, если сообщение является ответом на сообщение бота
 		if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == bot.tgbot.Self.ID {
-			log.Info().Msgf("Reply message from: %s", update.Message.From.UserName)
-			replyText, err := bot.sendMessageToOpenAI(update.Message)
-			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %v", err)
-			}
-			err = bot.sendReplyMessage(update.Message, replyText)
-			if err != nil {
-				log.Error().Msgf("Error tgbot.update: %v", err)
-			}
+			bot.replyHandler(update.Message)
 			continue
 		}
 
@@ -151,6 +124,15 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 
 func (bot *Bot) sendMessageToOpenAI(msg *tgbotapi.Message) (string, error) {
 	msgText := strings.TrimPrefix(msg.Text, "/askbot ")
+
+	words := strings.Split(msgText, " ")
+	var filteredWords []string
+	for _, word := range words {
+		if !strings.HasPrefix(word, "@") {
+			filteredWords = append(filteredWords, word)
+		}
+	}
+	msgText = strings.Join(filteredWords, " ")
 
 	reply, err := bot.gptBot.CreateChatCompletion(msg.From.UserName, msgText)
 	if err != nil {

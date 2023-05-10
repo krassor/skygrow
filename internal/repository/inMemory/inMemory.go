@@ -66,3 +66,22 @@ func (r *InMemoryRepository) LoadUserMessages(ctx context.Context, username stri
 		return nil, fmt.Errorf("LoadUserMessages error: Username not found")
 	}
 }
+
+func (r *InMemoryRepository) DeleteFirstPromt(ctx context.Context, username string) ([]openai.ChatCompletionMessage, error) {
+	if r.InMemoryMap == nil {
+		return nil, fmt.Errorf("DeleteFirstPromt error: Map is not initializate")
+	}
+
+	if username == "" {
+		return nil, fmt.Errorf("DeleteFirstPromt error: Empty key \"username\"")
+	}
+
+	messageSlice, ok := r.InMemoryMap[username]
+	if ok {
+		r.InMemoryMap[username] = messageSlice[1:]
+		return r.InMemoryMap[username], nil
+	} else {
+		return nil, fmt.Errorf("DeleteFirstPromt error: Username not found")
+	}
+
+}

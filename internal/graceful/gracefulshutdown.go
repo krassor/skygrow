@@ -54,6 +54,7 @@ func GracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 		}
 
 		wg.Wait()
+		log.Info().Msgf("Graceful shutdown completed")
 
 		close(wait)
 	}()
