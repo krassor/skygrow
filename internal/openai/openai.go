@@ -7,21 +7,23 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/krassor/skygrow/internal/repository"
+
 	openai "github.com/sashabaranov/go-openai"
 )
 
-type RepoMessages interface {
-	SaveUserMessage(ctx context.Context, username string, message openai.ChatCompletionMessage) error
-	LoadUserMessages(ctx context.Context, username string) ([]openai.ChatCompletionMessage, error)
-	IsUserExist(ctx context.Context, username string) (bool, error)
-}
+// type RepoMessages interface {
+// 	SaveUserMessage(ctx context.Context, username string, message openai.ChatCompletionMessage) error
+// 	LoadUserMessages(ctx context.Context, username string) ([]openai.ChatCompletionMessage, error)
+// 	IsUserExist(ctx context.Context, username string) (bool, error)
+// }
 
 type GPTBot struct {
 	openAIClient *openai.Client
-	repo         RepoMessages
+	repo         repository.MessageRepository
 }
 
-func NewGPTBot(repo RepoMessages) *GPTBot {
+func NewGPTBot(repo repository.MessageRepository) *GPTBot {
 	openAiToken, ok := os.LookupEnv("OPENAI_TOKEN")
 	if !ok {
 		log.Error().Msgf("Cannot find openai token env")
@@ -81,11 +83,20 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 	//Save response from openai GPT bot as an assistent response
 	msg = openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleAssistant,
-		Content: response,
+		Content: resp.Choices[0].Message.Content,
 	}
+
 	err = GPTBot.repo.SaveUserMessage(context.Background(), username, msg)
 	if err != nil {
 		return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
+	}
+
+	if resp.Usage.TotalTokens > 2048 {
+		del, err := GPTBot.repo.DeleteFirstPromt(context.Background(), username)
+		if err != nil {
+			return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
+		}
+		log.Printf("Deleted first promt: %v", del)
 	}
 
 	return response, nil

@@ -90,7 +90,7 @@ func (r *InMemoryRepository) DeleteFirstPromt(ctx context.Context, username stri
 
 	messageSlice, ok := r.InMemoryMap[username]
 	if ok {
-		r.InMemoryMap[username] = messageSlice[1:]
+		r.InMemoryMap[username] = messageSlice[2:]
 		return r.InMemoryMap[username], nil
 	} else {
 		return nil, fmt.Errorf("DeleteFirstPromt error: Username not found")
