@@ -88,7 +88,7 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 			// Encode it into utf16
 			utf16EncodedString := utf16.Encode([]rune(msg.Text))
 			// Decode just the piece of string I need
-			runeString := utf16.Decode(utf16EncodedString[entity.Offset : entity.Offset+entity.Length])
+			runeString := utf16.Decode(utf16EncodedString[entity.Offset+1 : entity.Offset+entity.Length])
 			// Transform []rune into string
 			mention := string(runeString)
 
