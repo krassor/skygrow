@@ -8,16 +8,18 @@ import (
 	"unicode/utf16"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/krassor/skygrow/internal/config"
 	"github.com/krassor/skygrow/internal/openai"
 	"github.com/rs/zerolog/log"
 )
 
 type Bot struct {
-	tgbot  *tgbotapi.BotAPI
-	gptBot *openai.GPTBot
+	tgbot     *tgbotapi.BotAPI
+	gptBot    *openai.GPTBot
+	botConfig *config.AppConfig
 }
 
-func NewBot(gptBot *openai.GPTBot) *Bot {
+func NewBot(botConfig *config.AppConfig, gptBot *openai.GPTBot) *Bot {
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TGBOT_APITOKEN"))
 	if err != nil {
 		log.Error().Msgf("Error auth telegram bot: %s", err)
@@ -28,8 +30,9 @@ func NewBot(gptBot *openai.GPTBot) *Bot {
 	log.Info().Msgf("Authorized on account %s", bot.Self.UserName)
 
 	return &Bot{
-		tgbot:  bot,
-		gptBot: gptBot,
+		tgbot:     bot,
+		gptBot:    gptBot,
+		botConfig: botConfig,
 	}
 }
 
@@ -79,6 +82,7 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 	}
 	log.Info().Msgf("exit tgbot routine")
 }
+
 func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 	result := false
 	for _, entity := range msg.Entities {
@@ -102,31 +106,6 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 		}
 	}
 	return result
-}
-
-func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
-
-	// Extract the command from the Message.
-
-	switch msg.Command() {
-	case "askbot":
-		replyText, err := bot.sendMessageToOpenAI(msg)
-		if err != nil {
-			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
-		}
-		err = bot.sendReplyMessage(msg, replyText)
-		if err != nil {
-			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
-		}
-	default:
-		replyText := "I don't know this command"
-		err := bot.sendReplyMessage(msg, replyText)
-		if err != nil {
-			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
-		}
-	}
-
-	return nil
 }
 
 func (bot *Bot) sendMessageToOpenAI(msg *tgbotapi.Message) (string, error) {

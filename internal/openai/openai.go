@@ -7,6 +7,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/krassor/skygrow/internal/config"
 	"github.com/krassor/skygrow/internal/repository"
 
 	openai "github.com/sashabaranov/go-openai"
@@ -21,9 +22,10 @@ import (
 type GPTBot struct {
 	openAIClient *openai.Client
 	repo         repository.MessageRepository
+	botConfig    *config.AppConfig
 }
 
-func NewGPTBot(repo repository.MessageRepository) *GPTBot {
+func NewGPTBot(botConfig *config.AppConfig, repo repository.MessageRepository) *GPTBot {
 	openAiToken, ok := os.LookupEnv("OPENAI_TOKEN")
 	if !ok {
 		log.Error().Msgf("Cannot find openai token env")
@@ -35,6 +37,7 @@ func NewGPTBot(repo repository.MessageRepository) *GPTBot {
 	return &GPTBot{
 		openAIClient: client,
 		repo:         repo,
+		botConfig:    botConfig,
 	}
 }
 
@@ -56,10 +59,15 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 		return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
 	}
 
+	openAIConfig, err := GPTBot.botConfig.ReadOpenAIConfig()
+	if err != nil {
+		return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
+	}
+
 	systemRoleMessage := make([]openai.ChatCompletionMessage, 1)
 	systemRoleMessage[0] = openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleSystem,
-		Content: "ты опытный специалист по выращиванию марихуаны и конопли. Отвечай только на вопросы по выращиванию растений, оборудованию для выращивания. Отвечай как можно конкретнее. На остальные вопросы отвечай, что ты только гровер и не знаешь ответы на другие вопросы",
+		Content: openAIConfig.SystemRolePromt,
 	}
 	//Добавляем системное сообщение вперед
 	messages = append(systemRoleMessage, messages...)
@@ -68,8 +76,9 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:       openai.GPT3Dot5Turbo,
-			Temperature: 0.5,
-			N:           1,
+			Temperature: openAIConfig.Temperature,
+			N:           openAIConfig.N,
+			MaxTokens:   openAIConfig.MaxTokens,
 			Messages:    messages,
 		},
 	)
@@ -78,7 +87,7 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 		return "", fmt.Errorf("Error GPTBot.CreateChatCompletion: %w", err)
 	}
 
-	response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPromt tokens usage%v\nTotal tokens usage: %v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
+	//response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPromt tokens usage%v\nTotal tokens usage: %v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
 
 	//Save response from openai GPT bot as an assistent response
 	msg = openai.ChatCompletionMessage{
@@ -92,12 +101,12 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 	}
 
 	if resp.Usage.TotalTokens > 2048 {
-		del, err := GPTBot.repo.DeleteFirstPromt(context.Background(), username)
+		_, err := GPTBot.repo.DeleteFirstPromt(context.Background(), username)
 		if err != nil {
 			return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
 		}
-		log.Printf("Deleted first promt: %v", del)
+		//log.Printf("Deleted first promt: %v", del)
 	}
 
-	return response, nil
+	return resp.Choices[0].Message.Content, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/krassor/skygrow/internal/config"
 	"github.com/krassor/skygrow/internal/graceful"
 	"github.com/krassor/skygrow/internal/logger"
 	"github.com/krassor/skygrow/internal/openai"
@@ -15,10 +16,11 @@ func main() {
 
 	logger.InitLogger()
 
+	config := config.InitConfig()
 	repo := repository.NewMessageRepository()
 
-	gptBot := openai.NewGPTBot(repo)
-	tgBot := telegramBot.NewBot(gptBot)
+	gptBot := openai.NewGPTBot(config, repo)
+	tgBot := telegramBot.NewBot(config, gptBot)
 
 	maxSecond := 15 * time.Second
 	waitShutdown := graceful.GracefulShutdown(
