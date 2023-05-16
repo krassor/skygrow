@@ -151,6 +151,10 @@ func (config *AppConfig) ReadBotConfig() (BotConfig, error) {
 	}
 
 	err = yaml.Unmarshal(bufRead, &botConfig)
+
+	log.Info().Msgf("Read bot config: %v", botConfig)
+	log.Info().Msgf("Admins slice: %v", botConfig.Admins)
+
 	if err != nil {
 		return BotConfig{}, fmt.Errorf("ReadBotConfig() Cannot unmarshall config file %s: %w", config.ConfigFilepath, err)
 	}
