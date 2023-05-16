@@ -73,7 +73,7 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 	}
 	//Добавляем системное сообщение вперед
 	messages = append(systemRoleMessage, messages...)
-	log.Info().Msgf("CreateChatCompletion(): promt messages: %v", messages")
+	log.Info().Msgf("CreateChatCompletion(): promt messages: %v", messages)
 
 	resp, err := GPTBot.openAIClient.CreateChatCompletion(
 		context.Background(),
@@ -89,7 +89,6 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 	if err != nil {
 		return "", fmt.Errorf("Error GPTBot.CreateChatCompletion: %w", err)
 	}
-
 
 	//response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPromt tokens usage%v\nTotal tokens usage: %v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
 
