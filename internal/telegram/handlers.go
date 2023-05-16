@@ -59,13 +59,21 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 	switch msg.Command() {
 	case "setsystempromt":
 
+		log.Info().Msgf("Input setsystempromt")
+
 		replyText := ""
 		isAdmin, err := bot.isAdmin(msg)
+
+		log.Info().Msgf("setsystempromt. %s is admin:", msg.From.UserName, isAdmin)
+
 		if err != nil {
 			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 		}
 		if isAdmin {
 			openAIConfig, err := bot.botConfig.ReadOpenAIConfig()
+
+			log.Info().Msgf("read openAI config: %v", openAIConfig)
+
 			if err != nil {
 				return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 			}
@@ -86,14 +94,21 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 
 	case "getsystempromt":
 
+		log.Info().Msgf("Input getsystempromt")
+
 		replyText := ""
 		isAdmin, err := bot.isAdmin(msg)
+
+		log.Info().Msgf("getsystempromt. %s is admin:", msg.From.UserName, isAdmin)
 
 		if err != nil {
 			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 		}
 		if isAdmin {
 			openAIConfig, err := bot.botConfig.ReadOpenAIConfig()
+
+			log.Info().Msgf("read openAI config: %v", openAIConfig)
+
 			if err != nil {
 				return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 			}
