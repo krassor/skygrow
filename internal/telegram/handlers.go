@@ -58,6 +58,7 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 
 	switch msg.Command() {
 	case "setsystempromt":
+
 		replyText := ""
 		isAdmin, err := bot.isAdmin(msg)
 		if err != nil {
@@ -84,8 +85,10 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 		}
 
 	case "getsystempromt":
+
 		replyText := ""
 		isAdmin, err := bot.isAdmin(msg)
+
 		if err != nil {
 			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 		}

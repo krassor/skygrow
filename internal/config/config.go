@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultAdmin           string  = "krassor"
+	defaultAdmin           string  = "KrAssor"
 	defaultMaxTokens       int     = 512
 	defaultTemperature     float32 = 0.5
 	defaultN               int     = 1

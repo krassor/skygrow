@@ -51,6 +51,16 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 			continue
 		}
 
+		//Check if message is a command
+		if update.Message.IsCommand() {
+			log.Info().Msgf("tgbot.update receive command from %s: %s, text: %s", update.Message.From, update.Message.Command(), update.Message.Text)
+
+			if err := bot.commandHandle(update.Message); err != nil {
+				log.Error().Msgf("Error tgbot.update: %v", err)
+			}
+			continue
+		}
+
 		// Проверяем, если сообщение адресовано самому боту
 		if update.Message.Chat.IsPrivate() {
 			bot.privateHandler(update.Message)
@@ -66,16 +76,6 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 		// Проверяем, если сообщение является ответом на сообщение бота
 		if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == bot.tgbot.Self.ID {
 			bot.replyHandler(update.Message)
-			continue
-		}
-
-		//Check if message is a command
-		if update.Message.IsCommand() {
-			log.Info().Msgf("tgbot.update receive command from %s: %s, text: %s", update.Message.From, update.Message.Command(), update.Message.Text)
-
-			if err := bot.commandHandle(update.Message); err != nil {
-				log.Error().Msgf("Error tgbot.update: %v", err)
-			}
 			continue
 		}
 
