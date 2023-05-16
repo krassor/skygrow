@@ -2,6 +2,7 @@ package telegramBot
 
 import (
 	"fmt"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
@@ -78,7 +79,7 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 				return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 			}
 
-			openAIConfig.SystemRolePromt = msg.Text
+			openAIConfig.SystemRolePromt = strings.TrimPrefix(msg.Text, "/askbot ")
 
 			err = bot.botConfig.WriteOpenAIConfig(&openAIConfig)
 			if err != nil {
