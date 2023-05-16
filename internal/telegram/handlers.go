@@ -79,7 +79,7 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 				return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 			}
 
-			openAIConfig.SystemRolePromt = strings.TrimPrefix(msg.Text, "/askbot ")
+			openAIConfig.SystemRolePromt = strings.TrimPrefix(msg.Text, "/setsystempromt ")
 
 			err = bot.botConfig.WriteOpenAIConfig(&openAIConfig)
 			if err != nil {
