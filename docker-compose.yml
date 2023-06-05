@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/tgBot.Dockerfile
+      target: builder
     volumes:
       - ./config/tgbot_config:/etc/tgGptBot
     networks:
