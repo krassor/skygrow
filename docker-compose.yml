@@ -1,5 +1,5 @@
 services:
-  app-tgBot:
+  appTgBot:
     build:
       context: .
       dockerfile: ./docker/tgBot.Dockerfile
