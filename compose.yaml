@@ -1,0 +1,26 @@
+services:
+  app-tgBot:
+    build:
+      context: .
+      dockerfile: ./docker/tgBot.Dockerfile
+    volumes:
+      - ./config/tgbot_config:/etc/tgGptBot
+    networks:
+      - back-tier
+#   prometheus:
+#     image: prom/prometheus
+#     container_name: prometheus
+#     command:
+#       - '--config.file=/etc/prometheus/prometheus.yml'
+#     ports:
+#       - 9090:9090
+#     restart: unless-stopped
+#     volumes:
+#       - ./prometheus:/etc/prometheus
+#       - prom_data:/prometheus
+#     networks:
+#       - back-tier
+# volumes:
+#   prom_data: 
+networks:
+  back-tier: 
