@@ -29,7 +29,6 @@ volumes:
 networks:
 #Internal-only network for proper nginx proxying and ssh
   back:
-    driver: bridge
     ipam:
      driver: default
      config:
