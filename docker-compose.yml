@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: ./docker/tgBot.Dockerfile
-      target: builder
     volumes:
       - ./config/tgbot_config:/etc/tgGptBot
     networks:
@@ -24,4 +23,6 @@ services:
 # volumes:
 #   prom_data: 
 networks:
-  back: 
+  back:
+    external: true
+    name: host
