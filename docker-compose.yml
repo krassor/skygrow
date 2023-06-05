@@ -6,7 +6,7 @@ services:
       - ./config/tgbot_config:/etc/tgGptBot
     networks:
       back:
-        ipv4_address: 172.16.1.1
+        ipv4_address: 172.28.0.11
 
   prometheus:
     image: prom/prometheus
@@ -21,15 +21,15 @@ services:
       - prom_data:/prometheus
     networks:
       back:
-        ipv4_address: 172.16.2.1
+        ipv4_address: 172.28.0.31
 
 volumes:
   prom_data:
 
 networks:
-#Internal-only network for proper nginx proxying and ssh
   back:
+    driver: bridge
     ipam:
-     driver: default
      config:
-       - subnet: 172.16.0.0/16
+       - subnet: 172.28.0.0/24
+         gateway: 172.28.0.1

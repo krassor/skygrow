@@ -1,7 +1,7 @@
 eval `ssh-agent -s`
 ssh-add /root/.ssh/github_krassor_rsa
 git pull git@github.com:krassor/skygrow.git
-docker-compose up
+docker-compose up -d --build
 
 # echo "stopping app-tg-gpt-bot container"
 # docker stop app-tg-gpt-bot
