@@ -23,7 +23,7 @@ services:
       - back-tier
 
 volumes:
-  prom_data:
+  prom_data: {}
 
 networks:
-  back-tier:
+  back-tier: {}
