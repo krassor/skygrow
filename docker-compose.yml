@@ -1,0 +1,36 @@
+services:
+  app-tgBot:
+    build:
+      dockerfile: ./docker/tgBot.Dockerfile
+    volumes:
+      - ./config/tgbot_config:/etc/tgGptBot
+    networks:
+      back:
+        ipv4_address: 172.16.1.1
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+    networks:
+      back:
+        ipv4_address: 172.16.2.1
+
+volumes:
+  prom_data:
+
+networks:
+#Internal-only network for proper nginx proxying and ssh
+  back:
+    driver: bridge
+    ipam:
+     driver: default
+     config:
+       - subnet: 172.16.0.0/16

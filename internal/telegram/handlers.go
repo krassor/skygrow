@@ -65,7 +65,7 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 		replyText := ""
 		isAdmin, err := bot.isAdmin(msg)
 
-		log.Info().Msgf("setsystempromt. %s is admin:", msg.From.UserName, isAdmin)
+		log.Info().Msgf("setsystempromt. %s is admin: %v", msg.From.UserName, isAdmin)
 
 		if err != nil {
 			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
@@ -100,7 +100,7 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 		replyText := ""
 		isAdmin, err := bot.isAdmin(msg)
 
-		log.Info().Msgf("getsystempromt. %s is admin:", msg.From.UserName, isAdmin)
+		log.Info().Msgf("getsystempromt. %s is admin: %v", msg.From.UserName, isAdmin)
 
 		if err != nil {
 			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
