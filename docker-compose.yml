@@ -1,28 +1,24 @@
 services:
-  appTgBot:
-    build:
-      context: .
-      dockerfile: ./docker/tgBot.Dockerfile
+  app-tg-gpt-bot:
+    build: ./tg-gpt-bot
     volumes:
-      - ./config/tgbot_config:/etc/tgGptBot
+      - ./tg-gpt-bot/config/:/etc/tg-gpt-bot/
     networks:
-      - back
-#   prometheus:
-#     image: prom/prometheus
-#     container_name: prometheus
-#     command:
-#       - '--config.file=/etc/prometheus/prometheus.yml'
-#     ports:
-#       - 9090:9090
-#     restart: unless-stopped
-#     volumes:
-#       - ./prometheus:/etc/prometheus
-#       - prom_data:/prometheus
-#     networks:
-#       - back-tier
-# volumes:
-#   prom_data: 
+      - back-tier
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+    networks:
+      - back-tier
+volumes:
+  prom_data: 
 networks:
-  back:
-    external: true
-    name: host
+  back-tier:
