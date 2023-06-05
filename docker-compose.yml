@@ -1,12 +1,12 @@
 services:
   app-tgBot:
     build:
+      context: .
       dockerfile: ./docker/tgBot.Dockerfile
     volumes:
       - ./config/tgbot_config:/etc/tgGptBot
     networks:
-      back:
-        ipv4_address: 172.28.1.1
+      - back-tier
 
   prometheus:
     image: prom/prometheus
@@ -20,17 +20,10 @@ services:
       - ./prometheus:/etc/prometheus
       - prom_data:/prometheus
     networks:
-      back:
-        ipv4_address: 172.28.2.1
+      - back-tier
 
 volumes:
-  prom_data: {}
+  prom_data:
 
 networks:
-  back:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.28.0.0/16
-          ip_range: 172.28.0.0/16
-          gateway: 172.28.0.1
+  back-tier:
