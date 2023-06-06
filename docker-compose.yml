@@ -1,10 +1,13 @@
 services:
   app-tg-gpt-bot:
     build: ./tg-gpt-bot
+    ports:
+      - 8080:8080
     volumes:
       - ./tg-gpt-bot/config/:/etc/tg-gpt-bot/
     networks:
       - back-tier
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -18,7 +21,9 @@ services:
       - prom_data:/prometheus
     networks:
       - back-tier
+
 volumes:
   prom_data: 
+
 networks:
   back-tier:
