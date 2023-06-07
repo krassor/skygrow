@@ -8,8 +8,8 @@ import (
 	"unicode/utf16"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/krassor/skygrow/internal/config"
-	"github.com/krassor/skygrow/internal/openai"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/openai"
 	"github.com/rs/zerolog/log"
 )
 

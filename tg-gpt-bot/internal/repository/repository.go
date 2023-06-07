@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/krassor/skygrow/internal/repository/inMemory"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/repository/inMemory"
 	"github.com/rs/zerolog/log"
 	openai "github.com/sashabaranov/go-openai"
 )

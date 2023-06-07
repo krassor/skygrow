@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/krassor/skygrow/internal/config"
-	"github.com/krassor/skygrow/internal/graceful"
-	"github.com/krassor/skygrow/internal/logger"
-	"github.com/krassor/skygrow/internal/openai"
-	"github.com/krassor/skygrow/internal/repository"
-	telegramBot "github.com/krassor/skygrow/internal/telegram"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/graceful"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/logger"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/openai"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/repository"
+	telegramBot "github.com/krassor/skygrow/tg-gpt-bot/internal/telegram"
 )
 
 func main() {

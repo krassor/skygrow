@@ -7,8 +7,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/krassor/skygrow/internal/config"
-	"github.com/krassor/skygrow/internal/repository"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/repository"
 
 	openai "github.com/sashabaranov/go-openai"
 )
