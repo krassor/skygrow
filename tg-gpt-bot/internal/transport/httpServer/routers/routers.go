@@ -4,6 +4,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer/handlers"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type DeviceRouter struct {
@@ -18,5 +20,5 @@ func NewDeviceRouter(deviceHandler handlers.DeviceHandlers) *DeviceRouter {
 
 func (d *DeviceRouter) Router(r *chi.Mux) {
 	r.Use(cors.AllowAll().Handler)
-	r.Post("/devices", d.DeviceHandler.CreateDevice)
+	r.Handle("/metrics", promhttp.Handler())
 }
