@@ -33,7 +33,7 @@ func (h *HttpServer) Listen() {
 	}
 	serverAddress, ok := os.LookupEnv("HTTP_SERVER_ADDRESS_LISTEN")
 	if !ok {
-		serverAddress = "127.0.0.1"
+		serverAddress = "0.0.0.0"
 	}
 
 	h.httpServer = &http.Server{
