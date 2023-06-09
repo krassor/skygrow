@@ -27,7 +27,7 @@ scrape_configs:
   scheme: http
   static_configs:
   - targets:
-    - app-tg-gpt-bot:8082
+    - app-tg-gpt-bot:8080
 remote_write:
 - url: https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push
   basic_auth:

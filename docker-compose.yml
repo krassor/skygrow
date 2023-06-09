@@ -1,5 +1,7 @@
 services:
   app-tg-gpt-bot:
+    hostname: app-tg-gpt-bot
+    container_name: app-tg-gpt-bot
     build: ./tg-gpt-bot
     ports:
       - 8080:8080
@@ -10,6 +12,7 @@ services:
 
   prometheus:
     image: prom/prometheus
+    hostname: prometheus
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
