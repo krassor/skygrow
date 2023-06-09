@@ -13,11 +13,11 @@ import (
 )
 
 type HttpServer struct {
-	Router     *routers.DeviceRouter
+	Router     *routers.BotRouter
 	httpServer *http.Server
 }
 
-func NewHttpServer(router *routers.DeviceRouter) *HttpServer {
+func NewHttpServer(router *routers.BotRouter) *HttpServer {
 	return &HttpServer{
 		Router: router,
 	}

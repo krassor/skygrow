@@ -10,6 +10,8 @@ import (
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/openai"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/repository"
 	telegramBot "github.com/krassor/skygrow/tg-gpt-bot/internal/telegram"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer/routers"
 )
 
 func main() {
@@ -22,6 +24,9 @@ func main() {
 	gptBot := openai.NewGPTBot(config, repo)
 	tgBot := telegramBot.NewBot(config, gptBot)
 
+	botRouter := routers.NewBotRouter()
+	httpServer := httpServer.NewHttpServer(botRouter)
+
 	maxSecond := 15 * time.Second
 	waitShutdown := graceful.GracefulShutdown(
 		context.Background(),
@@ -30,6 +35,9 @@ func main() {
 			"tgBot": func(ctx context.Context) error {
 				return tgBot.Shutdown(ctx)
 			},
+			"httpServer": func(ctx context.Context) error {
+				return httpServer.Shutdown(ctx)
+			},
 			// "tgBot": func(ctx context.Context) error {
 			// 	return deviceTgBot.Shutdown(ctx)
 			// },
@@ -37,6 +45,7 @@ func main() {
 	)
 
 	go tgBot.Update(context.Background(), 60)
+	go httpServer.Listen()
 
 	<-waitShutdown
 }

@@ -19,7 +19,7 @@ scrape_configs:
   static_configs:
   - targets:
     - localhost:9090
-- job_name: prometheus
+- job_name: app-tg-gpt-bot
   honor_timestamps: true
   scrape_interval: 15s
   scrape_timeout: 10s
@@ -27,7 +27,7 @@ scrape_configs:
   scheme: http
   static_configs:
   - targets:
-    - app-tg-gpt-bot:8080
+    - app-tg-gpt-bot:8082
 remote_write:
 - url: https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push
   basic_auth:
