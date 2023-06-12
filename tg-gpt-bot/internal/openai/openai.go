@@ -11,10 +11,6 @@ import (
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/repository"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"strconv"
-
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -23,17 +19,6 @@ import (
 // 	LoadUserMessages(ctx context.Context, username string) ([]openai.ChatCompletionMessage, error)
 // 	IsUserExist(ctx context.Context, username string) (bool, error)
 // }
-
-var requestMetrics = promauto.NewSummaryVec(prometheus.SummaryOpts{
-	Namespace:  "messages",
-	Subsystem:  "tgbot",
-	Name:       "chatCompletion",
-	Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-}, []string{"status"})
-
-func observeRequest(d time.Duration, status int) {
-	requestMetrics.WithLabelValues(strconv.Itoa(status)).Observe(d.Seconds())
-}
 
 type GPTBot struct {
 	openAIClient *openai.Client
@@ -58,6 +43,12 @@ func NewGPTBot(botConfig *config.AppConfig, repo repository.MessageRepository) *
 }
 
 func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (string, error) {
+
+	start := time.Now()
+	defer func() {
+		observeRequest(time.Since(start), username)
+	}()
+
 	log.Info().Msgf("GPTBot get input message: %s", gptInput)
 
 	msg := openai.ChatCompletionMessage{
