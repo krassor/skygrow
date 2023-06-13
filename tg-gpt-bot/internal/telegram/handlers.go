@@ -131,6 +131,12 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 		if err != nil {
 			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 		}
+	case "start":
+		replyText := fmt.Sprintf("Hi, %s! Ask your questions.", msg.From.UserName)
+		err := bot.sendReplyMessage(msg, replyText)
+		if err != nil {
+			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
+		}
 
 	default:
 		replyText := "I don't know this command"
