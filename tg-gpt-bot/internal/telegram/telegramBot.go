@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 	"strings"
 	"unicode/utf16"
 
@@ -109,6 +110,12 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 }
 
 func (bot *Bot) sendMessageToOpenAI(msg *tgbotapi.Message) (string, error) {
+
+	start := time.Now()
+	defer func() {
+		observeResponseLatencySecSummary(time.Since(start), msg.From.UserName)
+	}()
+
 	msgText := strings.TrimPrefix(msg.Text, "/askbot ")
 
 	words := strings.Split(msgText, " ")

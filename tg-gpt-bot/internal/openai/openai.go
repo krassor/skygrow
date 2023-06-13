@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/rs/zerolog/log"
 
@@ -43,11 +42,6 @@ func NewGPTBot(botConfig *config.AppConfig, repo repository.MessageRepository) *
 }
 
 func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (string, error) {
-
-	start := time.Now()
-	defer func() {
-		observeRequest(time.Since(start), username)
-	}()
 
 	log.Info().Msgf("GPTBot get input message: %s", gptInput)
 
@@ -129,6 +123,8 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 		}
 		//log.Printf("Deleted first promt: %v", del)
 	}
+
+	observeTotalTokensUsage(resp.Usage.TotalTokens, username)
 
 	return resp.Choices[0].Message.Content, nil
 }
