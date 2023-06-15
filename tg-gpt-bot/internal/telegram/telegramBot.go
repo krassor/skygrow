@@ -51,6 +51,7 @@ func (bot *Bot) Update(updateTimeout int) {
 
 		if update.Message == nil { // ignore any non-Message updates
 			log.Warn().Msgf("tgbot warn: Not message: %v", update.Message)
+			continue
 		}
 
 		go bot.processingMessages(update)
