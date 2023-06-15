@@ -62,6 +62,8 @@ func (bot *Bot) Update(updateTimeout int) {
 
 func (bot *Bot) processingMessages(update tgbotapi.Update) {
 
+	log.Info().Msgf("\t\tEnter goroutine processingMessages()")
+
 	select {
 	case <-bot.shutdownChannel:
 		return
@@ -91,6 +93,8 @@ func (bot *Bot) processingMessages(update tgbotapi.Update) {
 		} else {
 			log.Warn().Msgf("Unsupported message type")
 		}
+
+		log.Info().Msgf("\t\tExit goroutine processingMessages()\n")
 
 		return
 	}
