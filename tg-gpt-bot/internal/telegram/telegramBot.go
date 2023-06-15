@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 	"strings"
+	"time"
 	"unicode/utf16"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,9 +15,10 @@ import (
 )
 
 type Bot struct {
-	tgbot     *tgbotapi.BotAPI
-	gptBot    *openai.GPTBot
-	botConfig *config.AppConfig
+	tgbot           *tgbotapi.BotAPI
+	gptBot          *openai.GPTBot
+	botConfig       *config.AppConfig
+	shutdownChannel chan struct{}
 }
 
 func NewBot(botConfig *config.AppConfig, gptBot *openai.GPTBot) *Bot {
@@ -31,13 +32,14 @@ func NewBot(botConfig *config.AppConfig, gptBot *openai.GPTBot) *Bot {
 	log.Info().Msgf("Authorized on account %s", bot.Self.UserName)
 
 	return &Bot{
-		tgbot:     bot,
-		gptBot:    gptBot,
-		botConfig: botConfig,
+		tgbot:           bot,
+		gptBot:          gptBot,
+		botConfig:       botConfig,
+		shutdownChannel: make(chan struct{}),
 	}
 }
 
-func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
+func (bot *Bot) Update(updateTimeout int) {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = updateTimeout
 
@@ -46,10 +48,21 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 	//TODO: make goroutine with check update channel close
 	for update := range updates {
 		log.Info().Msgf("Input message: %v", update.Message)
+		go bot.processingMessages(update)
+	}
+	log.Info().Msgf("exit tgbot routine")
+
+}
+
+func (bot *Bot) processingMessages(update tgbotapi.Update) {
+
+	select {
+	case <-bot.shutdownChannel:
+		return
+	default:
 
 		if update.Message == nil { // ignore any non-Message updates
 			log.Warn().Msgf("tgbot warn: Not message: %v", update.Message)
-			continue
 		}
 
 		//Check if message is a command
@@ -59,29 +72,23 @@ func (bot *Bot) Update(ctx context.Context, updateTimeout int) {
 			if err := bot.commandHandle(update.Message); err != nil {
 				log.Error().Msgf("Error tgbot.update: %v", err)
 			}
-			continue
 		}
 
 		// Проверяем, если сообщение адресовано самому боту
 		if update.Message.Chat.IsPrivate() {
 			bot.privateHandler(update.Message)
-			continue
 		}
 
 		// если сообщение адресовано каналу, в котором находится бот
 		if (update.Message.Chat.IsChannel() || update.Message.Chat.IsGroup() || update.Message.Chat.IsSuperGroup()) && bot.checkBotMention(update.Message) {
 			bot.channelHandler(update.Message)
-			continue
 		}
 
 		// Проверяем, если сообщение является ответом на сообщение бота
 		if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == bot.tgbot.Self.ID {
 			bot.replyHandler(update.Message)
-			continue
 		}
-
 	}
-	log.Info().Msgf("exit tgbot routine")
 }
 
 func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
@@ -150,8 +157,9 @@ func (bot *Bot) Shutdown(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("error shutdown telegram bot: %w", ctx.Err())
+			return fmt.Errorf("Force exit tgBot: %w", ctx.Err())
 		default:
+			close(bot.shutdownChannel)
 			bot.tgbot.StopReceivingUpdates()
 			return nil
 		}

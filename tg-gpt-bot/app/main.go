@@ -44,7 +44,7 @@ func main() {
 		},
 	)
 
-	go tgBot.Update(context.Background(), 60)
+	go tgBot.Update(60)
 	go httpServer.Listen()
 
 	<-waitShutdown
