@@ -31,5 +31,5 @@ scrape_configs:
 remote_write:
 - url: https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push
   basic_auth:
-    username: 1025149
-    password: eyJrIjoiMTYwNDUyMTJmM2EwMWExMzdjN2Y1YjE2OWEwYzNiMzNhMWViNWMxNiIsIm4iOiJza2FpZ3JvdyIsImlkIjo4NjQ4NjB9
+    username: 
+    password: 

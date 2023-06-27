@@ -4,3 +4,4 @@ Procfile
 run_docker_build.sh
 Dockerfile copy
 config copy.yml
+prometheus copy.yml
