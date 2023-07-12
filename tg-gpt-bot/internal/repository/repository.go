@@ -16,6 +16,14 @@ type MessageRepository interface {
 	IsUserExist(ctx context.Context, username string) (bool, error)
 }
 
+type User struct {
+	ID          int64
+	Username    string
+	Lastname    string
+	Firstname   string
+	PhoneNumber string
+}
+
 func NewMessageRepository() MessageRepository {
 	db_type, ok := os.LookupEnv("USER_MESSAGE_DB_TYPE")
 	if !ok {

@@ -16,6 +16,9 @@ func (bot *Bot) replyHandler(msg *tgbotapi.Message) {
 		log.Error().Msgf("Error tgbot.update: %v", err)
 		return
 	}
+
+	log.Info().Msgf("Last GPT message: %s", replyText)
+
 	err = bot.sendReplyMessage(msg, replyText)
 	if err != nil {
 		log.Error().Msgf("Error tgbot.update: %v", err)
@@ -24,13 +27,16 @@ func (bot *Bot) replyHandler(msg *tgbotapi.Message) {
 }
 
 func (bot *Bot) privateHandler(msg *tgbotapi.Message) {
-	log.Info().Msgf("Self message: %s", msg.Text)
+	log.Info().Msgf("Self message: %sfrom: %v %s %s %s,",  msg.Text, msg.From.ID, msg.From.UserName, msg.From.LastName, msg.From.FirstName)
 
 	replyText, err := bot.sendMessageToOpenAI(msg)
 	if err != nil {
 		log.Error().Msgf("Error tgbot.update: %v", err)
 		return
 	}
+
+	log.Info().Msgf("Last GPT message: %s", replyText)
+
 	err = bot.sendReplyMessage(msg, replyText)
 	if err != nil {
 		log.Error().Msgf("Error tgbot.update: %v", err)
@@ -46,6 +52,9 @@ func (bot *Bot) channelHandler(msg *tgbotapi.Message) {
 		log.Error().Msgf("Error tgbot.update: %v", err)
 		return
 	}
+
+	log.Info().Msgf("Last GPT message: %s", replyText)
+
 	err = bot.sendReplyMessage(msg, replyText)
 	if err != nil {
 		log.Error().Msgf("Error tgbot.update: %v", err)
@@ -127,6 +136,9 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 		if err != nil {
 			return fmt.Errorf("Error tgbot.commandHandle: %w", err)
 		}
+
+		log.Info().Msgf("Last GPT message: %s", replyText)
+
 		err = bot.sendReplyMessage(msg, replyText)
 		if err != nil {
 			return fmt.Errorf("Error tgbot.commandHandle: %w", err)

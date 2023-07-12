@@ -41,7 +41,7 @@ func NewGPTBot(botConfig *config.AppConfig, repo repository.MessageRepository) *
 	}
 }
 
-func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (string, error) {
+func (GPTBot *GPTBot) CreateChatCompletion(userID string, gptInput string) (string, error) {
 
 	log.Info().Msgf("GPTBot get input message: %s", gptInput)
 
@@ -50,12 +50,12 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 		Content: gptInput,
 	}
 
-	err := GPTBot.repo.SaveUserMessage(context.Background(), username, msg)
+	err := GPTBot.repo.SaveUserMessage(context.Background(), userID, msg)
 	if err != nil {
-		return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
+		return "", fmt.Errorf("openai.CreateChatCompletion write user answer error: %w", err)
 	}
 
-	messages, err := GPTBot.repo.LoadUserMessages(context.Background(), username)
+	messages, err := GPTBot.repo.LoadUserMessages(context.Background(), userID)
 	if err != nil {
 		return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
 	}
@@ -99,17 +99,19 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 		Content: resp.Choices[0].Message.Content,
 	}
 
-	err = GPTBot.repo.SaveUserMessage(context.Background(), username, msg)
+	
+
+	err = GPTBot.repo.SaveUserMessage(context.Background(), userID, msg)
 	if err != nil {
-		return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
+		return "", fmt.Errorf("openai.CreateChatCompletion write openai answer error: %w", err)
 	}
 
 	if resp.Usage.TotalTokens > 3072 {
-		_, err := GPTBot.repo.DeleteFirstPromt(context.Background(), username)
+		_, err := GPTBot.repo.DeleteFirstPromt(context.Background(), userID)
 		if err != nil {
 			return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
 		}
-		_, err = GPTBot.repo.DeleteFirstPromt(context.Background(), username)
+		_, err = GPTBot.repo.DeleteFirstPromt(context.Background(), userID)
 		if err != nil {
 			return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
 		}
@@ -117,14 +119,14 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 	}
 
 	if resp.Usage.TotalTokens > 2048 {
-		_, err := GPTBot.repo.DeleteFirstPromt(context.Background(), username)
+		_, err := GPTBot.repo.DeleteFirstPromt(context.Background(), userID)
 		if err != nil {
 			return "", fmt.Errorf("openai.CreateChatCompletion error: %w", err)
 		}
 		//log.Printf("Deleted first promt: %v", del)
 	}
 
-	observeTotalTokensUsage(resp.Usage.TotalTokens, username)
+	observeTotalTokensUsage(resp.Usage.TotalTokens, userID)
 
 	return resp.Choices[0].Message.Content, nil
 }

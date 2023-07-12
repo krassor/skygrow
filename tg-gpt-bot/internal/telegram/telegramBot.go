@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"strconv"
 	"time"
 	"unicode/utf16"
 
@@ -67,7 +68,7 @@ func (bot *Bot) Update(updateTimeout int) {
 
 func (bot *Bot) processingMessages(update tgbotapi.Update) {
 
-	log.Info().Msgf("\t\tEnter goroutine processingMessages()")
+	log.Info().Msgf("\n\t\tEnter goroutine processingMessages(), id: %v, user: %s, name: %s %s", update.Message.From.ID, update.Message.From.UserName, update.Message.From.LastName, update.Message.From.FirstName)
 
 	select {
 	case <-bot.shutdownChannel:
@@ -99,7 +100,7 @@ func (bot *Bot) processingMessages(update tgbotapi.Update) {
 			log.Warn().Msgf("Unsupported message type")
 		}
 
-		log.Info().Msgf("\t\tExit goroutine processingMessages()\n")
+		log.Info().Msgf("\t\tExit goroutine processingMessages(), id: %v, user: %s, name: %s %s\n",update.Message.From.ID, update.Message.From.UserName, update.Message.From.LastName, update.Message.From.FirstName)
 
 		return
 	}
@@ -148,7 +149,7 @@ func (bot *Bot) sendMessageToOpenAI(msg *tgbotapi.Message) (string, error) {
 	}
 	msgText = strings.Join(filteredWords, " ")
 
-	reply, err := bot.gptBot.CreateChatCompletion(msg.From.UserName, msgText)
+	reply, err := bot.gptBot.CreateChatCompletion(strconv.Itoa(int(msg.From.ID)), msgText)
 	if err != nil {
 		return "", fmt.Errorf("Error bot.sendMessageToOpenAI: %w", err)
 	}
