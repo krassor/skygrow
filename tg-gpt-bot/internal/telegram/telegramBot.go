@@ -43,6 +43,11 @@ func (bot *Bot) Update(updateTimeout int) {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = updateTimeout
 
+	_, err := bot.tgbot.MakeRequest("deleteWebhook", tgbotapi.Params{"drop_pending_updates": "false"})
+	if err != nil {
+		log.Error().Msgf("bot.Update() error: cannot delete WebHook: %v", err)
+	}
+
 	updates := bot.tgbot.GetUpdatesChan(updateConfig)
 
 	//TODO: make goroutine with check update channel close

@@ -8,7 +8,7 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/prometheus/client_golang v1.15.1
 	github.com/rs/zerolog v1.29.1
-	github.com/sashabaranov/go-openai v1.10.0
+	github.com/sashabaranov/go-openai v1.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

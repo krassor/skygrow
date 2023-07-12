@@ -79,7 +79,7 @@ func (GPTBot *GPTBot) CreateChatCompletion(username string, gptInput string) (st
 	resp, err := GPTBot.openAIClient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:       openai.GPT3Dot5Turbo,
+			Model:       openai.GPT3Dot5Turbo0613,
 			Temperature: openAIConfig.Temperature,
 			N:           openAIConfig.N,
 			MaxTokens:   openAIConfig.MaxTokens,
