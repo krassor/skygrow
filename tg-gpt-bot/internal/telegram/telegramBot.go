@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 	"unicode/utf16"
 
@@ -100,7 +100,7 @@ func (bot *Bot) processingMessages(update tgbotapi.Update) {
 			log.Warn().Msgf("Unsupported message type")
 		}
 
-		log.Info().Msgf("\t\tExit goroutine processingMessages(), id: %v, user: %s, name: %s %s\n",update.Message.From.ID, update.Message.From.UserName, update.Message.From.LastName, update.Message.From.FirstName)
+		log.Info().Msgf("\n\t\tExit goroutine processingMessages(), id: %v, user: %s, name: %s %s\n", update.Message.From.ID, update.Message.From.UserName, update.Message.From.LastName, update.Message.From.FirstName)
 
 		return
 	}

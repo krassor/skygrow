@@ -5,3 +5,6 @@ run_docker_build.sh
 Dockerfile copy
 config copy.yml
 prometheus copy.yml
+Dockerfile_dev
+docker-compose-dev.yml
+run_docker_build_dev.sh
