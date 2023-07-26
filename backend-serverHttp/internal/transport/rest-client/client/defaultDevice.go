@@ -33,10 +33,11 @@ func (d *DefaultDevice) GetStatus(ctx context.Context, url string) (bool, error)
 
 	var res *http.Response
 	for i := 0; i < retryCount; i++ {
+		i := i
 		r, e := d.httpClient.Do(req)
 		if e != nil {
 			err = e
-			log.Error().Msgf("Error try %s:\n%w", i+1, err)
+			log.Error().Msgf("Error try %v:\n%v", i+1, err)
 			time.Sleep(retryDuration)
 			continue
 		}
