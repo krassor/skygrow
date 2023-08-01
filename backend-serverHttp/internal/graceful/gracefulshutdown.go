@@ -26,12 +26,15 @@ func GracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 		log.Info().Msgf("shutting down")
 
 		// set timeout for the ops to be done to prevent system hang
-		timeoutFunc := time.AfterFunc(timeout, func() {
-			log.Info().Msgf("timeout %d ms has been elapsed, force exit", timeout.Milliseconds())
-			os.Exit(0)
-		})
+		// timeoutFunc := time.AfterFunc(timeout, func() {
+		// 	log.Info().Msgf("timeout %d ms has been elapsed, force exit", timeout.Milliseconds())
+		// 	os.Exit(0)
+		// })
 
-		defer timeoutFunc.Stop()
+		// defer timeoutFunc.Stop()
+
+		ctxTimeout, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 
 		var wg sync.WaitGroup
 
@@ -44,7 +47,7 @@ func GracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 				defer wg.Done()
 
 				log.Info().Msgf("cleaning up: %s", innerKey)
-				if err := innerOp(ctx); err != nil {
+				if err := innerOp(ctxTimeout); err != nil {
 					log.Error().Msgf("%s: clean up failed: %s", innerKey, err.Error())
 					return
 				}
@@ -54,6 +57,7 @@ func GracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 		}
 
 		wg.Wait()
+		log.Info().Msgf("Graceful shutdown completed")
 
 		close(wait)
 	}()

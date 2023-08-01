@@ -4,14 +4,30 @@ import (
 	"gorm.io/gorm"
 )
 
-type Devices struct {
+type Mentor struct {
 	gorm.Model
-	DeviceVendor    string `gorm:"column:deviceVendor"`
-	DeviceName      string `gorm:"column:deviceName"`
-	DeviceSchema    string `gorm:"column:deviceSchema"`
-	DeviceIpAddress string `gorm:"column:deviceIpAddress"`
-	DevicePort      string `gorm:"column:devicePort"`
-	DeviceStatus    bool   `gorm:"column:deviceStatus;default:false"`
+	FirstName    string   `gorm:"column:firstName"`
+	SecondName   string   `gorm:"column:secondName"`
+	Phone        string   `gorm:"column:phone"`
+	Email        string   `gorm:"column:email"`
+	Competencies []string `gorm:"type:string[]"`
+}
+
+type User struct {
+	gorm.Model
+	FirstName    string   `gorm:"column:firstName"`
+	SecondName   string   `gorm:"column:secondName"`
+	Phone        string   `gorm:"column:phone"`
+	Email        string   `gorm:"column:email"`
+}
+
+type BookOrder struct {
+	gorm.Model
+	FirstName  string `gorm:"column:firstName"`
+	SecondName string `gorm:"column:secondName"`
+	Phone      string `gorm:"column:phone"`
+	Email      string `gorm:"column:email"`
+	MentorID   uint   `gorm:"column:mentorID"`
 }
 
 type Subscriber struct {

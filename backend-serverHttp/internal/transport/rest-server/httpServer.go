@@ -9,15 +9,15 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
 
-	"github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-sever/routers"
+	"github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-server/routers"
 )
 
 type HttpServer struct {
-	Router     *routers.DeviceRouter
+	Router     *routers.Router
 	httpServer *http.Server
 }
 
-func NewHttpServer(router *routers.DeviceRouter) *HttpServer {
+func NewHttpServer(router *routers.Router) *HttpServer {
 	return &HttpServer{
 		Router: router,
 	}

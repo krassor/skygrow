@@ -1,0 +1,59 @@
+package bookOrderServices
+
+import (
+	"context"
+
+	"github.com/krassor/skygrow/backend-serverHttp/internal/models/dto"
+	"github.com/krassor/skygrow/backend-serverHttp/internal/models/entities"
+	"github.com/krassor/skygrow/backend-serverHttp/internal/telegram"
+)
+type BookOrderRepository interface {
+	FindAllBookOrder(ctx context.Context) ([]entities.BookOrder, error)
+	CreateBookOrder(ctx context.Context, bookOrder entities.BookOrder) (entities.BookOrder, error)
+	UpdateBookOrder(ctx context.Context, bookOrder entities.BookOrder) (entities.BookOrder, error)
+	FindBookOrderById(ctx context.Context, id uint) (entities.BookOrder, error)
+}
+
+type BookOrderService struct {
+	BookOrderRepository BookOrderRepository
+	tgBot *telegramBot.Bot
+}
+
+func NewBookOrderService (r BookOrderRepository, tgBot *telegramBot.Bot) *BookOrderService {
+	return &BookOrderService{
+		BookOrderRepository: r,
+		tgBot: tgBot,
+	}
+}
+
+func (s *BookOrderService) CreateNewBookOrder(ctx context.Context, bookOrderDto dto.RequestBookOrderDto) (uint, error) {
+
+	bookOrderEntity := entities.BookOrder{
+		FirstName: bookOrderDto.FirstName,
+		SecondName: bookOrderDto.SecondName,
+		Phone: bookOrderDto.Phone,
+		Email: bookOrderDto.Email,
+		MentorID: bookOrderDto.MentorID,
+	}
+
+	responseBookOrderEntity, err:=s.BookOrderRepository.CreateBookOrder(ctx, bookOrderEntity)
+	if err != nil {
+		return 0, err
+	}
+
+	ResponseBookOrderDto := dto.ResponseBookOrderDto {
+		FirstName: responseBookOrderEntity.FirstName,
+		SecondName: responseBookOrderEntity.SecondName,
+		Phone: responseBookOrderEntity.Phone,
+		Email: responseBookOrderEntity.Email,
+		MentorID: responseBookOrderEntity.MentorID,
+		BookOrderID: responseBookOrderEntity.Model.ID,
+	}
+	err = s.tgBot.BookOrderNotify(ctx, ResponseBookOrderDto)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return responseBookOrderEntity.Model.ID, nil
+}

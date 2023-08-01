@@ -7,13 +7,12 @@ import (
 	"github.com/krassor/skygrow/backend-serverHttp/internal/graceful"
 	"github.com/krassor/skygrow/backend-serverHttp/internal/logger"
 	"github.com/krassor/skygrow/backend-serverHttp/internal/repositories"
-	services "github.com/krassor/skygrow/backend-serverHttp/internal/services/devices"
-	fetcher "github.com/krassor/skygrow/backend-serverHttp/internal/services/fetcher"
+	"github.com/krassor/skygrow/backend-serverHttp/internal/services/bookOrderServices"
 	subscriber "github.com/krassor/skygrow/backend-serverHttp/internal/services/subscriberServices"
 	telegramBot "github.com/krassor/skygrow/backend-serverHttp/internal/telegram"
-	httpServer "github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-sever"
-	"github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-sever/handlers"
-	"github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-sever/routers"
+	httpServer "github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-server"
+	"github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-server/handlers"
+	"github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-server/routers"
 )
 
 func main() {
@@ -21,16 +20,15 @@ func main() {
 
 	repository := repositories.NewRepository()
 
-	deviceRepoService := services.NewDeviceRepoService(repository)
+	
 	subscriberService := subscriber.NewSubscriberRepoService(repository)
+	bookOrderTgBot := telegramBot.NewBot(subscriberService)
 
-	deviceHandler := handlers.NewDeviceHandler(deviceRepoService)
-	deviceRouter := routers.NewDeviceRouter(deviceHandler)
-	deviceHttpServer := httpServer.NewHttpServer(deviceRouter)
+	bookOrderService := bookOrderServices.NewBookOrderService(repository, bookOrderTgBot)
 
-	deviceTgBot := telegramBot.NewBot(deviceRepoService, subscriberService)
-
-	fetcherDevice := fetcher.NewDeviceFetcher(deviceRepoService, deviceTgBot)
+	bookOrderHandler := handlers.NewBookOrderHandler(bookOrderService)
+	router := routers.NewRouter(bookOrderHandler)
+	httpServer := httpServer.NewHttpServer(router)
 
 	maxSecond := 15 * time.Second
 	waitShutdown := graceful.GracefulShutdown(
@@ -38,16 +36,15 @@ func main() {
 		maxSecond,
 		map[string]graceful.Operation{
 			"http": func(ctx context.Context) error {
-				return deviceHttpServer.Shutdown(ctx)
+				return httpServer.Shutdown(ctx)
 			},
-			// "tgBot": func(ctx context.Context) error {
-			// 	return deviceTgBot.Shutdown(ctx)
-			// },
+			"tgBotOrders": func(ctx context.Context) error {
+				return bookOrderTgBot.Shutdown(ctx)
+			},
 		},
 	)
 
-	go deviceHttpServer.Listen()
-	go deviceTgBot.Update(context.Background(), 60)
-	go fetcherDevice.Start(context.Background())
+	go httpServer.Listen()
+	go bookOrderTgBot.Update(context.Background(), 60)
 	<-waitShutdown
 }
