@@ -5,8 +5,9 @@ import (
 
 	"github.com/krassor/skygrow/backend-serverHttp/internal/models/dto"
 	"github.com/krassor/skygrow/backend-serverHttp/internal/models/entities"
-	"github.com/krassor/skygrow/backend-serverHttp/internal/telegram"
+	telegramBot "github.com/krassor/skygrow/backend-serverHttp/internal/telegram"
 )
+
 type BookOrderRepository interface {
 	FindAllBookOrder(ctx context.Context) ([]entities.BookOrder, error)
 	CreateBookOrder(ctx context.Context, bookOrder entities.BookOrder) (entities.BookOrder, error)
@@ -16,38 +17,40 @@ type BookOrderRepository interface {
 
 type BookOrderService struct {
 	BookOrderRepository BookOrderRepository
-	tgBot *telegramBot.Bot
+	tgBot               *telegramBot.Bot
 }
 
-func NewBookOrderService (r BookOrderRepository, tgBot *telegramBot.Bot) *BookOrderService {
+func NewBookOrderService(r BookOrderRepository, tgBot *telegramBot.Bot) *BookOrderService {
 	return &BookOrderService{
 		BookOrderRepository: r,
-		tgBot: tgBot,
+		tgBot:               tgBot,
 	}
 }
 
 func (s *BookOrderService) CreateNewBookOrder(ctx context.Context, bookOrderDto dto.RequestBookOrderDto) (uint, error) {
 
 	bookOrderEntity := entities.BookOrder{
-		FirstName: bookOrderDto.FirstName,
-		SecondName: bookOrderDto.SecondName,
-		Phone: bookOrderDto.Phone,
-		Email: bookOrderDto.Email,
-		MentorID: bookOrderDto.MentorID,
+		FirstName:          bookOrderDto.FirstName,
+		SecondName:         bookOrderDto.SecondName,
+		Phone:              bookOrderDto.Phone,
+		Email:              bookOrderDto.Email,
+		MentorID:           bookOrderDto.MentorID,
+		ProblemDescription: bookOrderDto.ProblemDescription,
 	}
 
-	responseBookOrderEntity, err:=s.BookOrderRepository.CreateBookOrder(ctx, bookOrderEntity)
+	responseBookOrderEntity, err := s.BookOrderRepository.CreateBookOrder(ctx, bookOrderEntity)
 	if err != nil {
 		return 0, err
 	}
 
-	ResponseBookOrderDto := dto.ResponseBookOrderDto {
-		FirstName: responseBookOrderEntity.FirstName,
-		SecondName: responseBookOrderEntity.SecondName,
-		Phone: responseBookOrderEntity.Phone,
-		Email: responseBookOrderEntity.Email,
-		MentorID: responseBookOrderEntity.MentorID,
-		BookOrderID: responseBookOrderEntity.Model.ID,
+	ResponseBookOrderDto := dto.ResponseBookOrderDto{
+		FirstName:          responseBookOrderEntity.FirstName,
+		SecondName:         responseBookOrderEntity.SecondName,
+		Phone:              responseBookOrderEntity.Phone,
+		Email:              responseBookOrderEntity.Email,
+		MentorID:           responseBookOrderEntity.MentorID,
+		BookOrderID:        responseBookOrderEntity.Model.ID,
+		ProblemDescription: responseBookOrderEntity.ProblemDescription,
 	}
 	err = s.tgBot.BookOrderNotify(ctx, ResponseBookOrderDto)
 

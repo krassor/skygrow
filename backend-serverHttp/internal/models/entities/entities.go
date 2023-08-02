@@ -10,24 +10,26 @@ type Mentor struct {
 	SecondName   string   `gorm:"column:secondName"`
 	Phone        string   `gorm:"column:phone"`
 	Email        string   `gorm:"column:email"`
-	Competencies []string `gorm:"type:string[]"`
+	Competencies []string `gorm:"type:text[];column:competencies"`
 }
 
 type User struct {
-	gorm.Model
-	FirstName    string   `gorm:"column:firstName"`
-	SecondName   string   `gorm:"column:secondName"`
-	Phone        string   `gorm:"column:phone"`
-	Email        string   `gorm:"column:email"`
-}
-
-type BookOrder struct {
 	gorm.Model
 	FirstName  string `gorm:"column:firstName"`
 	SecondName string `gorm:"column:secondName"`
 	Phone      string `gorm:"column:phone"`
 	Email      string `gorm:"column:email"`
-	MentorID   uint   `gorm:"column:mentorID"`
+}
+
+// TODO: will be deprecated. BookOrder must be aggregate
+type BookOrder struct {
+	gorm.Model
+	FirstName          string `gorm:"column:firstName"`
+	SecondName         string `gorm:"column:secondName"`
+	Phone              string `gorm:"column:phone"`
+	Email              string `gorm:"column:email"`
+	MentorID           uint   `gorm:"column:mentorID"`
+	ProblemDescription string `gorm:"type:string;column:problemDescription"`
 }
 
 type Subscriber struct {

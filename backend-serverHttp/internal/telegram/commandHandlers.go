@@ -76,7 +76,7 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 			return err
 		}
 	case "start":
-		replyText := fmt.Sprintf("Hello, %s! I'm stand device monitor.", msg.Chat.UserName)
+		replyText := fmt.Sprintf("Hello, %s! I'm bookorder notify bot.", msg.Chat.UserName)
 		err := bot.sendReplyMessage(msg, replyText)
 		if err != nil {
 			return err

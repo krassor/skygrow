@@ -52,6 +52,7 @@ func (h *BookOrderHandler) CreateBookOrder(w http.ResponseWriter, r *http.Reques
 		Email:       bookOrderDto.Email,
 		MentorID:    bookOrderDto.MentorID,
 		BookOrderID: bookOrderID,
+		ProblemDescription: bookOrderDto.ProblemDescription,
 	}
 
 	responseBookOrder := utils.Message(true, responseBookOrderDto)
