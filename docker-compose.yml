@@ -9,6 +9,7 @@ services:
       - ./tg-gpt-bot/config/:/etc/tg-gpt-bot/
     networks:
       - back-tier
+      
   app-serverhttp:
     hostname: app-backend-serverhttp
     container_name: app-backend-serverhttp
