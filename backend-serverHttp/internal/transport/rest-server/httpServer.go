@@ -27,8 +27,8 @@ func (h *HttpServer) Listen() {
 	app := chi.NewRouter()
 	h.Router.Router(app)
 
-	serverPort := os.Getenv("DEVICES_HTTP_PORT")
-	serverAddress := os.Getenv("DEVICES_HTTP_HOST_LISTEN")
+	serverPort := os.Getenv("HTTP_PORT")
+	serverAddress := os.Getenv("HTTP_HOST_LISTEN")
 	log.Info().Msgf("Server http get env %s:%s ", serverAddress, serverPort)
 
 	h.httpServer = &http.Server{

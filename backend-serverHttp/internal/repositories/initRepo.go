@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rs/zerolog/log"
 	"github.com/krassor/skygrow/backend-serverHttp/internal/models/entities"
+	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,11 +15,11 @@ type repository struct {
 }
 
 func NewRepository() *repository {
-	username := os.Getenv("ORDERS_DB_USER")
-	password := os.Getenv("ORDERS_DB_PASSWORD")
-	dbName := os.Getenv("ORDERS_DB_NAME")
-	dbHost := os.Getenv("ORDERS_DB_HOST")
-	dbPort := os.Getenv("ORDERS_DB_PORT")
+	username := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", dbHost, dbPort, username, dbName, password)
 	fmt.Println(dsn)
