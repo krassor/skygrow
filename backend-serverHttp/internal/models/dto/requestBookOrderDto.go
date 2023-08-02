@@ -5,6 +5,6 @@ type RequestBookOrderDto struct {
 	SecondName         string `json:"secondName"`
 	Phone              string `json:"phone"`
 	Email              string `json:"email"`
-	MentorID           uint   `json:"mentorID"`
+	MentorID           string `json:"mentorID"`
 	ProblemDescription string `json:"problemDescription"`
 }

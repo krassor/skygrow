@@ -20,7 +20,7 @@ func (r *repository) FindAllBookOrder(ctx context.Context) ([]entities.BookOrder
 	return bookOrders, nil
 }
 
-func (r *repository) FindBookOrderById(ctx context.Context, id uint) (entities.BookOrder, error) {
+func (r *repository) FindBookOrderById(ctx context.Context, id string) (entities.BookOrder, error) {
 	var bookOrder entities.BookOrder
 	tx := r.DB.WithContext(ctx).First(&bookOrder, id)
 	if tx.Error != nil {
@@ -32,7 +32,7 @@ func (r *repository) FindBookOrderById(ctx context.Context, id uint) (entities.B
 func (r *repository) CreateBookOrder(ctx context.Context, bookOrder entities.BookOrder) (entities.BookOrder, error) {
 
 	findBookOrder := entities.BookOrder{}
-	findBookOrder.Model.ID = bookOrder.Model.ID
+	findBookOrder.BaseModel.ID = bookOrder.BaseModel.ID
 
 	tx := r.DB.WithContext(ctx).Where(findBookOrder).FirstOrCreate(&bookOrder)
 	if tx.Error != nil {
