@@ -116,13 +116,14 @@ func (bot *Bot) processingMessages(update tgbotapi.Update) {
 func (bot *Bot) BookOrderNotify(ctx context.Context, bookOrder dto.ResponseBookOrderDto) error {
 
 	msgText := fmt.Sprintf(
-		"New order notify:\nBookOrderID: %v\nMentorID: %v\nFirstName: %s\nSecondName: %s\nEmail: %s\nPhone: %s",
+		"New order notify:\nBookOrderID: %v\nMentorID: %v\nFirstName: %s\nSecondName: %s\nEmail: %s\nPhone: %s\nProblem Description: %s",
 		bookOrder.BookOrderID,
 		bookOrder.MentorID,
 		bookOrder.FirstName,
 		bookOrder.SecondName,
 		bookOrder.Email,
 		bookOrder.Phone,
+		bookOrder.ProblemDescription,
 	)
 
 	subscribers, err := bot.subscriber.GetSubscribers(ctx)
