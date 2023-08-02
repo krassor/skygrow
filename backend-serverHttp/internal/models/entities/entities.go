@@ -5,7 +5,7 @@ import (
 )
 
 type BaseModel struct {
-	ID         string `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	ID         string `gorm:"type:uuid;primary_key"`
 	Created_at time.Time
 	Updated_at time.Time
 	Deleted_at time.Time
@@ -35,13 +35,12 @@ type BookOrder struct {
 	SecondName         string `gorm:"column:secondName"`
 	Phone              string `gorm:"column:phone"`
 	Email              string `gorm:"column:email"`
-	MentorID           string   `gorm:"column:mentorID"`
+	MentorID           string `gorm:"column:mentorID"`
 	ProblemDescription string `gorm:"type:string;column:problemDescription"`
 }
 
 type Subscriber struct {
-	BaseModel
 	Name     string `gorm:"column:name"`
-	ChatID   int64  `gorm:"column:chatid"`
+	ChatID   int64  `gorm:"column:chatid;primary_key"`
 	IsActive bool   `gorm:"column:isActive"`
 }
