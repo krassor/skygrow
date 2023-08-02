@@ -9,6 +9,75 @@ services:
       - ./tg-gpt-bot/config/:/etc/tg-gpt-bot/
     networks:
       - back-tier
+  app-serverhttp:
+    hostname: app-backend-serverhttp
+    container_name: app-backend-serverhttp
+    build:
+      context: backend-serverHttp
+      dockerfile: Dockerfile
+    ports:
+        - 8011:8011
+    environment:
+      - DB_NAME=skygrowdb
+      - DB_PASSWORD=copro123@
+      - DB_USER=krassor
+      - DB_HOST=skygrow-pg
+      - DB_PORT=5432
+      - HTTP_PORT=8011
+      - HTTP_HOST_LISTEN=0.0.0.0
+      - TGBOT_APITOKEN=6453631610:AAHRFClOyCuJ8-9PHpfoWvIC-0QXIysy9ks
+    networks:
+      - back-tier
+  
+  skygrow-pg:
+    image: postgres
+    hostname: skygrow-pg
+    container_name: skygrow-pg
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=skygrowdb
+      - POSTGRES_USER=krassor
+      - POSTGRES_PASSWORD=copro123@
+    # command:
+    #   - 'echo "host skygrowdb krassor all trust" >> /var/lib/postgresql/data/pg_hba.conf'
+    restart: unless-stopped
+    volumes:
+      - pg_data:/var/lib/postgres
+    networks:
+      - back-tier
+
+  pgadmin:
+    image: dpage/pgadmin4
+    hostname: pgadmin
+    container_name: pgadmin4
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: krassor@mail.ru
+      PGADMIN_DEFAULT_PASSWORD: 12808891KrAssor@
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - back-tier
+      
+  portainer:
+    image: portainer/portainer-ce:latest
+    hostname: portainer
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./portainer-data:/data
+    ports:
+      - 9090:9000
+    networks:
+      - back-tier
+
 
   prometheus:
     image: prom/prometheus
@@ -27,6 +96,8 @@ services:
 
 volumes:
   prom_data: 
+  pg_data:
+  pgadmin-data:
 
 networks:
   back-tier:

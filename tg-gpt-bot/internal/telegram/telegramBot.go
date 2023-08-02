@@ -51,7 +51,6 @@ func (bot *Bot) Update(updateTimeout int) {
 
 	updates := bot.tgbot.GetUpdatesChan(updateConfig)
 
-	//TODO: make goroutine with check update channel close
 	for update := range updates {
 		log.Info().Msgf("Input message: %v\n", update.Message)
 
@@ -62,7 +61,7 @@ func (bot *Bot) Update(updateTimeout int) {
 
 		go bot.processingMessages(update)
 	}
-	log.Info().Msgf("exit tgbot routine")
+	//log.Info().Msgf("exit tgbot routine")
 
 }
 
