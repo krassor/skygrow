@@ -176,13 +176,13 @@ func (bot *Bot) sendReplyMessage(inputMsg *tgbotapi.Message, replyText string) e
 // }
 
 func (bot *Bot) subscribe(msg *tgbotapi.Message) (replyText string, err error) {
-	subscriber, err := bot.subscriber.GetSubscriberByChatId(context.Background(), msg.SenderChat.ID)
+	subscriber, err := bot.subscriber.GetSubscriberByChatId(context.Background(), msg.From.ID)
 	if err != nil {
 		replyText = "Error finding subscriber in the DB"
 		return replyText, err
 	}
 	if (subscriber == entities.Subscriber{}) {
-		_, err = bot.subscriber.CreateNewSubscriber(context.Background(), msg.SenderChat.ID, msg.From.UserName)
+		_, err = bot.subscriber.CreateNewSubscriber(context.Background(), msg.From.ID, msg.From.UserName)
 		if err != nil {
 			replyText = "Error creating subscriber in the DB"
 			return replyText, err
