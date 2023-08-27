@@ -50,36 +50,36 @@ services:
     networks:
       - back-tier
 
-  pgadmin:
-    image: dpage/pgadmin4
-    hostname: pgadmin
-    container_name: pgadmin4
-    restart: always
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: krassor@mail.ru
-      PGADMIN_DEFAULT_PASSWORD: 12808891KrAssor@
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    networks:
-      - back-tier
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   hostname: pgadmin
+  #   container_name: pgadmin4
+  #   restart: always
+  #   ports:
+  #     - "5050:80"
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: krassor@mail.ru
+  #     PGADMIN_DEFAULT_PASSWORD: 12808891KrAssor@
+  #   volumes:
+  #     - pgadmin-data:/var/lib/pgadmin
+  #   networks:
+  #     - back-tier
       
-  portainer:
-    image: portainer/portainer-ce:latest
-    hostname: portainer
-    container_name: portainer
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./portainer-data:/data
-    ports:
-      - 9090:9000
-    networks:
-      - back-tier
+  # portainer:
+  #   image: portainer/portainer-ce:latest
+  #   hostname: portainer
+  #   container_name: portainer
+  #   restart: unless-stopped
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   volumes:
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - ./portainer-data:/data
+  #   ports:
+  #     - 9090:9000
+  #   networks:
+  #     - back-tier
 
 
   prometheus:
