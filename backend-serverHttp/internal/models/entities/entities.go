@@ -13,19 +13,23 @@ type BaseModel struct {
 
 type Mentor struct {
 	BaseModel
-	FirstName    string   `gorm:"column:firstName"`
-	SecondName   string   `gorm:"column:secondName"`
-	Phone        string   `gorm:"column:phone"`
-	Email        string   `gorm:"column:email"`
-	Competencies []string `gorm:"type:text[];column:competencies"`
+	FirstName       string   `gorm:"column:firstName"`
+	SecondName      string   `gorm:"column:secondName"`
+	Phone           string   `gorm:"column:phone"`
+	Email           string   `gorm:"column:email"`
+	Competencies    []string `gorm:"type:text[];column:competencies"`
+	Hashed_password string   `gorm:"column:hashedPassword"`
+	AccessToken     string   `gorm:"column:accessToken"`
 }
 
 type User struct {
 	BaseModel
-	FirstName  string `gorm:"column:firstName"`
-	SecondName string `gorm:"column:secondName"`
-	Phone      string `gorm:"column:phone"`
-	Email      string `gorm:"column:email"`
+	FirstName       string `gorm:"column:firstName"`
+	SecondName      string `gorm:"column:secondName"`
+	Phone           string `gorm:"column:phone"`
+	Email           string `gorm:"column:email"`
+	Hashed_password string `gorm:"column:hashedPassword"`
+	AccessToken     string `gorm:"column:accessToken"`
 }
 
 // TODO: will be deprecated. BookOrder must be aggregate

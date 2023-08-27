@@ -1,5 +1,5 @@
 # Этап, на котором выполняется сборка приложения
-FROM golang:1.19-alpine as builder
+FROM golang:1.20-alpine as builder
 WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download

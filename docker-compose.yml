@@ -13,6 +13,8 @@ services:
   app-serverhttp:
     hostname: app-backend-serverhttp
     container_name: app-backend-serverhttp
+    depends_on:
+      - skygrow-pg
     build:
       context: backend-serverHttp
       dockerfile: Dockerfile

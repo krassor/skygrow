@@ -9,6 +9,7 @@ import (
 	"github.com/krassor/skygrow/backend-serverHttp/internal/repositories"
 	"github.com/krassor/skygrow/backend-serverHttp/internal/services/bookOrderServices"
 	subscriber "github.com/krassor/skygrow/backend-serverHttp/internal/services/subscriberServices"
+	"github.com/krassor/skygrow/backend-serverHttp/internal/services/userServices"
 	telegramBot "github.com/krassor/skygrow/backend-serverHttp/internal/telegram"
 	httpServer "github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-server"
 	"github.com/krassor/skygrow/backend-serverHttp/internal/transport/rest-server/handlers"
@@ -20,14 +21,16 @@ func main() {
 
 	repository := repositories.NewRepository()
 
-	
 	subscriberService := subscriber.NewSubscriberRepoService(repository)
 	bookOrderTgBot := telegramBot.NewBot(subscriberService)
 
 	bookOrderService := bookOrderServices.NewBookOrderService(repository, bookOrderTgBot)
+	userService := userServices.NewUser(repository)
 
 	bookOrderHandler := handlers.NewBookOrderHandler(bookOrderService)
-	router := routers.NewRouter(bookOrderHandler)
+	userHandler := handlers.NewUserHandler(userService)
+
+	router := routers.NewRouter(bookOrderHandler, userHandler)
 	httpServer := httpServer.NewHttpServer(router)
 
 	maxSecond := 15 * time.Second
