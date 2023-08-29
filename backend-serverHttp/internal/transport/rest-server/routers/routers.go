@@ -25,4 +25,5 @@ func (d *Router) Router(r *chi.Mux) {
 	r.Use(middleware.Heartbeat("/ping"))
 	r.Post("/bookorder", d.BookOrderHandler.CreateBookOrder)
 	r.Post("/signup", d.UserHandler.SignUp)
+	r.Post("/signin", d.UserHandler.SignIn)
 }

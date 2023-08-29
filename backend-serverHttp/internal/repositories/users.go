@@ -23,3 +23,12 @@ func (r *repository) CreateNewUser(ctx context.Context, user entities.User) (ent
 	}
 	return user, nil
 }
+
+func (r *repository) UpdateUser(ctx context.Context, user entities.User) (entities.User, error) {
+
+	tx := r.DB.WithContext(ctx).Save(&user)
+	if tx.Error != nil {
+		return entities.User{}, tx.Error
+	}
+	return user, nil
+}
