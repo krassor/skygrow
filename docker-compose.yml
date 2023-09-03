@@ -12,6 +12,8 @@ services:
       
   app-serverhttp:
     hostname: app-backend-serverhttp
+    depends_on:
+      - skygrow-pg
     container_name: app-backend-serverhttp
     depends_on:
       - skygrow-pg
@@ -52,6 +54,8 @@ services:
 
   # pgadmin:
   #   image: dpage/pgadmin4
+  #   depends_on:
+  #     - skygrow-pg
   #   hostname: pgadmin
   #   container_name: pgadmin4
   #   restart: always
