@@ -27,18 +27,20 @@ func (d *Router) Router(r *chi.Mux) {
 	//r.Use(cors.AllowAll().Handler)
 	r.Use(middleware.Heartbeat("/ping"))
 
-	//Public
-	r.Group(func(r chi.Router) {
-		r.Post("/signup", d.UserHandler.SignUp)
-		r.Post("/signin", d.UserHandler.SignIn)
-	})
+	r.Route("/user", func(r chi.Router) {
+		//Public
+		r.Group(func(r chi.Router) {
+			r.Post("/signup", d.UserHandler.SignUp)
+			r.Post("/signin", d.UserHandler.SignIn)
+		})
 
-	//Private
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.Logger)
-		r.Use(jwtauth.Verifier(d.tokenAuth))
-		r.Use(jwtauth.Authenticator)
-		r.Post("/bookorder", d.BookOrderHandler.CreateBookOrder)
+		//Private
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.Logger)
+			r.Use(jwtauth.Verifier(d.tokenAuth))
+			r.Use(jwtauth.Authenticator)
+			r.Post("/bookorder", d.BookOrderHandler.CreateBookOrder)
+		})
 	})
 
 }
