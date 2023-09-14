@@ -25,6 +25,7 @@ func NewRouter(bookOrderHandler *handlers.BookOrderHandler, userHandler *handler
 
 func (d *Router) Router(r *chi.Mux) {
 	//r.Use(cors.AllowAll().Handler)
+	r.Use(middleware.Logger)
 	r.Use(middleware.Heartbeat("/ping"))
 
 	//Public
@@ -35,7 +36,6 @@ func (d *Router) Router(r *chi.Mux) {
 
 	//Private
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.Logger)
 		r.Use(jwtauth.Verifier(d.tokenAuth))
 		r.Use(jwtauth.Authenticator)
 		r.Post("/bookorder", d.BookOrderHandler.CreateBookOrder)
