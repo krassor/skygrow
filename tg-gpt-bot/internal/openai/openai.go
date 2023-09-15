@@ -9,15 +9,15 @@ import (
 
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/repository"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
 
 	openai "github.com/sashabaranov/go-openai"
 )
 
-// type RepoMessages interface {
-// 	SaveUserMessage(ctx context.Context, username string, message openai.ChatCompletionMessage) error
-// 	LoadUserMessages(ctx context.Context, username string) ([]openai.ChatCompletionMessage, error)
-// 	IsUserExist(ctx context.Context, username string) (bool, error)
-// }
+type OpenAIMsgBroker interface {
+	PublishOpenaiResponse(ctx context.Context, msg dto.OpenaiMsg) error
+	SubscribeOpenAiRequest(ctx context.Context, msg dto.OpenaiMsg)
+}
 
 type GPTBot struct {
 	openAIClient *openai.Client

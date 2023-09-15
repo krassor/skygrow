@@ -10,7 +10,7 @@ import (
 func (c *RedisClient) PublishOpenaiResponse(ctx context.Context, msg dto.OpenaiMsg) error {
 	op := "PublishOpenaiAnswer"
 
-	err := c.Client.Publish(ctx, c.requestChannel, msg).Err()
+	err := c.Client.Publish(ctx, c.requestRedisChannel, msg).Err()
 
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
