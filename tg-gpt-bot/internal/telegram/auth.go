@@ -11,7 +11,7 @@ func (bot *Bot) isAdmin(msg *tgbotapi.Message) (bool, error) {
 
 	botConfig, err := bot.botConfig.ReadBotConfig()
 	if err != nil {
-		return result, fmt.Errorf("Error isADmin(): %w", err)
+		return result, fmt.Errorf("isADmin(): %w", err)
 	}
 
 	for _, admin := range botConfig.Admins {

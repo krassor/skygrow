@@ -5,18 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
+	//"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
 
 type RedisClient struct {
 	Client               *redis.Client
-	requestRedisChannel  string
-	responseRedisChannel string
-	requestChan          chan dto.OpenaiMsg
-	responseChan         chan dto.OpenaiMsg
-	shutdownChannel      chan struct{}
+	//shutdownChannel      chan struct{}
 }
 
 func NewRedisClient(requestRedisChannel string, responseRedisChannel string) *RedisClient {
@@ -44,10 +40,6 @@ func NewRedisClient(requestRedisChannel string, responseRedisChannel string) *Re
 
 	return &RedisClient{
 		Client:               rdb,
-		requestRedisChannel:  requestRedisChannel,
-		responseRedisChannel: responseRedisChannel,
-		requestChan:          make(chan dto.OpenaiMsg),
-		responseChan:         make(chan dto.OpenaiMsg),
-		shutdownChannel:      make(chan struct{}),
+		//shutdownChannel:      make(chan struct{}),
 	}
 }
