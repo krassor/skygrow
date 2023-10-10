@@ -8,7 +8,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 func (bot *Bot) defaultHandler(msg *tgbotapi.Message) {
-	log.Info().Msgf("Reply message from: %s", msg.From.UserName)
+	op:="bot.defaultHandler"
+	log.Info().Msgf("%s. Message from: %s", op, msg.From.UserName)
 
 	bot.sendMessageToOpenaiTopic(bot.ctx, msg)
 

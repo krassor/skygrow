@@ -3,6 +3,7 @@ package redisBroker
 import (
 	"context"
 	"encoding/json"
+
 	//"fmt"
 
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
@@ -35,6 +36,7 @@ func (c *RedisClient) Subscribe(ctx context.Context, channels ...string) <-chan 
 				err := json.Unmarshal([]byte(message.Payload), &msg)
 				if err != nil {
 					log.Error().Msgf("%s: %s", op, err)
+					continue
 				}
 				ch <- msg
 			}

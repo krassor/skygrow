@@ -12,12 +12,11 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/openai"
 	"github.com/rs/zerolog/log"
 )
 
 type OpenAIMsgBroker interface {
-	Publish(ctx context.Context, channel string, msg dto.OpenaiMsg)
+	Publish(ctx context.Context, channel string, msg dto.OpenaiMsg) error
 	Subscribe(ctx context.Context, channels ...string) <-chan dto.OpenaiMsg
 }
 
@@ -36,7 +35,7 @@ const (
 	dtoSource        string = "telegram"
 )
 
-func NewBot(botConfig *config.AppConfig, gptBot *openai.GPTBot, broker OpenAIMsgBroker) *Bot {
+func NewBot(botConfig *config.AppConfig, broker OpenAIMsgBroker) *Bot {
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TGBOT_APITOKEN"))
 	if err != nil {
 		log.Error().Msgf("Error auth telegram bot: %s", err)
@@ -68,6 +67,8 @@ func (bot *Bot) Update(updateTimeout int) {
 	}
 
 	updates := bot.tgbot.GetUpdatesChan(updateConfig)
+
+	go bot.Subscribe()
 
 	for update := range updates {
 		log.Info().Msgf("Input message: %v\n", update.Message)
@@ -106,7 +107,7 @@ func (bot *Bot) Subscribe() {
 
 			tgBotApiMsg.Chat.ID = int64(chatId)
 			tgBotApiMsg.MessageID = msgId
-			
+
 			go func(update dto.OpenaiMsg) {
 				err = bot.sendReplyMessage(&tgBotApiMsg, update.Msg)
 				if err != nil {
@@ -185,6 +186,7 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 }
 
 func (bot *Bot) sendMessageToOpenaiTopic(ctx context.Context, msg *tgbotapi.Message) {
+	op := "bot.sendMessageToOpenaiTopic"
 
 	start := time.Now()
 	defer func() {
@@ -210,7 +212,11 @@ func (bot *Bot) sendMessageToOpenaiTopic(ctx context.Context, msg *tgbotapi.Mess
 		MsgId:  strconv.Itoa(int(msg.MessageID)),
 		Msg:    msgText,
 	}
-	bot.broker.Publish(ctx, brokerChannelPub, openaiRequest)
+	log.Info().Msgf("%s. request to openAi channel: %v", op, openaiRequest)
+	err := bot.broker.Publish(ctx, brokerChannelPub, openaiRequest)
+	if err != nil {
+		log.Info().Msgf("%s. %v", op, err)
+	}
 
 }
 

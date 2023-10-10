@@ -15,7 +15,7 @@ type RedisClient struct {
 	//shutdownChannel      chan struct{}
 }
 
-func NewRedisClient(requestRedisChannel string, responseRedisChannel string) *RedisClient {
+func NewRedisClient() *RedisClient {
 	op := "NewRedisClient"
 	redisHost, ok := os.LookupEnv("REDIS_HOST")
 	if !ok {

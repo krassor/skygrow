@@ -15,7 +15,7 @@ import (
 )
 
 type OpenAIMsgBroker interface {
-	Publish(ctx context.Context, channel string, msg dto.OpenaiMsg)
+	Publish(ctx context.Context, channel string, msg dto.OpenaiMsg) error
 	Subscribe(ctx context.Context, channels ...string) <-chan dto.OpenaiMsg
 }
 
@@ -67,16 +67,19 @@ func (GPTBot *GPTBot) CreateChatCompletion(ctx context.Context, openaiMsg dto.Op
 	err := GPTBot.repo.SaveUserMessage(ctx, openaiMsg.UserId, msg)
 	if err != nil {
 		log.Error().Msgf("%s: %v", op, err)
+		return
 	}
 
 	messages, err := GPTBot.repo.LoadUserMessages(ctx, openaiMsg.UserId)
 	if err != nil {
 		log.Error().Msgf("%s: %v", op, err)
+		return
 	}
 
 	openAIConfig, err := GPTBot.botConfig.ReadOpenAIConfig()
 	if err != nil {
 		log.Error().Msgf("%s: %v", op, err)
+		return
 	}
 
 	log.Info().Msgf("%s. read openAIConfig: %v", op, openAIConfig)
@@ -103,6 +106,7 @@ func (GPTBot *GPTBot) CreateChatCompletion(ctx context.Context, openaiMsg dto.Op
 
 	if err != nil {
 		log.Error().Msgf("%s: %v", op, err)
+		return
 	}
 
 	//response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPromt tokens usage%v\nTotal tokens usage: %v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
@@ -116,16 +120,19 @@ func (GPTBot *GPTBot) CreateChatCompletion(ctx context.Context, openaiMsg dto.Op
 	err = GPTBot.repo.SaveUserMessage(context.Background(), openaiMsg.UserId, msg)
 	if err != nil {
 		log.Error().Msgf("%s: %v", op, err)
+		return
 	}
 
 	if resp.Usage.TotalTokens > 3072 {
 		_, err := GPTBot.repo.DeleteFirstPromt(context.Background(), openaiMsg.UserId)
 		if err != nil {
 			log.Error().Msgf("%s: %v", op, err)
+			return
 		}
 		_, err = GPTBot.repo.DeleteFirstPromt(context.Background(), openaiMsg.UserId)
 		if err != nil {
 			log.Error().Msgf("%s: %v", op, err)
+			return
 		}
 		//log.Printf("Deleted first promt: %v", del)
 	}
@@ -134,6 +141,7 @@ func (GPTBot *GPTBot) CreateChatCompletion(ctx context.Context, openaiMsg dto.Op
 		_, err := GPTBot.repo.DeleteFirstPromt(context.Background(), openaiMsg.UserId)
 		if err != nil {
 			log.Error().Msgf("%s: %v", op, err)
+			return
 		}
 		//log.Printf("Deleted first promt: %v", del)
 	}
