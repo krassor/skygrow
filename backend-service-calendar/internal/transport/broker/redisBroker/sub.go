@@ -6,7 +6,7 @@ import (
 
 	//"fmt"
 
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
 
 	"github.com/rs/zerolog/log"
 )

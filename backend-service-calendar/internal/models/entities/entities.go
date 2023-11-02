@@ -5,46 +5,36 @@ import (
 )
 
 type BaseModel struct {
-	ID         string `gorm:"type:uuid;primary_key"`
+	Id         string `gorm:"type:uuid;primary_key"`
 	Created_at time.Time
 	Updated_at time.Time
 	Deleted_at time.Time
 }
 
-type Mentor struct {
+type Calendar struct {
 	BaseModel
-	FirstName       string   `gorm:"column:firstName"`
-	SecondName      string   `gorm:"column:secondName"`
-	Phone           string   `gorm:"column:phone"`
-	Email           string   `gorm:"column:email"`
-	Competencies    []string `gorm:"type:text[];column:competencies"`
-	Hashed_password string   `gorm:"column:hashedPassword"`
-	AccessToken     string   `gorm:"column:accessToken"`
+	OwnerId     string `gorm:"column:ownerId"`
+	Description string `gorm:"column:description"`
+	Etag        string `gorm:"column:etag"`
+	Summary     string `gorm:"column:summary"`
+	TimeZone    string `gorm:"column:timeZone"`
 }
 
-type User struct {
+type CalendarEvent struct {
 	BaseModel
-	FirstName       string `gorm:"column:firstName"`
-	SecondName      string `gorm:"column:secondName"`
-	Phone           string `gorm:"column:phone"`
-	Email           string `gorm:"column:email"`
-	Hashed_password string `gorm:"column:hashedPassword"`
-	AccessToken     string `gorm:"column:accessToken"`
+	ConferenceId string    `gorm:"column:conferenceId"`
+	RequestId    string    `gorm:"column:requestId"`
+	Description  string    `gorm:"column:description"`
+	Start        time.Time `gorm:"column:start"`
+	End          time.Time `gorm:"column:end"`
+	Status       string    `gorm:"column:status"`
+	Summary      string    `gorm:"column:summary"`
+	Transparency string    `gorm:"column:transparency"`
 }
 
-// TODO: will be deprecated. BookOrder must be aggregate
-type BookOrder struct {
+type Attendee struct {
 	BaseModel
-	FirstName          string `gorm:"column:firstName"`
-	SecondName         string `gorm:"column:secondName"`
-	Phone              string `gorm:"column:phone"`
-	Email              string `gorm:"column:email"`
-	MentorID           string `gorm:"column:mentorID"`
-	ProblemDescription string `gorm:"type:string;column:problemDescription"`
-}
-
-type Subscriber struct {
-	Name     string `gorm:"column:name"`
-	ChatID   int64  `gorm:"column:chatid;primary_key"`
-	IsActive bool   `gorm:"column:isActive"`
+	UserId      string `gorm:"column:userId"`
+	DisplayName string `gorm:"column:displayName"`
+	Email       string `gorm:"column:email"`
 }

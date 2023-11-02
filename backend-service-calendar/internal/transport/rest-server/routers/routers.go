@@ -8,6 +8,7 @@ import (
 
 	//"github.com/go-chi/cors"
 	"github.com/krassor/skygrow/backend-service-calendar/internal/transport/rest-server/handlers"
+	myMiddleware "github.com/krassor/skygrow/backend-service-calendar/internal/transport/rest-server/middleware"
 )
 
 type Router struct {
@@ -26,7 +27,7 @@ func NewRouter(bookOrderHandler *handlers.BookOrderHandler, userHandler *handler
 
 func (d *Router) Router(r *chi.Mux) {
 	r.Use(cors.AllowAll().Handler)
-	r.Use(middleware.Logger)
+	r.Use(myMiddleware.LoggerMiddleware)
 	r.Use(middleware.Heartbeat("/ping"))
 
 	r.Route("/user", func(r chi.Router) {

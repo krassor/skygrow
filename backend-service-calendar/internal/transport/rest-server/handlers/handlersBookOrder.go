@@ -5,8 +5,8 @@ import (
 
 	"net/http"
 
-	"github.com/krassor/skygrow/backend-service-calendar/models/dto"
-	"github.com/krassor/skygrow/backend-service-calendar/services/bookOrderServices"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/services/bookOrderServices"
 	"github.com/krassor/skygrow/backend-service-calendar/pkg/utils"
 	"github.com/rs/zerolog/log"
 )

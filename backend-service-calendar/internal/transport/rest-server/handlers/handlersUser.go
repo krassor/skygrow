@@ -9,9 +9,9 @@ import (
 
 	"net/http"
 
-	"github.com/krassor/skygrow/backend-serverHttp/internal/models/dto"
-	"github.com/krassor/skygrow/backend-serverHttp/internal/services/userServices"
-	"github.com/krassor/skygrow/backend-serverHttp/pkg/utils"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/services/userServices"
+	"github.com/krassor/skygrow/backend-service-calendar/pkg/utils"
 	"github.com/rs/zerolog/log"
 )
 

@@ -6,9 +6,9 @@ package bookOrderServices
 
 // 	"github.com/google/uuid"
 
-// 	"github.com/krassor/skygrow/backend-serverHttp/internal/models/dto"
-// 	"github.com/krassor/skygrow/backend-serverHttp/internal/models/entities"
-// 	telegramBot "github.com/krassor/skygrow/backend-serverHttp/internal/telegram"
+// 	"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
+// 	"github.com/krassor/skygrow/backend-service-calendar/internal/models/entities"
+// 	telegramBot "github.com/krassor/skygrow/backend-service-calendar/internal/telegram"
 // )
 
 // type BookOrderRepository interface {

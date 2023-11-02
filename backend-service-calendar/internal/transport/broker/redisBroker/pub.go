@@ -6,11 +6,11 @@ import (
 
 	"encoding/json"
 
-	"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
+	//"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
 	"github.com/rs/zerolog/log"
 )
 
-func (c *RedisClient) Publish(ctx context.Context, channel string, msg dto.OpenaiMsg) error {
+func (c *RedisClient) Publish(ctx context.Context, channel string, msg interface{}) error {
 	op := "redisClient.Publish"
 	log.Info().Msgf("%s. Channel: %s. Input message: %v,", op, channel, msg)
 	//err := c.Client.Publish(ctx, channel, msg).Err()
