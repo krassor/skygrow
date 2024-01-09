@@ -4,15 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
-
 	"github.com/google/uuid"
-
 	"github.com/krassor/skygrow/backend-serverHttp/internal/models/dto"
 	"github.com/krassor/skygrow/backend-serverHttp/internal/models/entities"
+	"github.com/krassor/skygrow/backend-serverHttp/pkg/jwt"
+	"regexp"
+	"time"
 	//telegramBot "github.com/krassor/skygrow/backend-serverHttp/internal/telegram"
 )
 
@@ -106,25 +103,27 @@ func (s *UserService) SignIn(ctx context.Context, userDto dto.RequestUserSignInD
 	}
 
 	//generate jwt token
-	jwtSecretKey := []byte("skygrowSecretKey")
-	timeNow := time.Now()
+	//jwtSecretKey := []byte("skygrowSecretKey")
+	//timeNow := time.Now()
+	//
+	//payload := jwt.MapClaims{
+	//	"sub":   findUserEntity.Email,
+	//	"roles": "user",
+	//	"iat":   timeNow.Unix(),
+	//	"exp":   timeNow.Add(time.Hour * 72).Unix(),
+	//}
+	//token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	//
+	//accessToken, err := token.SignedString(jwtSecretKey)
+	accessToken, err := jwt.NewToken(findUserEntity, time.Hour*72, "user", "skygrowSecretKey")
 
-	payload := jwt.MapClaims{
-		"sub":   findUserEntity.BaseModel.ID,
-		"roles": "user",
-		"iat":   timeNow.Unix(),
-		"exp":   timeNow.Add(time.Hour * 72).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-
-	accessToken, err := token.SignedString(jwtSecretKey)
 	if err != nil {
 		return dto.ResponseUserSignInDto{}, fmt.Errorf("error generate access token. Service SignIn(): %w", err)
 	}
 	//end generate jwt token
 
 	findUserEntity.AccessToken = accessToken
-	findUserEntity.BaseModel.Updated_at = timeNow
+	findUserEntity.BaseModel.Updated_at = time.Now()
 
 	_, err = s.UserRepository.UpdateUser(ctx, findUserEntity)
 	if err != nil {

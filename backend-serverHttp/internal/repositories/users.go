@@ -7,7 +7,7 @@ import (
 	"github.com/krassor/skygrow/backend-serverHttp/internal/models/entities"
 )
 
-func (r *repository) FindUserByEmail(ctx context.Context, email string) (entities.User, error) {
+func (r *Repository) FindUserByEmail(ctx context.Context, email string) (entities.User, error) {
 	var userEntity entities.User = entities.User{}
 	tx := r.DB.WithContext(ctx).Limit(1).Where("email = ?", email).Find(&userEntity)
 	if tx.Error != nil {
@@ -15,7 +15,7 @@ func (r *repository) FindUserByEmail(ctx context.Context, email string) (entitie
 	}
 	return userEntity, nil
 }
-func (r *repository) CreateNewUser(ctx context.Context, user entities.User) (entities.User, error) {
+func (r *Repository) CreateNewUser(ctx context.Context, user entities.User) (entities.User, error) {
 
 	tx := r.DB.WithContext(ctx).Create(&user)
 	if tx.Error != nil {
@@ -24,7 +24,7 @@ func (r *repository) CreateNewUser(ctx context.Context, user entities.User) (ent
 	return user, nil
 }
 
-func (r *repository) UpdateUser(ctx context.Context, user entities.User) (entities.User, error) {
+func (r *Repository) UpdateUser(ctx context.Context, user entities.User) (entities.User, error) {
 
 	tx := r.DB.WithContext(ctx).Save(&user)
 	if tx.Error != nil {

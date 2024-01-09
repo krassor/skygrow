@@ -20,16 +20,16 @@ func main() {
 
 	logger.InitLogger()
 
-	config := config.InitConfig()
+	appConfig := config.InitConfig()
 	repo := repository.NewMessageRepository()
 
 	broker := redisBroker.NewRedisClient()
 
-	gptBot := openai.NewGPTBot(config, repo, broker)
-	tgBot := telegramBot.NewBot(config, broker)
+	gptBot := openai.NewGPTBot(appConfig, repo, broker)
+	tgBot := telegramBot.NewBot(appConfig, broker)
 
 	botRouter := routers.NewBotRouter()
-	httpServer := httpServer.NewHttpServer(botRouter)
+	newHttpServer := httpServer.NewHttpServer(botRouter)
 
 	maxSecond := 15 * time.Second
 	waitShutdown := graceful.GracefulShutdown(
@@ -39,8 +39,8 @@ func main() {
 			"tgBot": func(ctx context.Context) error {
 				return tgBot.Shutdown(ctx)
 			},
-			"httpServer": func(ctx context.Context) error {
-				return httpServer.Shutdown(ctx)
+			"newHttpServer": func(ctx context.Context) error {
+				return newHttpServer.Shutdown(ctx)
 			},
 			"gptBot": func(ctx context.Context) error {
 				return gptBot.Shutdown(ctx)
@@ -50,7 +50,7 @@ func main() {
 
 	go gptBot.Start()
 	go tgBot.Update(60)
-	go httpServer.Listen()
+	go newHttpServer.Listen()
 
 	<-waitShutdown
 }

@@ -5,21 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/utils"
 	"time"
 
 	"net/http"
 
 	"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
-	"github.com/krassor/skygrow/backend-service-calendar/internal/services/userServices"
-	"github.com/krassor/skygrow/backend-service-calendar/pkg/utils"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/services/user"
 	"github.com/rs/zerolog/log"
 )
 
 type UserHandler struct {
-	userService *userServices.UserService
+	userService *user.UserService
 }
 
-func NewUserHandler(userService *userServices.UserService) *UserHandler {
+func NewUserHandler(userService *user.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 	}
@@ -42,7 +42,7 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	err = h.userService.SignUp(ctx, requestUserSignUpDto)
 
 	if err != nil {
-		if errors.Is(err, userServices.ErrEmailNotValid) {
+		if errors.Is(err, user.ErrEmailNotValid) {
 			log.Error().Msgf("Error creating user: %v: %s", requestUserSignUpDto, err)
 			httpErr := utils.Err(w, http.StatusBadRequest, err)
 			if httpErr != nil {
@@ -51,7 +51,7 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, userServices.ErrEmptyPassword) {
+		if errors.Is(err, user.ErrEmptyPassword) {
 			log.Error().Msgf("Error creating user: %v: %s", requestUserSignUpDto, err)
 			httpErr := utils.Err(w, http.StatusBadRequest, err)
 			if httpErr != nil {
@@ -60,7 +60,7 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, userServices.ErrUserAlreadyExist) {
+		if errors.Is(err, user.ErrUserAlreadyExist) {
 			log.Error().Msgf("Error creating user: %v: %s", requestUserSignUpDto, err)
 			httpErr := utils.Err(w, http.StatusBadRequest, err)
 			if httpErr != nil {
@@ -103,7 +103,7 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	responseUserSignIn, err := h.userService.SignIn(ctx, requestUserSignInDto)
 
 	if err != nil {
-		if errors.Is(err, userServices.ErrEmailNotValid) {
+		if errors.Is(err, user.ErrEmailNotValid) {
 			log.Error().Msgf("Error user login: %v: %s", requestUserSignInDto, err)
 			httpErr := utils.Err(w, http.StatusUnauthorized, err)
 			if httpErr != nil {
@@ -112,7 +112,7 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, userServices.ErrEmptyPassword) {
+		if errors.Is(err, user.ErrEmptyPassword) {
 			log.Error().Msgf("Error user login: %v: %s", requestUserSignInDto, err)
 			httpErr := utils.Err(w, http.StatusUnauthorized, err)
 			if httpErr != nil {
@@ -121,7 +121,7 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, userServices.ErrWrongPassword) {
+		if errors.Is(err, user.ErrWrongPassword) {
 			log.Error().Msgf("Error user login: %v: %s", requestUserSignInDto, err)
 			httpErr := utils.Err(w, http.StatusUnauthorized, err)
 			if httpErr != nil {
@@ -130,7 +130,7 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, userServices.ErrUserNotFound) {
+		if errors.Is(err, user.ErrUserNotFound) {
 			log.Error().Msgf("Error user login: %v: %s", requestUserSignInDto, err)
 			httpErr := utils.Err(w, http.StatusUnauthorized, err)
 			if httpErr != nil {

@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/utils"
 
 	"net/http"
 
 	"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
 	"github.com/krassor/skygrow/backend-service-calendar/internal/services/bookOrderServices"
-	"github.com/krassor/skygrow/backend-service-calendar/pkg/utils"
 	"github.com/rs/zerolog/log"
 )
 
@@ -46,12 +46,12 @@ func (h *BookOrderHandler) CreateBookOrder(w http.ResponseWriter, r *http.Reques
 	}
 
 	responseBookOrderDto := dto.ResponseBookOrderDto{
-		FirstName:   bookOrderDto.FirstName,
-		SecondName:  bookOrderDto.SecondName,
-		Phone:       bookOrderDto.Phone,
-		Email:       bookOrderDto.Email,
-		MentorID:    bookOrderDto.MentorID,
-		BookOrderID: bookOrderID,
+		FirstName:          bookOrderDto.FirstName,
+		SecondName:         bookOrderDto.SecondName,
+		Phone:              bookOrderDto.Phone,
+		Email:              bookOrderDto.Email,
+		MentorID:           bookOrderDto.MentorID,
+		BookOrderID:        bookOrderID,
 		ProblemDescription: bookOrderDto.ProblemDescription,
 	}
 
@@ -61,4 +61,3 @@ func (h *BookOrderHandler) CreateBookOrder(w http.ResponseWriter, r *http.Reques
 		log.Warn().Msgf("Cannot encode response to json: %s", err)
 	}
 }
-

@@ -9,3 +9,4 @@ Dockerfile_dev
 Dockerfile.dev
 docker-compose-dev.yml
 run_docker_build_dev.sh
+qodana.yaml
