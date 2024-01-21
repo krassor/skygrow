@@ -31,7 +31,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(userService)
 
 	router := routers.NewRouter(bookOrderHandler, userHandler)
-	httpServer := httpServer.NewHttpServer(router)
+	newHttpServer := httpServer.NewHttpServer(router)
 
 	maxSecond := 15 * time.Second
 	waitShutdown := graceful.GracefulShutdown(
@@ -39,7 +39,7 @@ func main() {
 		maxSecond,
 		map[string]graceful.Operation{
 			"http": func(ctx context.Context) error {
-				return httpServer.Shutdown(ctx)
+				return newHttpServer.Shutdown(ctx)
 			},
 			"tgBotOrders": func(ctx context.Context) error {
 				return bookOrderTgBot.Shutdown(ctx)
@@ -47,7 +47,7 @@ func main() {
 		},
 	)
 
-	go httpServer.Listen()
+	go newHttpServer.Listen()
 	go bookOrderTgBot.Update(context.Background(), 60)
 	<-waitShutdown
 }

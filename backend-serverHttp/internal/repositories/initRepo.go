@@ -10,11 +10,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type repository struct {
+type Repository struct {
 	DB *gorm.DB
 }
 
-func NewRepository() *repository {
+func NewRepository() *Repository {
 	username := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
@@ -37,7 +37,7 @@ func NewRepository() *repository {
 	}
 	log.Info().Msg("gorm have connected to database")
 
-	return &repository{
+	return &Repository{
 		DB: conn,
 	}
 }

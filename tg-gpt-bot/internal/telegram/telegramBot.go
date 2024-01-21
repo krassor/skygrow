@@ -11,18 +11,31 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/openai"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
 	"github.com/rs/zerolog/log"
 )
 
-type Bot struct {
-	tgbot           *tgbotapi.BotAPI
-	gptBot          *openai.GPTBot
-	botConfig       *config.AppConfig
-	shutdownChannel chan struct{}
+type OpenAIMsgBroker interface {
+	Publish(ctx context.Context, channel string, msg dto.OpenaiMsg) error
+	Subscribe(ctx context.Context, channels ...string) <-chan dto.OpenaiMsg
 }
 
-func NewBot(botConfig *config.AppConfig, gptBot *openai.GPTBot) *Bot {
+type Bot struct {
+	tgbot           *tgbotapi.BotAPI
+	broker          OpenAIMsgBroker
+	botConfig       *config.AppConfig
+	shutdownChannel chan struct{}
+	ctx             context.Context
+	cancel          context.CancelFunc
+}
+
+const (
+	brokerChannelSub string = "openai.response"
+	brokerChannelPub string = "openai.request"
+	dtoSource        string = "telegram"
+)
+
+func NewBot(botConfig *config.AppConfig, broker OpenAIMsgBroker) *Bot {
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TGBOT_APITOKEN"))
 	if err != nil {
 		log.Error().Msgf("Error auth telegram bot: %s", err)
@@ -32,11 +45,15 @@ func NewBot(botConfig *config.AppConfig, gptBot *openai.GPTBot) *Bot {
 
 	log.Info().Msgf("Authorized on account %s", bot.Self.UserName)
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Bot{
 		tgbot:           bot,
-		gptBot:          gptBot,
+		broker:          broker,
 		botConfig:       botConfig,
 		shutdownChannel: make(chan struct{}),
+		ctx:             ctx,
+		cancel:          cancel,
 	}
 }
 
@@ -51,6 +68,8 @@ func (bot *Bot) Update(updateTimeout int) {
 
 	updates := bot.tgbot.GetUpdatesChan(updateConfig)
 
+	go bot.Subscribe()
+
 	for update := range updates {
 		log.Info().Msgf("Input message: %v\n", update.Message)
 
@@ -62,6 +81,42 @@ func (bot *Bot) Update(updateTimeout int) {
 		go bot.processingMessages(update)
 	}
 	//log.Info().Msgf("exit tgbot routine")
+
+}
+
+func (bot *Bot) Subscribe() {
+	op := "tgBot subscribe()"
+
+	updates := bot.broker.Subscribe(bot.ctx, brokerChannelSub)
+	for update := range updates {
+
+		log.Info().Msgf("%s: %v", op, update)
+		//TODO check source and send reply to handler
+		if update.Source == dtoSource {
+
+			tgBotApiMsg := tgbotapi.Message{}
+
+			chatId, err := strconv.Atoi(update.ChatId)
+			if err != nil {
+				log.Error().Msgf("%s: %v", op, err)
+			}
+			msgId, err := strconv.Atoi(update.MsgId)
+			if err != nil {
+				log.Error().Msgf("%s: %v", op, err)
+			}
+
+			tgBotApiMsg.Chat.ID = int64(chatId)
+			tgBotApiMsg.MessageID = msgId
+
+			go func(update dto.OpenaiMsg) {
+				err = bot.sendReplyMessage(&tgBotApiMsg, update.Msg)
+				if err != nil {
+					log.Error().Msgf("%s: %v", op, err)
+				}
+			}(update)
+		}
+
+	}
 
 }
 
@@ -84,17 +139,17 @@ func (bot *Bot) processingMessages(update tgbotapi.Update) {
 
 		// Проверяем, если сообщение адресовано самому боту
 		if update.Message.Chat.IsPrivate() {
-			bot.privateHandler(update.Message)
+			bot.defaultHandler(update.Message)
 		} else
 
 		// если сообщение адресовано каналу, в котором находится бот
 		if (update.Message.Chat.IsChannel() || update.Message.Chat.IsGroup() || update.Message.Chat.IsSuperGroup()) && bot.checkBotMention(update.Message) {
-			bot.channelHandler(update.Message)
+			bot.defaultHandler(update.Message)
 		} else
 
 		// Проверяем, если сообщение является ответом на сообщение бота
 		if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.ID == bot.tgbot.Self.ID {
-			bot.replyHandler(update.Message)
+			bot.defaultHandler(update.Message)
 		} else {
 			log.Warn().Msgf("Unsupported message type")
 		}
@@ -130,15 +185,17 @@ func (bot *Bot) checkBotMention(msg *tgbotapi.Message) bool {
 	return result
 }
 
-func (bot *Bot) sendMessageToOpenAI(msg *tgbotapi.Message) (string, error) {
+func (bot *Bot) sendMessageToOpenaiTopic(ctx context.Context, msg *tgbotapi.Message) {
+	op := "bot.sendMessageToOpenaiTopic"
 
 	start := time.Now()
 	defer func() {
 		observeResponseLatencySecSummary(time.Since(start), msg.From.UserName)
 	}()
 
-	msgText := strings.TrimPrefix(msg.Text, "/askbot ")
+	msgText := strings.TrimPrefix(msg.Text, "/askbot ") //TODO move it to handler
 
+	//TODO move to func
 	words := strings.Split(msgText, " ")
 	var filteredWords []string
 	for _, word := range words {
@@ -148,11 +205,19 @@ func (bot *Bot) sendMessageToOpenAI(msg *tgbotapi.Message) (string, error) {
 	}
 	msgText = strings.Join(filteredWords, " ")
 
-	reply, err := bot.gptBot.CreateChatCompletion(strconv.Itoa(int(msg.From.ID)), msgText)
-	if err != nil {
-		return "", fmt.Errorf("Error bot.sendMessageToOpenAI: %w", err)
+	openaiRequest := dto.OpenaiMsg{
+		Source: dtoSource,
+		ChatId: strconv.Itoa(int(msg.Chat.ID)),
+		UserId: strconv.Itoa(int(msg.From.ID)),
+		MsgId:  strconv.Itoa(int(msg.MessageID)),
+		Msg:    msgText,
 	}
-	return reply, nil
+	log.Info().Msgf("%s. request to openAi channel: %v", op, openaiRequest)
+	err := bot.broker.Publish(ctx, brokerChannelPub, openaiRequest)
+	if err != nil {
+		log.Info().Msgf("%s. %v", op, err)
+	}
+
 }
 
 func (bot *Bot) sendReplyMessage(inputMsg *tgbotapi.Message, replyText string) error {
@@ -162,7 +227,7 @@ func (bot *Bot) sendReplyMessage(inputMsg *tgbotapi.Message, replyText string) e
 
 	_, err := bot.tgbot.Send(replyMsg)
 	if err != nil {
-		return fmt.Errorf("Error tgbot.sendReplyMessage: %w", err)
+		return fmt.Errorf("tgbot.sendReplyMessage: %w", err)
 	}
 	return nil
 }
@@ -171,9 +236,10 @@ func (bot *Bot) Shutdown(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("Force exit tgBot: %w", ctx.Err())
+			return fmt.Errorf("exit tgBot: %w", ctx.Err())
 		default:
 			close(bot.shutdownChannel)
+			bot.cancel()
 			bot.tgbot.StopReceivingUpdates()
 			return nil
 		}

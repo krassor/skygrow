@@ -18,7 +18,7 @@ type SubscribersRepo interface {
 	FindSubscriberByChatId(ctx context.Context, chatId int64) (entities.Subscriber, error)
 }
 
-func (r *repository) FindAllSubscribers(ctx context.Context) ([]entities.Subscriber, error) {
+func (r *Repository) FindAllSubscribers(ctx context.Context) ([]entities.Subscriber, error) {
 	var subscribers []entities.Subscriber
 	tx := r.DB.WithContext(ctx).Find(&subscribers)
 	if tx.Error != nil {
@@ -28,7 +28,7 @@ func (r *repository) FindAllSubscribers(ctx context.Context) ([]entities.Subscri
 	return subscribers, nil
 }
 
-func (r *repository) CreateSubscriber(ctx context.Context, chatId int64, name string) (entities.Subscriber, error) {
+func (r *Repository) CreateSubscriber(ctx context.Context, chatId int64, name string) (entities.Subscriber, error) {
 	var subscriber entities.Subscriber = entities.Subscriber{
 		Name:     name,
 		ChatID:   chatId,
@@ -44,7 +44,7 @@ func (r *repository) CreateSubscriber(ctx context.Context, chatId int64, name st
 	return subscriber, nil
 }
 
-func (r *repository) UpdateSubscriber(ctx context.Context, subscriber entities.Subscriber) (entities.Subscriber, error) {
+func (r *Repository) UpdateSubscriber(ctx context.Context, subscriber entities.Subscriber) (entities.Subscriber, error) {
 
 	tx := r.DB.WithContext(ctx).Save(&subscriber)
 	if tx.Error != nil {
@@ -53,7 +53,7 @@ func (r *repository) UpdateSubscriber(ctx context.Context, subscriber entities.S
 	return subscriber, nil
 }
 
-func (r *repository) FindSubscriberByChatId(ctx context.Context, chatId int64) (entities.Subscriber, error) {
+func (r *Repository) FindSubscriberByChatId(ctx context.Context, chatId int64) (entities.Subscriber, error) {
 	var subscriber entities.Subscriber
 
 	tx := r.DB.WithContext(ctx).Limit(1).Where("chatId = ?", chatId).Find(&subscriber)

@@ -10,6 +10,7 @@ import (
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/openai"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/repository"
 	telegramBot "github.com/krassor/skygrow/tg-gpt-bot/internal/telegram"
+	"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/broker/redisBroker"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer"
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer/routers"
 )
@@ -19,14 +20,16 @@ func main() {
 
 	logger.InitLogger()
 
-	config := config.InitConfig()
+	appConfig := config.InitConfig()
 	repo := repository.NewMessageRepository()
 
-	gptBot := openai.NewGPTBot(config, repo)
-	tgBot := telegramBot.NewBot(config, gptBot)
+	broker := redisBroker.NewRedisClient()
+
+	gptBot := openai.NewGPTBot(appConfig, repo, broker)
+	tgBot := telegramBot.NewBot(appConfig, broker)
 
 	botRouter := routers.NewBotRouter()
-	httpServer := httpServer.NewHttpServer(botRouter)
+	newHttpServer := httpServer.NewHttpServer(botRouter)
 
 	maxSecond := 15 * time.Second
 	waitShutdown := graceful.GracefulShutdown(
@@ -36,17 +39,18 @@ func main() {
 			"tgBot": func(ctx context.Context) error {
 				return tgBot.Shutdown(ctx)
 			},
-			"httpServer": func(ctx context.Context) error {
-				return httpServer.Shutdown(ctx)
+			"newHttpServer": func(ctx context.Context) error {
+				return newHttpServer.Shutdown(ctx)
 			},
-			// "tgBot": func(ctx context.Context) error {
-			// 	return deviceTgBot.Shutdown(ctx)
-			// },
+			"gptBot": func(ctx context.Context) error {
+				return gptBot.Shutdown(ctx)
+			},
 		},
 	)
 
+	go gptBot.Start()
 	go tgBot.Update(60)
-	go httpServer.Listen()
+	go newHttpServer.Listen()
 
 	<-waitShutdown
 }

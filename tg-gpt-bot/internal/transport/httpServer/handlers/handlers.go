@@ -44,7 +44,7 @@ type DeviceHandlers interface {
 // 		}
 // 		return
 // 	}
-// 	//deviceEntity := entities.Devices{}
+// 	//deviceEntity := domain.Devices{}
 // 	deviceEntity, err := d.deviceService.CreateNewDevice(r.Context(), deviceDto)
 
 // 	if err != nil {
