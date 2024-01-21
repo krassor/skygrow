@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/utils/logger/sl"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -21,39 +23,40 @@ var (
 type GoogleCalendar struct {
 	googleService *calendar.Service
 	googleClient  *http.Client
+	log           *slog.Logger
 }
 
-//func (gc *GoogleCalendar) CreateCalendar(
-//	description string, etag string, summary string, timezone string) (string, error) {
-//	op := "GoogleService.CreateCalendar()"
-//	if summary == "" {
-//		return "", fmt.Errorf("%s : %w", op, ErrorEmptyCalendarField)
-//	}
-//	if etag == "" {
-//		return "", fmt.Errorf("%s : %w", op, ErrorEmptyCalendarField)
-//	}
-//	if timezone == "" {
-//		return "", fmt.Errorf("%s : %w", op, ErrorEmptyCalendarField)
-//	}
-//	newCalendar := &calendar.Calendar{
-//		ConferenceProperties: &calendar.ConferenceProperties{
-//			AllowedConferenceSolutionTypes: []string{"eventHangout", "eventNamedHangout", "hangoutsMeet"},
-//		},
-//		Description: description,
-//		Etag:        etag,
-//		Summary:     summary,
-//		TimeZone:    timezone,
-//	}
-//	cal, err := gc.googleService.Calendars.Insert(newCalendar).Do()
-//	if err != nil {
-//		return "", fmt.Errorf("%s : %w", op, err)
-//	}
-//
-//	return cal.Id, nil
-//}
+func NewGoogleCalendar(log *slog.Logger) *GoogleCalendar {
+	op := "NewGoogleCalendar"
+	log.With(
+		slog.String("op", op))
+
+	b := getClientSecret("credentials/client_secret.json")
+
+	// If modifying these scopes, delete your previously saved token.json.
+	config, err := google.ConfigFromJSON(b, calendar.CalendarScope)
+	if err != nil {
+		log.Error("Unable to parse client secret file to config", sl.Err(err))
+		panic("Unable to parse google client secret file to config")
+	}
+
+	client := getClient(config)
+
+	srv, err := calendar.NewService(context.TODO(), option.WithHTTPClient(client))
+	if err != nil {
+		log.Error("unable to retrieve Calendar client", sl.Err(err))
+	}
+
+	return &GoogleCalendar{
+		googleService: srv,
+		googleClient:  client,
+		log:           log,
+	}
+
+}
 
 // CreateCalendar() return Google calendar ID. Return non nil error if function cannot create calendar with Google API
-func (gc *GoogleCalendar) CreateCalendar(
+func (gc *GoogleCalendar) CreateCalendar( //TODO change logger
 	description string, summary string, timezone string) (string, error) {
 	op := "GoogleService.CreateCalendar()"
 	if summary == "" {
@@ -76,29 +79,6 @@ func (gc *GoogleCalendar) CreateCalendar(
 	}
 
 	return cal.Id, nil
-}
-
-func NewGoogleCalendar() *GoogleCalendar {
-	b := getClientSecret("credentials/client_secret.json")
-
-	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, calendar.CalendarScope)
-	if err != nil {
-		log.Fatal().Msgf("Unable to parse client secret file to config: %v", err)
-	}
-
-	client := getClient(config)
-
-	srv, err := calendar.NewService(context.TODO(), option.WithHTTPClient(client))
-	if err != nil {
-		log.Fatal().Msgf("unable to retrieve Calendar client: %v", err)
-	}
-
-	return &GoogleCalendar{
-		googleService: srv,
-		googleClient:  client,
-	}
-
 }
 
 func getClientSecret(filepath string) []byte {

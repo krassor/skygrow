@@ -47,15 +47,29 @@ func (c *Calendar) FindCalendarByUserId(ctx context.Context, userId uuid.UUID) (
 	return calendar, nil
 }
 
-func (c *Calendar) CreateCalendar(ctx context.Context, calendar domain.Calendar) (domain.Calendar, error) {
+func (c *Calendar) CreateCalendar(ctx context.Context, calendarUser domain.User) (domain.Calendar, error) {
 	op := "Calendar CreateCalendar()"
-	if (calendar == domain.Calendar{}) {
+	if (calendarUser == domain.User{}) {
 		return domain.Calendar{}, fmt.Errorf("%s:%w", op, ErrNilEntity)
 	}
 
-	googleCalendarId, err := c.googleCalendar.CreateCalendar(calendar.Description, calendar.Summary, calendar.TimeZone)
+	description := fmt.Sprintf("%s %s", calendarUser.FirstName, calendarUser.SecondName)
+	summary := fmt.Sprintf("calendar owner id: %s", calendarUser.ID.String())
+
+	//!!!!!!!!!!!!!!
+	timeZone := "Europe/Moscow" //TODO: timeZone should be received from frontend
+
+	googleCalendarId, err := c.googleCalendar.CreateCalendar(description, summary, timeZone)
 	if err != nil {
 		return domain.Calendar{}, fmt.Errorf("%s : %w", op, err)
+	}
+
+	calendar := domain.Calendar{
+		CalendarOwnerId:  calendarUser.ID,
+		GoogleCalendarId: googleCalendarId,
+		Description:      description,
+		Summary:          summary,
+		TimeZone:         timeZone,
 	}
 
 	calendarOut, err := c.calendarRepository.CreateCalendar(ctx, calendar)

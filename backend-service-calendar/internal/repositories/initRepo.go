@@ -3,24 +3,29 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"os"
-
+	"github.com/krassor/skygrow/backend-service-calendar/internal/config"
 	"github.com/krassor/skygrow/backend-service-calendar/internal/models/domain"
-	"github.com/rs/zerolog/log"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/utils/logger/sl"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log/slog"
 )
 
 type Repository struct {
-	DB *gorm.DB
+	DB  *gorm.DB
+	log *slog.Logger
 }
 
-func NewRepository() *Repository {
-	username := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
+func NewCalendarRepository(log *slog.Logger, cfg *config.Config) *Repository {
+	op := "repositories.NewCalendarRepository()"
+	log.With(
+		slog.String("op", op))
+
+	username := cfg.DBConfig.User
+	password := cfg.DBConfig.Password
+	dbName := cfg.DBConfig.Name
+	dbHost := cfg.DBConfig.Host
+	dbPort := cfg.DBConfig.Port
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", dbHost, dbPort, username, dbName, password)
 	fmt.Println(dsn)
@@ -28,15 +33,17 @@ func NewRepository() *Repository {
 	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		log.Error().Msgf("Error gorm.Open(): %s", err)
+		log.Error("error connecting to database", sl.Err(err))
+		panic("error connecting to database")
 	}
-	log.Info().Msg("gorm have connected to database")
+	log.Debug("gorm have connected to database")
 
 	err = conn.Debug().AutoMigrate(&domain.User{}, &domain.Calendar{}, &domain.CalendarEvent{}, &domain.GoogleAuthToken{}) //Миграция базы данных
 	if err != nil {
-		log.Error().Msgf("Error gorm.AutoMigrate(): %s", err)
+		log.Error("error database auto migrate", sl.Err(err))
+		panic("error database auto migrate")
 	}
-	log.Info().Msg("gorm have connected to database")
+	log.Debug("success auto migrate")
 
 	return &Repository{
 		DB: conn,

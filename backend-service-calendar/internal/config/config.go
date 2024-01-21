@@ -2,6 +2,8 @@ package config
 
 import (
 	"flag"
+	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -9,10 +11,9 @@ import (
 )
 
 type Config struct {
-	Env         string           `yaml:"env" env-default:"local"`
-	StoragePath string           `yaml:"storage_path" env-required:"true"`
-	HttpServer  HttpServerConfig `yaml:"http_server"`
-	DBConfig    DBConfig
+	Env        string           `yaml:"env" env-default:"local"`
+	HttpServer HttpServerConfig `yaml:"http_server" env-required:"true"`
+	DBConfig   DBConfig         `yaml:"db" env-required:"true"`
 	//MigrationsPath string
 	//TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
 }
@@ -23,37 +24,38 @@ type Config struct {
 //}
 
 type HttpServerConfig struct {
-	Port    int           `yaml:"port" env-required:"true"`
-	Timeout time.Duration `yaml:"timeout"`
+	Address string        `yaml:"address" env-required:"true" env-default:"localhost"`
+	Port    string        `yaml:"port" env-required:"true" env-default:"8080"`
+	Timeout time.Duration `yaml:"timeout" env-default:"5"`
 }
 
 type DBConfig struct {
-	Port     string `yaml:"port" env:"PORT" env-default:"5432"`
-	Host     string `yaml:"host" env:"HOST" env-default:"localhost"`
-	Name     string `yaml:"name" env:"NAME" env-default:"postgres"`
-	User     string `yaml:"user" env:"USER" env-default:"user"`
-	Password string `yaml:"password" env:"PASSWORD"`
+	Host     string `yaml:"host" env:"DBHOST" env-default:"localhost"`
+	Port     string `yaml:"port" env:"DBPORT" env-default:"5432"`
+	Name     string `yaml:"name" env:"DBNAME" env-default:"postgres"`
+	User     string `yaml:"user" env:"DBUSER" env-default:"user"`
+	Password string `yaml:"password" env:"DBPASSWORD" env-default:"password"`
 }
 
 func MustLoad() *Config {
 	configPath := fetchConfigPath()
 	if configPath == "" {
-		panic("config path is empty")
+		log.Println("config path is empty. Load default path: \"config/config.yml\"")
 	}
-
+	configPath = "config/config.yml"
 	return MustLoadPath(configPath)
 }
 
 func MustLoadPath(configPath string) *Config {
 	// check if file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		panic("config file does not exist: " + configPath)
+		log.Fatalf("config file does not exist: %s", configPath)
 	}
 
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		panic("cannot read config: " + err.Error())
+		log.Fatalf("cannot read config: %s", err.Error())
 	}
 
 	return &cfg
@@ -68,9 +70,11 @@ func fetchConfigPath() string {
 	flag.StringVar(&res, "config", "", "path to config file")
 	flag.Parse()
 
-	if res == "" {
-		res = os.Getenv("CONFIG_PATH")
+	if res != "" {
+		slog.Info("load config path from command line.", "path", res)
+		return res
 	}
-
+	res = os.Getenv("CONFIG_PATH")
+	slog.Info("load config path from env CONFIG_PATH", "path", res)
 	return res
 }

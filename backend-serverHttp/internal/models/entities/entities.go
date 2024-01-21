@@ -1,11 +1,12 @@
 package entities
 
 import (
+	"github.com/google/uuid"
 	"time"
 )
 
 type BaseModel struct {
-	ID         string `gorm:"type:uuid;primary_key"`
+	ID         uuid.UUID `gorm:"type:uuid;primary_key"`
 	Created_at time.Time
 	Updated_at time.Time
 	Deleted_at time.Time

@@ -1,43 +1,92 @@
 package main
 
 import (
+	"context"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/config"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/graceful"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/repositories"
 	"github.com/krassor/skygrow/backend-service-calendar/internal/services/GoogleService"
-	"github.com/rs/zerolog/log"
-	"runtime"
-	"sync"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/services/calendar"
+	myHttpServer "github.com/krassor/skygrow/backend-service-calendar/internal/transport/httpServer"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/transport/httpServer/handlers"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/transport/httpServer/routers"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/utils/logger/handlers/slogpretty"
+	"log/slog"
+	"os"
+	"time"
+)
+
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
 )
 
 func main() {
-	runtime.GOMAXPROCS(2)
-	gc1 := GoogleService.NewGoogleCalendar()
-	gc2 := GoogleService.NewGoogleCalendar()
-	log.Info().Msg("GoogleService created")
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		id, err := gc1.CreateCalendar(
-			"New course for learning",
-			"Smetankin Dmirtrii",
-			"Europe/Moscow")
+	cfg := config.MustLoad()
 
-		if err != nil {
-			log.Error().Msgf("ERROR: %v", err)
-		}
-		log.Info().Msgf("calendarID: %s", id)
-	}()
+	log := setupLogger(cfg.Env)
 
-	go func() {
-		defer wg.Done()
-		id, err := gc2.CreateCalendar(
-			"New course for learning",
-			"Smetankina Lubov",
-			"Europe/Moscow")
+	log.Info(
+		"starting backend-service-calendar",
+		slog.String("env", cfg.Env),
+		slog.String("version", "0.1"),
+	)
+	log.Debug("debug messages are enabled")
 
-		if err != nil {
-			log.Error().Msgf("ERROR: %v", err)
-		}
-		log.Info().Msgf("calendarID: %s", id)
-	}()
-	wg.Wait()
+	googleCalendar := GoogleService.NewGoogleCalendar(log)
+	calendarRepository := repositories.NewCalendarRepository(log, cfg)
+	calendarService := calendar.NewCalendarService(calendarRepository, googleCalendar)
+	calendarHandler := handlers.NewCalendarHandler(log, calendarService)
+	router := routers.NewRouter(calendarHandler)
+	httpServer := myHttpServer.NewHttpServer(log, router, cfg)
+
+	maxSecond := 15 * time.Second
+	waitShutdown := graceful.GracefulShutdown(
+		context.Background(),
+		maxSecond,
+		map[string]graceful.Operation{
+			"http": func(ctx context.Context) error {
+				return httpServer.Shutdown(ctx)
+			},
+		},
+	)
+
+	go httpServer.Listen()
+	<-waitShutdown
+}
+
+func setupLogger(env string) *slog.Logger {
+	var log *slog.Logger
+
+	switch env {
+	case envLocal:
+		log = setupPrettySlog()
+	case envDev:
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	case envProd:
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
+	default: // If env config is invalid, set prod settings by default due to security
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
+	}
+
+	return log
+}
+
+func setupPrettySlog() *slog.Logger {
+	opts := slogpretty.PrettyHandlerOptions{
+		SlogOpts: &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		},
+	}
+
+	handler := opts.NewPrettyHandler(os.Stdout)
+
+	return slog.New(handler)
 }
