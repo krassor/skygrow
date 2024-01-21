@@ -29,6 +29,7 @@ func (d *Router) Router(r *chi.Mux) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Heartbeat("/ping"))
 
+
 	r.Route("/user", func(r chi.Router) {
 		//Public
 		r.Group(func(r chi.Router) {
