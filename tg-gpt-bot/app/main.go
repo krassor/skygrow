@@ -53,4 +53,5 @@ func main() {
 	go newHttpServer.Listen()
 
 	<-waitShutdown
+
 }

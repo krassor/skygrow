@@ -1,4 +1,4 @@
-package entities
+package domain
 
 import (
 	"github.com/google/uuid"
@@ -17,7 +17,7 @@ type User struct {
 	FirstName       string `gorm:"column:firstName"`
 	SecondName      string `gorm:"column:secondName"`
 	Phone           string `gorm:"column:phone"`
-	Email           string `gorm:"column:email"`
+	Email           string `gorm:"column:email;index"`
 	Hashed_password string `gorm:"column:hashedPassword"`
 	AccessToken     string `gorm:"column:accessToken"`
 }

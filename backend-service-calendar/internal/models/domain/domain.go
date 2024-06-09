@@ -5,26 +5,27 @@ import (
 	"time"
 )
 
-type StatusType string
+type CalendarStatusType string
 
 const (
-	InProcess StatusType = "In process"
-	Created   StatusType = "Created"
-	Done      StatusType = "Done"
+	InProcess CalendarStatusType = "In process"
+	Created   CalendarStatusType = "Created"
+	Done      CalendarStatusType = "Done"
 )
 
-func (st StatusType) String() string {
-	switch st {
-	case InProcess:
-
-		return "In process"
-	case Created:
-		return "Created"
-	case Done:
-		return "Done"
-	default:
-		return "Unknown"
-	}
+func (st CalendarStatusType) String() string {
+	//switch st {
+	//case InProcess:
+	//
+	//	return "In process"
+	//case Created:
+	//	return "Created"
+	//case Done:
+	//	return "Done"
+	//default:
+	//	return "Unknown"
+	//}
+	return string(st)
 }
 
 type BaseModel struct {
@@ -47,7 +48,7 @@ type Calendar struct {
 	Etag             string
 	Summary          string
 	TimeZone         string
-	Status           StatusType
+	Status           CalendarStatusType
 }
 
 type CalendarEvent struct {

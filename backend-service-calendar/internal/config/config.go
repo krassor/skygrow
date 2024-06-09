@@ -14,14 +14,7 @@ type Config struct {
 	Env        string           `yaml:"env" env-default:"local"`
 	HttpServer HttpServerConfig `yaml:"http_server" env-required:"true"`
 	DBConfig   DBConfig         `yaml:"db" env-required:"true"`
-	//MigrationsPath string
-	//TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
 }
-
-//type GRPCConfig struct {
-//	Port    int           `yaml:"port"`
-//	Timeout time.Duration `yaml:"timeout"`
-//}
 
 type HttpServerConfig struct {
 	Address string        `yaml:"address" env-required:"true" env-default:"localhost"`

@@ -54,6 +54,7 @@ func main() {
 
 	go httpServer.Listen()
 	<-waitShutdown
+
 }
 
 func setupLogger(env string) *slog.Logger {

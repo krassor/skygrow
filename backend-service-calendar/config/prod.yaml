@@ -1,6 +1,12 @@
-env: "prod"
-storage_path: "/root/apps/grpc-auth/sso.db"
-grpc:
-  port: 44044
+env: "local"
+http_server:
+  address: "localhost"
+  port: "8080"
   timeout: 5s
-migrations_path: "./migrations"
+  secret: "skygrowSecretKey"
+db:
+  host: "localhost"
+  port: "5432"
+  name: "postgres"
+  user: "postgres"
+  password: "password"

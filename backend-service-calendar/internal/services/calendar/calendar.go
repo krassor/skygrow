@@ -16,17 +16,46 @@ type calendarRepository interface {
 	UpdateCalendar(ctx context.Context, calendar *domain.Calendar) error
 }
 
+type CalendarTaskType int
+
+const (
+	CreateCalendar CalendarTaskType = iota + 1
+)
+
+func (t CalendarTaskType) String() string {
+	return [...]string{"CreateCalendar"}[t-1]
+}
+
+func (t CalendarTaskType) EnumIndex() int {
+	return int(t)
+}
+
+type Task struct {
+	TaskType CalendarTaskType
+}
+
 type Calendar struct {
 	calendarRepository calendarRepository
 	googleCalendar     *GoogleService.GoogleCalendar
 	log                *slog.Logger
+	shutdownChannel    chan struct{}
+	ctx                context.Context
+	cancel             context.CancelFunc
+	tasks              chan Task
 }
 
 func NewCalendarService(log *slog.Logger, cr calendarRepository, gc *GoogleService.GoogleCalendar) *Calendar {
+
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Calendar{
 		calendarRepository: cr,
 		googleCalendar:     gc,
 		log:                log,
+		shutdownChannel:    make(chan struct{}),
+		ctx:                ctx,
+		cancel:             cancel,
+		tasks:              make(chan Task),
 	}
 }
 
@@ -96,4 +125,20 @@ func (c *Calendar) CreateCalendar(ctx context.Context, calendarUser domain.Calen
 	}
 	log.Debug("calendarOut", "calendar", calendar)
 	return calendar, nil
+}
+
+func (c *Calendar) CalendarWorker() {
+
+}
+
+func (c *Calendar) Shutdown(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("force exit CalendarWorker: %w", ctx.Err())
+		default:
+			c.cancel()
+			return nil
+		}
+	}
 }

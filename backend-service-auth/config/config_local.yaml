@@ -1,0 +1,12 @@
+env: "local"
+http_server:
+  address: "localhost"
+  port: "8081"
+  timeout: 5s
+  secret: "skygrowSecretKey"
+db:
+  host: "localhost"
+  port: "5432"
+  name: "postgres"
+  user: "postgres"
+  password: "password"

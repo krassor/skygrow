@@ -55,7 +55,7 @@ func NewGoogleCalendar(log *slog.Logger) *GoogleCalendar {
 
 }
 
-// CreateCalendar() return Google calendar ID. Return non nil error if function cannot create calendar with Google API
+// CreateCalendar return Google calendar ID. Return non nil error if function cannot create calendar with Google API
 func (gc *GoogleCalendar) CreateCalendar( //TODO change logger
 	description string, summary string, timezone string) (string, error) {
 	op := "GoogleService.CreateCalendar()"
