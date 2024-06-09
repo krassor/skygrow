@@ -31,7 +31,28 @@ services:
       - TGBOT_APITOKEN=6453631610:AAHRFClOyCuJ8-9PHpfoWvIC-0QXIysy9ks
     networks:
       - back-tier
-  
+
+  app-calendar-service:
+    hostname: app-calendar-service
+    depends_on:
+      - skygrow-pg
+    container_name: app-calendar-service
+    build:
+      context: backend-service-calendar
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+#    environment:
+#      - DB_NAME=skygrowdb
+#      - DB_PASSWORD=copro123@
+#      - DB_USER=krassor
+#      - DB_HOST=skygrow-pg
+#      - DB_PORT=5432
+#      - HTTP_PORT=8080
+#      - HTTP_HOST_LISTEN=0.0.0.0
+    networks:
+      - back-tier
+
   skygrow-pg:
     image: postgres
     hostname: skygrow-pg

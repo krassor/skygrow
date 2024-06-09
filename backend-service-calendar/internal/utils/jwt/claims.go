@@ -5,11 +5,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type UserClaims struct {
-	jwt.RegisteredClaims
+type UserData struct {
 	Uid        uuid.UUID `json:"uid"`
 	Email      string    `json:"email"`
 	FirstName  string    `json:"first_name"`
 	SecondName string    `json:"second_name"`
 	Role       string    `json:"role"`
+}
+type UserClaims struct {
+	jwt.RegisteredClaims
+	Data UserData `json:"data"`
 }

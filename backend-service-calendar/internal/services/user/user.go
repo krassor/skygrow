@@ -21,9 +21,9 @@ var (
 )
 
 type userRepository interface {
-	FindById(ctx context.Context, userId uuid.UUID) (domain.User, error)
-	FindByEmail(ctx context.Context, email string) (domain.User, error)
-	CreateUser(ctx context.Context, email string) (domain.User, error)
+	FindById(ctx context.Context, userId uuid.UUID) (domain.CalendarUser, error)
+	FindByEmail(ctx context.Context, email string) (domain.CalendarUser, error)
+	CreateUser(ctx context.Context, email string) (domain.CalendarUser, error)
 }
 
 type User struct {
@@ -34,37 +34,37 @@ func NewUser(r userRepository) *User {
 	return &User{userRepository: r}
 }
 
-func (u *User) FindUserById(ctx context.Context, userId uuid.UUID) (domain.User, error) {
+func (u *User) FindUserById(ctx context.Context, userId uuid.UUID) (domain.CalendarUser, error) {
 	op := "CalendarService FindUserById()"
 	user, err := u.userRepository.FindById(ctx, userId)
 	if err != nil {
-		return domain.User{}, fmt.Errorf("%s:%w", op, err)
+		return domain.CalendarUser{}, fmt.Errorf("%s:%w", op, err)
 
 	}
 	return user, nil
 }
 
-func (u *User) FindUserByEmail(ctx context.Context, email string) (domain.User, error) {
+func (u *User) FindUserByEmail(ctx context.Context, email string) (domain.CalendarUser, error) {
 	op := "CalendarService FindUserByEmail()"
 	if !utils.IsEmailValid(email) {
-		return domain.User{}, fmt.Errorf("%s:%w", op, ErrEmailNotValid)
+		return domain.CalendarUser{}, fmt.Errorf("%s:%w", op, ErrEmailNotValid)
 	}
 	user, err := u.userRepository.FindByEmail(ctx, email)
 	if err != nil {
-		return domain.User{}, fmt.Errorf("%s:%w", op, err)
+		return domain.CalendarUser{}, fmt.Errorf("%s:%w", op, err)
 
 	}
 	return user, nil
 }
 
-func (u *User) CreateUser(ctx context.Context, email string) (domain.User, error) {
+func (u *User) CreateUser(ctx context.Context, email string) (domain.CalendarUser, error) {
 	op := "CalendarService CreateUser()"
 	if !utils.IsEmailValid(email) {
-		return domain.User{}, fmt.Errorf("%s:%w", op, ErrEmailNotValid)
+		return domain.CalendarUser{}, fmt.Errorf("%s:%w", op, ErrEmailNotValid)
 	}
 	user, err := u.userRepository.CreateUser(ctx, email)
 	if err != nil {
-		return domain.User{}, fmt.Errorf("%s:%w", op, err)
+		return domain.CalendarUser{}, fmt.Errorf("%s:%w", op, err)
 
 	}
 	return user, nil

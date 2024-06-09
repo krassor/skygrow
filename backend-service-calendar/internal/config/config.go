@@ -27,22 +27,24 @@ type HttpServerConfig struct {
 	Address string        `yaml:"address" env-required:"true" env-default:"localhost"`
 	Port    string        `yaml:"port" env-required:"true" env-default:"8080"`
 	Timeout time.Duration `yaml:"timeout" env-default:"5"`
+	Secret  string        `yaml:"secret" env-required:"true" env-default:"secret"`
 }
 
 type DBConfig struct {
-	Host     string `yaml:"host" env:"DBHOST" env-default:"localhost"`
-	Port     string `yaml:"port" env:"DBPORT" env-default:"5432"`
-	Name     string `yaml:"name" env:"DBNAME" env-default:"postgres"`
-	User     string `yaml:"user" env:"DBUSER" env-default:"user"`
-	Password string `yaml:"password" env:"DBPASSWORD" env-default:"password"`
+	Host     string `yaml:"host" env:"DB_HOST" env-default:"localhost"`
+	Port     string `yaml:"port" env:"DB_PORT" env-default:"5432"`
+	Name     string `yaml:"name" env:"DB_NAME" env-default:"postgres"`
+	User     string `yaml:"user" env:"DB_USER" env-default:"user"`
+	Password string `yaml:"password" env:"DB_PASSWORD" env-default:"password"`
 }
 
 func MustLoad() *Config {
 	configPath := fetchConfigPath()
 	if configPath == "" {
 		log.Println("config path is empty. Load default path: \"config/config.yml\"")
+		configPath = "config/config.yml"
 	}
-	configPath = "config/config.yml"
+
 	return MustLoadPath(configPath)
 }
 
@@ -75,6 +77,6 @@ func fetchConfigPath() string {
 		return res
 	}
 	res = os.Getenv("CONFIG_PATH")
-	slog.Info("load config path from env CONFIG_PATH", "path", res)
+	slog.Info("load config path from env ", "CONFIG_PATH", res)
 	return res
 }

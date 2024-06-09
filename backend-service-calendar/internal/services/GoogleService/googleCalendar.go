@@ -30,14 +30,14 @@ func NewGoogleCalendar(log *slog.Logger) *GoogleCalendar {
 	op := "NewGoogleCalendar"
 	log.With(
 		slog.String("op", op))
-
-	b := getClientSecret("credentials/client_secret.json")
+	credPath := os.Getenv("GOOGLE_CRED_PATH")
+	b := getClientSecret(credPath)
 
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b, calendar.CalendarScope)
 	if err != nil {
 		log.Error("Unable to parse client secret file to config", sl.Err(err))
-		panic("Unable to parse google client secret file to config")
+		log.Error("Unable to parse google client secret file to config")
 	}
 
 	client := getClient(config)
@@ -103,7 +103,7 @@ func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tokFile := "credentials/token.json"
+	tokFile := os.Getenv("GOOGLE_TOKEN_PATH")
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		tok = getTokenFromWeb(config)
@@ -119,9 +119,10 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 		"authorization code: \n%v\n", authURL)
 
 	var authCode string
-	if _, err := fmt.Scan(&authCode); err != nil {
-		log.Fatal().Msgf("Unable to read authorization code: %v", err)
-	}
+	//if _, err := fmt.Scan(&authCode); err != nil {
+	//	log.Fatal().Msgf("Unable to read authorization code: %v", err)
+	//}
+	authCode = os.Getenv("GOOGLE_CODE")
 
 	tok, err := config.Exchange(context.TODO(), authCode)
 	if err != nil {

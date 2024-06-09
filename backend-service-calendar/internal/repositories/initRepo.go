@@ -18,7 +18,7 @@ type Repository struct {
 
 func NewCalendarRepository(log *slog.Logger, cfg *config.Config) *Repository {
 	op := "repositories.NewCalendarRepository()"
-	log.With(
+	logInternal := log.With(
 		slog.String("op", op))
 
 	username := cfg.DBConfig.User
@@ -33,20 +33,21 @@ func NewCalendarRepository(log *slog.Logger, cfg *config.Config) *Repository {
 	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		log.Error("error connecting to database", sl.Err(err))
+		logInternal.Error("error connecting to database", sl.Err(err))
 		panic("error connecting to database")
 	}
-	log.Debug("gorm have connected to database")
+	logInternal.Debug("gorm have connected to database")
 
-	err = conn.Debug().AutoMigrate(&domain.User{}, &domain.Calendar{}, &domain.CalendarEvent{}, &domain.GoogleAuthToken{}) //Миграция базы данных
+	err = conn.Debug().AutoMigrate(&domain.CalendarUser{}, &domain.Calendar{}, &domain.CalendarEvent{}, &domain.GoogleAuthToken{}) //Миграция базы данных
 	if err != nil {
-		log.Error("error database auto migrate", sl.Err(err))
+		logInternal.Error("error database auto migrate", sl.Err(err))
 		panic("error database auto migrate")
 	}
-	log.Debug("success auto migrate")
+	logInternal.Debug("success auto migrate")
 
 	return &Repository{
-		DB: conn,
+		DB:  conn,
+		log: log,
 	}
 }
 
@@ -55,7 +56,7 @@ func (r *Repository) Shutdown(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("Force exit %s: %w", op, ctx.Err())
+			return fmt.Errorf("force exit %s: %w", op, ctx.Err())
 		default:
 			conn, _ := r.DB.DB()
 			err := conn.Close()

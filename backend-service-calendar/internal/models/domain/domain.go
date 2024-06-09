@@ -5,16 +5,38 @@ import (
 	"time"
 )
 
+type StatusType string
+
+const (
+	InProcess StatusType = "In process"
+	Created   StatusType = "Created"
+	Done      StatusType = "Done"
+)
+
+func (st StatusType) String() string {
+	switch st {
+	case InProcess:
+
+		return "In process"
+	case Created:
+		return "Created"
+	case Done:
+		return "Done"
+	default:
+		return "Unknown"
+	}
+}
+
 type BaseModel struct {
 	ID        uuid.UUID `gorm:"type:uuid;primary_key"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
-type User struct {
+type CalendarUser struct {
 	BaseModel
 	FirstName  string
 	SecondName string
-	Email      string `gorm:"index"`
+	Email      string `gorm:"index;column:email"`
 }
 
 type Calendar struct {
@@ -25,6 +47,7 @@ type Calendar struct {
 	Etag             string
 	Summary          string
 	TimeZone         string
+	Status           StatusType
 }
 
 type CalendarEvent struct {

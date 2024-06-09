@@ -6,8 +6,8 @@ import (
 	"regexp"
 )
 
-func Message(status bool, message interface{}) map[string]interface{} {
-	if status {
+func Message(statusOK bool, message interface{}) map[string]interface{} {
+	if statusOK {
 		return map[string]interface{}{"status": "OK", "message": message}
 	}
 	return map[string]interface{}{"status": "error", "message": message}

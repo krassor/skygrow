@@ -3,9 +3,10 @@ http_server:
   address: "localhost"
   port: "8080"
   timeout: 5s
+  secret: "skygrowSecretKey"
 db:
   host: "localhost"
   port: "5432"
   name: "postgres"
-  user: "user"
+  user: "postgres"
   password: "password"

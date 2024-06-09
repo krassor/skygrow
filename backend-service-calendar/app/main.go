@@ -30,15 +30,15 @@ func main() {
 	log.Info(
 		"starting backend-service-calendar",
 		slog.String("env", cfg.Env),
-		slog.String("version", "0.1"),
+		slog.String("version", "0.2"),
 	)
 	log.Debug("debug messages are enabled")
 
 	googleCalendar := GoogleService.NewGoogleCalendar(log)
 	calendarRepository := repositories.NewCalendarRepository(log, cfg)
-	calendarService := calendar.NewCalendarService(calendarRepository, googleCalendar)
+	calendarService := calendar.NewCalendarService(log, calendarRepository, googleCalendar)
 	calendarHandler := handlers.NewCalendarHandler(log, calendarService)
-	router := routers.NewRouter(calendarHandler)
+	router := routers.NewRouter(calendarHandler, cfg.HttpServer.Secret)
 	httpServer := myHttpServer.NewHttpServer(log, router, cfg)
 
 	maxSecond := 15 * time.Second
