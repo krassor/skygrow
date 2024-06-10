@@ -2,7 +2,9 @@ services:
   app-tg-gpt-bot:
     hostname: app-tg-gpt-bot
     container_name: app-tg-gpt-bot
-    build: ./tg-gpt-bot
+    build:
+      context: tg-gpt-bot
+      dockerfile: Dockerfile
     ports:
       - 8080:8080
     volumes:
@@ -10,13 +12,13 @@ services:
     networks:
       - back-tier
       
-  app-serverhttp:
-    hostname: app-backend-serverhttp
+  app-auth-service:
+    hostname: app-auth-service
     depends_on:
       - skygrow-pg
-    container_name: app-backend-serverhttp
+    container_name: app-auth-service
     build:
-      context: backend-serverHttp
+      context: backend-service-auth
       dockerfile: Dockerfile
     ports:
         - 8011:8011
@@ -28,7 +30,6 @@ services:
       - DB_PORT=5432
       - HTTP_PORT=8011
       - HTTP_HOST_LISTEN=0.0.0.0
-      - TGBOT_APITOKEN=6453631610:AAHRFClOyCuJ8-9PHpfoWvIC-0QXIysy9ks
     networks:
       - back-tier
 
