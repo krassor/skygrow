@@ -4,10 +4,10 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -o bin/app-serverHttp app/main.go
+RUN go build -o bin/app-auth-service app/main.go
 # Финальный этап, копируем собранное приложение
 FROM alpine:latest
-COPY --from=builder /build/bin/app-serverHttp /bin/app-serverHttp
+COPY --from=builder /build/bin/app-auth-service /bin/app-auth-service
 # ENV DB_NAME=skygrowdb
 # ENV DB_PASSWORD=copro123@
 # ENV DB_USER=krassor
@@ -18,4 +18,4 @@ COPY --from=builder /build/bin/app-serverHttp /bin/app-serverHttp
 # ENV TGBOT_APITOKEN=5817824261:AAEoDtCT--VWk8ESKNTBftndBnQ6MgdtJxg
 # ENV HTTP_PORT_EXPOSE=8011
 # EXPOSE $HTTP_PORT_EXPOSE
-ENTRYPOINT ["/bin/app-serverHttp"]
+ENTRYPOINT ["/bin/app-auth-service"]
