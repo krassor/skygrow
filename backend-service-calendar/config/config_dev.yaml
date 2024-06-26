@@ -1,5 +1,5 @@
 env: "dev"
-http_server:
+httpServer:
   address: "0.0.0.0"
   port: "8080"
   timeout: 5s
@@ -10,3 +10,6 @@ db:
   name: "skygrowdb"
   user: "krassor"
   password: "copro123@"
+googleAuthConfig:
+  credPath: "/etc/backend-service-calendar/credentials/client_secret.json"
+  tokenPath: "/etc/backend-service-calendar/credentials/token.json"

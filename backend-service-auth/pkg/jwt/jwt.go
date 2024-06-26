@@ -32,7 +32,7 @@ func NewToken(user domain.User, duration time.Duration, role string, secret stri
 		Email:      user.Email,
 		FirstName:  user.FirstName,
 		SecondName: user.SecondName,
-		Role:       "",
+		Role:       role,
 	}
 	claims := token.Claims.(jwt.MapClaims)
 

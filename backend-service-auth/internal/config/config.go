@@ -3,7 +3,6 @@ package config
 import (
 	"flag"
 	"log"
-	"log/slog"
 	"os"
 	"time"
 
@@ -12,16 +11,11 @@ import (
 
 type Config struct {
 	Env        string           `yaml:"env" env-default:"local"`
-	HttpServer HttpServerConfig `yaml:"http_server" env-required:"true"`
+	HttpServer HttpServerConfig `yaml:"httpServer" env-required:"true"`
 	DBConfig   DBConfig         `yaml:"db" env-required:"true"`
 	//MigrationsPath string
 	//TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
 }
-
-//type GRPCConfig struct {
-//	Port    int           `yaml:"port"`
-//	Timeout time.Duration `yaml:"timeout"`
-//}
 
 type HttpServerConfig struct {
 	Address string        `yaml:"address" env-required:"true" env-default:"localhost"`
@@ -73,10 +67,10 @@ func fetchConfigPath() string {
 	flag.Parse()
 
 	if res != "" {
-		slog.Info("load config path from command line.", "path", res)
+		log.Println("load config path from command line.", "path", res)
 		return res
 	}
 	res = os.Getenv("CONFIG_PATH")
-	slog.Info("load config path from env ", "CONFIG_PATH", res)
+	log.Println("load config path from env ", "CONFIG_PATH", res)
 	return res
 }

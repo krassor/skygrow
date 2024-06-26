@@ -39,7 +39,7 @@ func (h *HttpServer) Listen(cfg *config.Config) {
 
 	err := h.httpServer.ListenAndServe()
 
-	if err != nil && errors.Is(err, http.ErrServerClosed) {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Warn().Msgf("httpServer.ListenAndServe() Error: %s", err)
 	}
 

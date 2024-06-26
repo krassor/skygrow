@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/krassor/skygrow/backend-service-calendar/internal/config"
 	"github.com/krassor/skygrow/backend-service-calendar/internal/utils/logger/sl"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
@@ -23,24 +24,24 @@ var (
 type GoogleCalendar struct {
 	googleService *calendar.Service
 	googleClient  *http.Client
+	cfg           *config.Config
 	log           *slog.Logger
 }
 
-func NewGoogleCalendar(log *slog.Logger) *GoogleCalendar {
+func NewGoogleCalendar(log *slog.Logger, cfg *config.Config) *GoogleCalendar {
 	op := "NewGoogleCalendar"
 	log.With(
 		slog.String("op", op))
-	credPath := os.Getenv("GOOGLE_CRED_PATH")
-	b := getClientSecret(credPath)
+	b := getClientSecret(cfg.GoogleAuthConfig.CredPath)
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, calendar.CalendarScope)
+	googleConfig, err := google.ConfigFromJSON(b, calendar.CalendarScope)
 	if err != nil {
 		log.Error("Unable to parse client secret file to config", sl.Err(err))
 		log.Error("Unable to parse google client secret file to config")
 	}
 
-	client := getClient(config)
+	client := getClient(googleConfig, cfg.GoogleAuthConfig.TokenPath)
 
 	srv, err := calendar.NewService(context.TODO(), option.WithHTTPClient(client))
 	if err != nil {
@@ -51,13 +52,16 @@ func NewGoogleCalendar(log *slog.Logger) *GoogleCalendar {
 		googleService: srv,
 		googleClient:  client,
 		log:           log,
+		cfg:           cfg,
 	}
 
 }
 
 // CreateCalendar return Google calendar ID. Return non nil error if function cannot create calendar with Google API
-func (gc *GoogleCalendar) CreateCalendar( //TODO change logger
-	description string, summary string, timezone string) (string, error) {
+func (gc *GoogleCalendar) CreateCalendar(
+	description string,
+	summary string,
+	timezone string) (string, error) {
 	op := "GoogleService.CreateCalendar()"
 	if summary == "" {
 		return "", fmt.Errorf("%s : %w", op, ErrorEmptyCalendarField)
@@ -99,11 +103,11 @@ func getClientSecret(filepath string) []byte {
 	return b
 }
 
-func getClient(config *oauth2.Config) *http.Client {
+func getClient(config *oauth2.Config, tokenPath string) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tokFile := os.Getenv("GOOGLE_TOKEN_PATH")
+	tokFile := tokenPath
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		tok = getTokenFromWeb(config)
@@ -132,8 +136,8 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 }
 
 // Retrieves a token from a local file.
-func tokenFromFile(file string) (*oauth2.Token, error) {
-	f, err := os.Open(file)
+func tokenFromFile(filePath string) (*oauth2.Token, error) {
+	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -144,9 +148,9 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 }
 
 // Saves a token to a file path.
-func saveToken(path string, token *oauth2.Token) {
-	fmt.Printf("Saving credential file to: %s\n", path)
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+func saveToken(tokenPath string, token *oauth2.Token) {
+	fmt.Printf("Saving credential file to: %s\n", tokenPath)
+	f, err := os.OpenFile(tokenPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		log.Fatal().Msgf("Unable to cache oauth token: %v", err)
 	}

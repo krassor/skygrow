@@ -15,6 +15,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	ErrCannotDecodeJSONBody = errors.New("cannot decode body")
+	ErrEmptyJSONBodyField   = errors.New("empty body field")
+)
+
 type UserHandler struct {
 	userService *userServices.UserService
 }
@@ -27,16 +32,27 @@ func NewUserHandler(userService *userServices.UserService) *UserHandler {
 
 func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	requestUserSignUpDto := dto.RequestUserSignUpDto{}
-
 	err := json.NewDecoder(r.Body).Decode(&requestUserSignUpDto)
 	if err != nil {
 		log.Error().Msgf("Error decode json in SignUp() handler: %s", err)
+		httpErr := utils.Err(w, http.StatusInternalServerError, ErrCannotDecodeJSONBody)
+		if httpErr != nil {
+			log.Error().Msgf("Cannot sending error message to http client from SignUp(): %s", httpErr)
+		}
+		return
+	}
+
+	err = validateEmptyFieldRequestUserSignUpDto(&requestUserSignUpDto)
+	if err != nil {
+		log.Error().Msgf("Error empty body field in SignUp() handler: %s", err)
 		httpErr := utils.Err(w, http.StatusInternalServerError, err)
 		if httpErr != nil {
 			log.Error().Msgf("Cannot sending error message to http client from SignUp(): %s", httpErr)
 		}
 		return
 	}
+
+	//TODO: timeout from config
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err = h.userService.SignUp(ctx, requestUserSignUpDto)
@@ -50,16 +66,6 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-
-		if errors.Is(err, userServices.ErrEmptyPassword) {
-			log.Error().Msgf("Error creating user: %v: %s", requestUserSignUpDto, err)
-			httpErr := utils.Err(w, http.StatusBadRequest, err)
-			if httpErr != nil {
-				log.Error().Msgf("Cannot sending error message to http client: %s", httpErr)
-			}
-			return
-		}
-
 		if errors.Is(err, userServices.ErrUserAlreadyExist) {
 			log.Error().Msgf("Error creating user: %v: %s", requestUserSignUpDto, err)
 			httpErr := utils.Err(w, http.StatusBadRequest, err)
@@ -84,6 +90,23 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		log.Error().Msgf("Cannot encode response to json: %s", err)
 	}
 
+}
+
+func validateEmptyFieldRequestUserSignUpDto(d *dto.RequestUserSignUpDto) error {
+	if d.Email == "" {
+		return fmt.Errorf("%w: email", ErrEmptyJSONBodyField)
+	}
+	if d.Password == "" {
+		return fmt.Errorf("%w: password", ErrEmptyJSONBodyField)
+	}
+	if d.FirstName == "" {
+		return fmt.Errorf("%w: firstName", ErrEmptyJSONBodyField)
+	}
+	if d.SecondName == "" {
+		return fmt.Errorf("%w: secondName", ErrEmptyJSONBodyField)
+	}
+
+	return nil
 }
 
 func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {

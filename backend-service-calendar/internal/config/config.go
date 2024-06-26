@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	Env        string           `yaml:"env" env-default:"local"`
-	HttpServer HttpServerConfig `yaml:"http_server" env-required:"true"`
-	DBConfig   DBConfig         `yaml:"db" env-required:"true"`
+	Env              string           `yaml:"env" env-default:"local"`
+	HttpServer       HttpServerConfig `yaml:"httpServer" env-required:"true"`
+	DBConfig         DBConfig         `yaml:"db" env-required:"true"`
+	GoogleAuthConfig GoogleAuthConfig `yaml:"googleAuthConfig" env-required:"true"`
 }
 
 type HttpServerConfig struct {
@@ -29,6 +30,11 @@ type DBConfig struct {
 	Name     string `yaml:"name" env:"DB_NAME" env-default:"postgres"`
 	User     string `yaml:"user" env:"DB_USER" env-default:"user"`
 	Password string `yaml:"password" env:"DB_PASSWORD" env-default:"password"`
+}
+
+type GoogleAuthConfig struct {
+	CredPath  string `yaml:"credPath" env:"GOOGLE_CRED_PATH" env-default:"/etc/backend-service-calendar/credentials/client_secret.json"`
+	TokenPath string `yaml:"tokenPath" env:"GOOGLE_TOKEN_PATH" env-default:"/etc/backend-service-calendar/credentials/token.json"`
 }
 
 func MustLoad() *Config {

@@ -13,8 +13,8 @@ type ResponseUserSignUpDto struct {
 }
 
 type RequestUserSignInDto struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" validation:"nonempty"`
+	Password string `json:"password" validation:"nonempty"`
 }
 
 type ResponseUserSignInDto struct {

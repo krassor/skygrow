@@ -1,5 +1,5 @@
-env: "local"
-http_server:
+env: "prod"
+httpServer:
   address: "localhost"
   port: "8080"
   timeout: 5s

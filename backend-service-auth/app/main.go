@@ -28,7 +28,7 @@ func main() {
 	log := setupLogger(cfg.Env)
 
 	log.Info(
-		"starting backend-service-calendar",
+		"starting backend-service-auth",
 		slog.String("env", cfg.Env),
 		slog.String("version", "0.2"),
 	)
