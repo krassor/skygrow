@@ -30,7 +30,7 @@ func main() {
 	log.Info(
 		"starting backend-service-auth",
 		slog.String("env", cfg.Env),
-		slog.String("version", "0.2"),
+		slog.String("version", "0.3"),
 	)
 	log.Debug("debug messages are enabled")
 
