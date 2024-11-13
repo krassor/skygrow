@@ -5,11 +5,34 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # JOB to run change detection
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      backend-service-auth: ${{ steps.filter.outputs.backend-service-auth }}
+      tg-gpt-bot: ${{ steps.filter.outputs.tg-gpt-bot }}
+    steps:
+      # For pull requests it's not necessary to checkout the code
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend-service-auth:
+              - 'backend-service-auth/**'
+            tg-gpt-bot:
+              - 'tg-gpt-bot/**'
 
-  push_to_registry:
+  backend-service-auth:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend-service-auth == 'true' }}
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
+
       - name: Check out the repo
         uses: actions/checkout@v4
       
@@ -45,8 +68,8 @@ jobs:
  #       uses: appleboy/ssh-action@master
  #       with:
  #         host: ${{ secrets.SERVER_HOST }}
-          port: ${{ secrets.SERVER_PORT }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          script_stop: true
-          script: bash deploy.sh
+ #         port: ${{ secrets.SERVER_PORT }}
+ #         username: ${{ secrets.USERNAME }}
+ #         password: ${{ secrets.PASSWORD }}
+ #         script_stop: true
+ #         script: bash deploy.sh
