@@ -19,9 +19,11 @@ jobs:
       tg-gpt-bot: ${{ steps.filter.outputs.tg-gpt-bot }}
     steps:
       # For pull requests it's not necessary to checkout the code
-      - uses: dorny/paths-filter@v3
+      - name: path filter
+        uses: dorny/paths-filter@v3
         id: filter
         with:
+          token: ${{ secrets.GH_TOKEN }}
           filters: |
             backend-service-auth:
               - 'backend-service-auth/**'
