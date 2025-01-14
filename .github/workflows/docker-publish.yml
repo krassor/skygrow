@@ -36,9 +36,9 @@ jobs:
     steps:
 
       - name: Check out the repo
-        uses: actions/checkout@a81bbbf8298c0fa03ea29cdc473d45769f953675
-        with:
-          token: ${{ secrets.GH_TOKEN }}
+        uses: actions/checkout@v4
+        #with:
+          #token: ${{ secrets.GH_TOKEN }}
           #token: ${{ github.token }}
       
       - name: Log in to Docker Hub
