@@ -2,7 +2,7 @@ env: "prod"
 httpServer:
   address: "localhost"
   port: "8080"
-  timeout: 5s
+  timeout: 6s
   secret: "skygrowSecretKey"
 db:
   host: "localhost"
