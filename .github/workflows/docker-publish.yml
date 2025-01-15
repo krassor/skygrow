@@ -18,31 +18,26 @@ jobs:
       backend-service-auth: ${{ steps.filter.outputs.backend-service-auth }}
       tg-gpt-bot: ${{ steps.filter.outputs.tg-gpt-bot }}
     steps:
-      # For pull requests it's not necessary to checkout the code
-      - name: path filter
-        uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          filters: |
-            backend-service-auth:
+    - uses: actions/checkout@v4
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          backend-service-auth:
               - 'backend-service-auth/**'
             tg-gpt-bot:
               - 'tg-gpt-bot/**'
 
   backend-service-auth:
     needs: changes
-    if: ${{ needs.changes.outputs.backend-service-auth == 'true' }}
     name: Push Docker image to Docker Hub
+    if: ${{ needs.changes.outputs.backend-service-auth == 'true' }}
     runs-on: ubuntu-latest
     steps:
 
       - name: Check out the repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          #token: ${{ github.token }}
-      
+
       - name: Log in to Docker Hub
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
         with:
