@@ -11,7 +11,7 @@ import (
 
 	"github.com/krassor/skygrow/backend-service-auth/internal/models/dto"
 	"github.com/krassor/skygrow/backend-service-auth/internal/services/userServices"
-	"github.com/krassor/skygrow/backend-service-auth/utils/utils"
+	"github.com/krassor/skygrow/backend-service-auth/utils"
 	"github.com/rs/zerolog/log"
 )
 
