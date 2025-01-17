@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
@@ -15,8 +16,11 @@ import (
 	"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer/routers"
 )
 
+var Version = "dev"
+
 func main() {
 	//123
+	fmt.Printf("Version: %s\n", Version)
 
 	logger.InitLogger()
 
