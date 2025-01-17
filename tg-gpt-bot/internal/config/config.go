@@ -83,14 +83,14 @@ func InitConfig() *AppConfig {
 func (config *AppConfig) WriteOpenAIConfig(openAIConfig *OpenAIConfig) error {
 	botConfig, err := config.ReadBotConfig()
 	if err != nil {
-		return fmt.Errorf("Error WriteOpenAIConfig() read botConfig: %w", err)
+		return fmt.Errorf("error WriteOpenAIConfig() read botConfig: %w", err)
 	}
 
 	botConfig.OpenAI = *openAIConfig
 
 	bufWrite, err := yaml.Marshal(botConfig)
 	if err != nil {
-		return fmt.Errorf("Error WriteOpenAIConfig() marshall: %w", err)
+		return fmt.Errorf("error WriteOpenAIConfig() marshall: %w", err)
 	}
 
 	config.mutex.Lock()
@@ -98,7 +98,7 @@ func (config *AppConfig) WriteOpenAIConfig(openAIConfig *OpenAIConfig) error {
 
 	err = os.WriteFile(config.ConfigFilepath, bufWrite, 0775)
 	if err != nil {
-		return fmt.Errorf("Error WriteOpenAIConfig() write file: %w", err)
+		return fmt.Errorf("error WriteOpenAIConfig() write file: %w", err)
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func (config *AppConfig) ReadOpenAIConfig() (OpenAIConfig, error) {
 func (config *AppConfig) WriteBotConfig(botConfig *BotConfig) error {
 	bufWrite, err := yaml.Marshal(botConfig)
 	if err != nil {
-		return fmt.Errorf("Error WriteBotConfig() marshall: %w", err)
+		return fmt.Errorf("error WriteBotConfig() marshall: %w", err)
 	}
 
 	config.mutex.Lock()
@@ -134,7 +134,7 @@ func (config *AppConfig) WriteBotConfig(botConfig *BotConfig) error {
 
 	err = os.WriteFile(config.ConfigFilepath, bufWrite, 0775)
 	if err != nil {
-		return fmt.Errorf("Error WriteBotConfig() write file: %w", err)
+		return fmt.Errorf("error WriteBotConfig() write file: %w", err)
 	}
 	return nil
 }

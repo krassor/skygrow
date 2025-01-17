@@ -34,7 +34,7 @@ func main() {
 	)
 	log.Debug("debug messages are enabled")
 
-	googleCalendar := GoogleService.NewGoogleCalendar(log)
+	googleCalendar := GoogleService.NewGoogleCalendar(log, cfg)
 	calendarRepository := repositories.NewCalendarRepository(log, cfg)
 	calendarService := calendar.NewCalendarService(log, calendarRepository, googleCalendar)
 	calendarHandler := handlers.NewCalendarHandler(log, calendarService)

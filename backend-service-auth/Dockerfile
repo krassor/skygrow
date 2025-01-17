@@ -4,7 +4,7 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -o bin/app-auth-service app/main.go
+RUN go build -ldflags "-X main.Version=0.3.0" -o bin/app-auth-service app/main.go
 # Финальный этап, копируем собранное приложение
 FROM alpine:latest
 COPY --from=builder /build/bin/app-auth-service /bin/app-auth-service

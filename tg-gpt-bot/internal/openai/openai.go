@@ -14,7 +14,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-type OpenAIMsgBroker interface {
+type MsgBroker interface {
 	Publish(ctx context.Context, channel string, msg dto.OpenaiMsg) error
 	Subscribe(ctx context.Context, channels ...string) <-chan dto.OpenaiMsg
 }
@@ -23,7 +23,7 @@ type GPTBot struct {
 	openAIClient    *openai.Client
 	repo            repository.MessageRepository
 	botConfig       *config.AppConfig
-	broker          OpenAIMsgBroker
+	broker          MsgBroker
 	shutdownChannel chan struct{}
 	ctx             context.Context
 	cancel          context.CancelFunc
@@ -34,7 +34,7 @@ const (
 	brokerChannelPub string = "openai.response"
 )
 
-func NewGPTBot(botConfig *config.AppConfig, repo repository.MessageRepository, broker OpenAIMsgBroker) *GPTBot {
+func NewGPTBot(botConfig *config.AppConfig, repo repository.MessageRepository, broker MsgBroker) *GPTBot {
 	openAiToken, ok := os.LookupEnv("OPENAI_TOKEN")
 	if !ok {
 		log.Error().Msgf("Cannot find openai token env")
@@ -109,9 +109,9 @@ func (GPTBot *GPTBot) CreateChatCompletion(ctx context.Context, openaiMsg dto.Op
 		return
 	}
 
-	//response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPromt tokens usage%v\nTotal tokens usage: %v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
+	//response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPrompt tokens usage%v\nTotal tokens usage: %v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
 
-	//Save response from openai GPT bot as an assistent response
+	//Save response from openai GPT bot as an assistant response
 	msg = openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleAssistant,
 		Content: resp.Choices[0].Message.Content,
@@ -143,18 +143,22 @@ func (GPTBot *GPTBot) CreateChatCompletion(ctx context.Context, openaiMsg dto.Op
 			log.Error().Msgf("%s: %v", op, err)
 			return
 		}
-		//log.Printf("Deleted first promt: %v", del)
+		//log.Printf("Deleted first prompt: %v", del)
 	}
 
 	observeTotalTokensUsage(resp.Usage.TotalTokens, openaiMsg.UserId)
 
-	GPTBot.broker.Publish(ctx, brokerChannelPub, dto.OpenaiMsg{
+	err = GPTBot.broker.Publish(ctx, brokerChannelPub, dto.OpenaiMsg{
 		Source: openaiMsg.Source,
 		ChatId: openaiMsg.ChatId,
 		UserId: openaiMsg.UserId,
-		MsgId: openaiMsg.MsgId,
+		MsgId:  openaiMsg.MsgId,
 		Msg:    resp.Choices[0].Message.Content,
 	})
+	if err != nil {
+		log.Error().Msgf("%s: %v", op, err)
+		return
+	}
 }
 
 func (GPTBot *GPTBot) Start() {

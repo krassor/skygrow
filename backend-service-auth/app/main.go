@@ -22,6 +22,8 @@ const (
 	envProd  = "prod"
 )
 
+var Version = "dev"
+
 func main() {
 	cfg := config.MustLoad()
 
@@ -30,7 +32,7 @@ func main() {
 	log.Info(
 		"starting backend-service-auth",
 		slog.String("env", cfg.Env),
-		slog.String("version", "0.3"),
+		slog.String("version", Version),
 	)
 	log.Debug("debug messages are enabled")
 

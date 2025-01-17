@@ -7,8 +7,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
 )
+
 func (bot *Bot) defaultHandler(msg *tgbotapi.Message) {
-	op:="bot.defaultHandler"
+	op := "bot.defaultHandler"
 	log.Info().Msgf("%s. Message from: %s", op, msg.From.UserName)
 
 	bot.sendMessageToOpenaiTopic(bot.ctx, msg)
@@ -158,4 +159,3 @@ func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
 // 		return
 // 	}
 // }
-
