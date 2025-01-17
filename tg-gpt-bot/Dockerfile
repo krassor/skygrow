@@ -4,7 +4,7 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -ldflags "-X main.Version=0.3.0" -o bin/app-tg-gpt-bot app/main.go
+RUN VERSION=$(git describe --tags --abbrev=0) go build -ldflags "-X main.Version=${VERSION}" -o bin/app-tg-gpt-bot app/main.go
 # Финальный этап, копируем собранное приложение
 FROM alpine:latest
 COPY --from=builder /build/bin/app-tg-gpt-bot  /bin/app-tg-gpt-bot 
