@@ -3,6 +3,8 @@ name: Publish to server
 on:
   push:
     branches: [ "main" ]
+    tags:
+      - 'v*'  # Запускается при пуше тегов, начинающихся с 'v'
 
 jobs:
   # JOB to run change detection
