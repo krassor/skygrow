@@ -1,10 +1,10 @@
 # Этап, на котором выполняется сборка приложения
-FROM golang:1.21-alpine as builder
+FROM golang:1.23-alpine as builder
 WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -ldflags "-X main.Version=0.3.0" -o bin/app-auth-service app/main.go
+RUN go build -o bin/app-auth-service app/main.go
 # Финальный этап, копируем собранное приложение
 FROM alpine:latest
 COPY --from=builder /build/bin/app-auth-service /bin/app-auth-service
