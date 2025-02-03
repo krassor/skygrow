@@ -7,9 +7,9 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/repository"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/config"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/dto"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/repository"
 
 	openai "github.com/sashabaranov/go-openai"
 )

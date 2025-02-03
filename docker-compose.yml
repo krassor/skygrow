@@ -106,20 +106,20 @@ services:
   #     - back-tier
 
 
-  prometheus:
-    image: prom/prometheus
-    hostname: prometheus
-    container_name: prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    # ports:
-    #   - 9090:9090
-    restart: unless-stopped
-    volumes:
-      - ./prometheus:/etc/prometheus
-      - prom_data:/prometheus
-    networks:
-      - back-tier
+  # prometheus:
+  #   image: prom/prometheus
+  #   hostname: prometheus
+  #   container_name: prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #   # ports:
+  #   #   - 9090:9090
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./prometheus:/etc/prometheus
+  #     - prom_data:/prometheus
+  #   networks:
+  #     - back-tier
 
 volumes:
   prom_data: 

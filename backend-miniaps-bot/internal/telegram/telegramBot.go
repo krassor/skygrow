@@ -10,8 +10,8 @@ import (
 	"unicode/utf16"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/config"
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/config"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/dto"
 	"github.com/rs/zerolog/log"
 )
 

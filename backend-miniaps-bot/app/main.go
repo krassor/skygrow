@@ -19,7 +19,7 @@ import (
 var Version = "dev"
 
 func main() {
-	//123
+	//1233
 	fmt.Printf("Version: %s\n", Version)
 
 	logger.InitLogger()

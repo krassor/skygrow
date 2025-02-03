@@ -6,7 +6,7 @@ import (
 
 	"encoding/json"
 
-	"github.com/krassor/skygrow/tg-gpt-bot/internal/dto"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/dto"
 	"github.com/rs/zerolog/log"
 )
 

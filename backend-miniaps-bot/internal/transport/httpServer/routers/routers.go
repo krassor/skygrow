@@ -6,13 +6,12 @@ import (
 
 	//"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer/handlers"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	//"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type BotRouter struct {
 	//openAiHandler handlers.openAiHandler
 }
-
 func NewBotRouter( /*deviceHandler handlers.DeviceHandlers*/ ) *BotRouter {
 	return &BotRouter{
 		//DeviceHandler: deviceHandler,
@@ -24,9 +23,9 @@ func (br *BotRouter) Router(r *chi.Mux) {
 	r.Use(middleware.Heartbeat("/ping"))
 
 	//Public
-	r.Group(func(r chi.Router) {
-		r.Handle("/metrics", promhttp.Handler())
-	})
+	// r.Group(func(r chi.Router) {
+	// 	r.Handle("/metrics", promhttp.Handler())
+	// })
 
 	// r.Route("/api", func(r chi.Router) {
 	// 	//Private
