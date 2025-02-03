@@ -1,19 +1,19 @@
 package main
 
 import (
-	// "context"
-	// "fmt"
-	// "time"
+	"context"
+	"fmt"
+	"time"
 
-	// "github.com/krassor/skygrow/backend-miniaps-bot/internal/config"
-	// "github.com/krassor/skygrow/backend-miniaps-bot/internal/graceful"
-	// "github.com/krassor/skygrow/backend-miniaps-bot/internal/logger"
-	// "github.com/krassor/skygrow/backend-miniaps-bot/internal/openai"
-	// "github.com/krassor/skygrow/backend-miniaps-bot/internal/repository"
-	// telegramBot "github.com/krassor/skygrow/backend-miniaps-bot/internal/telegram"
-	// "github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/broker/redisBroker"
-	// "github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/httpServer"
-	// "github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/httpServer/routers"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/config"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/graceful"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/logger"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/openai"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/repository"
+	telegramBot "github.com/krassor/skygrow/backend-miniaps-bot/internal/telegram"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/broker/redisBroker"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/httpServer"
+	"github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/httpServer/routers"
 )
 
 var Version = "dev"
