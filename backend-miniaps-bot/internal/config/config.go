@@ -1,162 +1,108 @@
 package config
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"os"
-	"sync"
+	"time"
 
-	"github.com/rs/zerolog/log"
+	"github.com/ilyakaznacheev/cleanenv"
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	defaultAdmin           string  = "KrAssor"
-	defaultMaxTokens       int     = 512
-	defaultTemperature     float32 = 0.5
-	defaultN               int     = 1
-	defaultSystemRolePromt string  = ""
-)
+type Config struct {
+	Env        string           `yaml:"env" env-default:"local"`
+	HttpServer HttpServerConfig `yaml:"httpServer" env-required:"true"`
+	DBConfig   DBConfig         `yaml:"db" env-required:"true"`
+	BotConfig  BotConfig        `yaml:"bot" env-required:"true"`
+	configPath string
+	//MigrationsPath string
+	//TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
+}
 
-type OpenAIConfig struct {
-	SystemRolePromt string  `yaml:"systemRolePromt"`
-	MaxTokens       int     `yaml:"maxTokens"`
-	Temperature     float32 `yaml:"temperature"`
-	N               int     `yaml:"n"`
+type HttpServerConfig struct {
+	Address string        `yaml:"address" env-required:"true" env-default:"localhost"`
+	Port    string        `yaml:"port" env-required:"true" env-default:"8080"`
+	Timeout time.Duration `yaml:"timeout" env-default:"5"`
+	Secret  string        `yaml:"secret" env-required:"true" env-default:"secret"`
+}
+
+type DBConfig struct {
+	Host     string `yaml:"host" env:"DB_HOST" env-default:"localhost"`
+	Port     string `yaml:"port" env:"DB_PORT" env-default:"5432"`
+	Name     string `yaml:"name" env:"DB_NAME" env-default:"postgres"`
+	User     string `yaml:"user" env:"DB_USER" env-default:"user"`
+	Password string `yaml:"password" env:"DB_PASSWORD" env-default:"password"`
+}
+
+type AIConfig struct {
+	AIApiToken      string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
+	SystemRolePromt string  `yaml:"systemRolePromt" env-default:""`
+	MaxTokens       int     `yaml:"maxTokens" env-default:"4096"`
+	Temperature     float32 `yaml:"temperature" env-default:"0.5"`
+	N               int     `yaml:"n" env-default:"1"`
 }
 
 type BotConfig struct {
-	Admins []string     `yaml:"admins"`
-	OpenAI OpenAIConfig `yaml:"openAI"`
+	Admins        []string `yaml:"admins" env-default:"KrAssor"`
+	TgbotApiToken string   `yaml:"tgbot_apitoken" env:"TGBOT_APITOKEN" env-required:"true"`
+	AI            AIConfig `yaml:"AI"`
 }
 
-type AppConfig struct {
-	ConfigFilepath string
-	mutex          sync.RWMutex
+func MustLoad() *Config {
+	configPath := fetchConfigPath()
+	if configPath == "" {
+		log.Println("config path is empty. Load default path: \"config/config.yml\"")
+		configPath = "config/config.yml"
+	}
+
+	return MustLoadPath(configPath)
 }
 
-func InitConfig() *AppConfig {
-	configFilepath, ok := os.LookupEnv("CONFIG_FILEPATH")
-	if !ok {
-		log.Warn().Msgf("Cannot find CONFIG_FILEPATH env")
+func MustLoadPath(configPath string) *Config {
+	// check if file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		log.Fatalf("config file does not exist: %s", configPath)
 	}
 
-	if configFilepath == "" {
-		configFilepath = "config.yml"
+	var cfg Config
+
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+		log.Fatalf("cannot read config: %s", err.Error())
 	}
 
-	_, err := os.Stat(configFilepath)
-	if os.IsNotExist(err) {
-		newConfig := BotConfig{
-			Admins: []string{defaultAdmin},
-			OpenAI: OpenAIConfig{
-				SystemRolePromt: defaultSystemRolePromt,
-				MaxTokens:       defaultMaxTokens,
-				Temperature:     defaultTemperature,
-				N:               defaultN,
-			},
-		}
-
-		_, err := os.Create(configFilepath)
-		if err != nil {
-			log.Panic().Msgf("Faled to create config file: %s", configFilepath)
-		}
-
-		bufWrite, err := yaml.Marshal(newConfig)
-		if err != nil {
-			log.Panic().Msgf("Error marshalling config struct")
-		}
-		err = os.WriteFile(configFilepath, bufWrite, 0775)
-		if err != nil {
-			log.Panic().Msgf("Error writing config file: %s", configFilepath)
-		}
-
-		log.Info().Msgf("New config file created: %s", configFilepath)
-
-	} else {
-		log.Info().Msgf("Config file already exists")
-	}
-	return &AppConfig{
-		ConfigFilepath: configFilepath,
-	}
+	cfg.configPath = configPath
+	return &cfg
 }
 
-func (config *AppConfig) WriteOpenAIConfig(openAIConfig *OpenAIConfig) error {
-	botConfig, err := config.ReadBotConfig()
+// fetchConfigPath fetches config path from command line flag or environment variable.
+// Priority: flag > env > default.
+// Default value is empty string.
+func fetchConfigPath() string {
+	var res string
+
+	flag.StringVar(&res, "config", "", "path to config file")
+	flag.Parse()
+
+	if res != "" {
+		log.Println("load config path from command line.", "path", res)
+		return res
+	}
+	res = os.Getenv("CONFIG_PATH")
+	log.Println("load config path from env ", "CONFIG_PATH", res)
+	return res
+}
+
+func (cfg *Config) Write() error {
+	bufWrite, err := yaml.Marshal(cfg)
 	if err != nil {
-		return fmt.Errorf("error WriteOpenAIConfig() read botConfig: %w", err)
+		return fmt.Errorf("error config.Write() marshall: %w", err)
 	}
 
-	botConfig.OpenAI = *openAIConfig
-
-	bufWrite, err := yaml.Marshal(botConfig)
+	err = os.WriteFile(cfg.configPath, bufWrite, 0775)
 	if err != nil {
-		return fmt.Errorf("error WriteOpenAIConfig() marshall: %w", err)
-	}
-
-	config.mutex.Lock()
-	defer config.mutex.Unlock()
-
-	err = os.WriteFile(config.ConfigFilepath, bufWrite, 0775)
-	if err != nil {
-		return fmt.Errorf("error WriteOpenAIConfig() write file: %w", err)
+		return fmt.Errorf("error config.Write() write file: %w", err)
 	}
 	return nil
-}
-
-func (config *AppConfig) ReadOpenAIConfig() (OpenAIConfig, error) {
-
-	botConfig := BotConfig{}
-
-	config.mutex.RLock()
-	defer config.mutex.RUnlock()
-
-	bufRead, err := os.ReadFile(config.ConfigFilepath)
-	if err != nil {
-		return OpenAIConfig{}, fmt.Errorf("ReadOpenAIConfig() Cannot read config file %s: %w", config.ConfigFilepath, err)
-	}
-
-	err = yaml.Unmarshal(bufRead, &botConfig)
-	if err != nil {
-		return OpenAIConfig{}, fmt.Errorf("ReadOpenAIConfig() Cannot unmarshall config file %s: %w", config.ConfigFilepath, err)
-	}
-
-	return botConfig.OpenAI, nil
-}
-
-func (config *AppConfig) WriteBotConfig(botConfig *BotConfig) error {
-	bufWrite, err := yaml.Marshal(botConfig)
-	if err != nil {
-		return fmt.Errorf("error WriteBotConfig() marshall: %w", err)
-	}
-
-	config.mutex.Lock()
-	defer config.mutex.Unlock()
-
-	err = os.WriteFile(config.ConfigFilepath, bufWrite, 0775)
-	if err != nil {
-		return fmt.Errorf("error WriteBotConfig() write file: %w", err)
-	}
-	return nil
-}
-
-func (config *AppConfig) ReadBotConfig() (BotConfig, error) {
-	botConfig := BotConfig{}
-
-	config.mutex.RLock()
-	defer config.mutex.RUnlock()
-
-	bufRead, err := os.ReadFile(config.ConfigFilepath)
-	if err != nil {
-		return BotConfig{}, fmt.Errorf("ReadBotConfig() Cannot read config file %s: %w", config.ConfigFilepath, err)
-	}
-
-	err = yaml.Unmarshal(bufRead, &botConfig)
-
-	log.Info().Msgf("Read bot config: %v", botConfig)
-	log.Info().Msgf("Admins slice: %v", botConfig.Admins)
-
-	if err != nil {
-		return BotConfig{}, fmt.Errorf("ReadBotConfig() Cannot unmarshall config file %s: %w", config.ConfigFilepath, err)
-	}
-	return botConfig, nil
 }

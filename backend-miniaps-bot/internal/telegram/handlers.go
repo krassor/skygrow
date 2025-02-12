@@ -1,161 +1,184 @@
 package telegramBot
 
-// import (
-// 	"fmt"
-// 	"strings"
+import (
+	"context"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
-// 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-// 	"github.com/rs/zerolog/log"
-// )
+	"log/slog"
 
-// func (bot *Bot) defaultHandler(msg *tgbotapi.Message) {
-// 	op := "bot.defaultHandler"
-// 	log.Info().Msgf("%s. Message from: %s", op, msg.From.UserName)
+	"app/main.go/internal/utils/logger/sl"
 
-// 	bot.sendMessageToOpenaiTopic(bot.ctx, msg)
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
 
-// }
+type sendFunction func(inputMsg *tgbotapi.Message, replyText string) error
 
-// func (bot *Bot) commandHandle(msg *tgbotapi.Message) error {
+func (bot *Bot) defaultHandler(ctx context.Context, update *tgbotapi.Update, sendFunc sendFunction) {
+	op := "bot.defaultHandler"
+	log := bot.log.With(
+		slog.String("op", op),
+	)
+	log.Debug("input message",
+		slog.String("user id", strconv.FormatInt(update.Message.From.ID, 10)),
+		slog.String("user name", update.Message.From.UserName),
+		slog.String("first name", update.Message.From.FirstName),
+		slog.String("last name", update.Message.From.LastName),
+		slog.String("message id", strconv.Itoa(update.Message.MessageID)),
+	)
 
-// 	// Extract the command from the Message.
+	ctxTimeout, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
-// 	switch msg.Command() {
-// 	case "setsystempromt":
+	response, err := bot.AIBot.ProcessMessage(
+		ctxTimeout,
+		update.Message.From.ID,
+		bot.textFilter(update.Message.Text),
+	)
+	if err != nil {
+		sl.Err(err)
+	}
 
-// 		log.Info().Msgf("Input setsystempromt")
+	err = sendFunc(update.Message, response)
+	if err != nil {
+		sl.Err(err)
+	}
+}
 
-// 		replyText := ""
-// 		isAdmin, err := bot.isAdmin(msg)
+func (bot *Bot) stubHandler(ctx context.Context, update *tgbotapi.Update) {
+	op := "bot.handleStub"
+	log := bot.log.With(
+		slog.String("op", op),
+	)
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		log.Info("input message",
+			slog.String("user id", strconv.FormatInt(update.Message.From.ID, 10)),
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("first name", update.Message.From.FirstName),
+			slog.String("last name", update.Message.From.LastName),
+			slog.String("message id", strconv.Itoa(update.Message.MessageID)),
+		)
+	}
 
-// 		log.Info().Msgf("setsystempromt. %s is admin: %v", msg.From.UserName, isAdmin)
+}
 
-// 		if err != nil {
-// 			return fmt.Errorf("tgbot.commandHandle: %w", err)
-// 		}
-// 		if isAdmin {
-// 			openAIConfig, err := bot.botConfig.ReadOpenAIConfig()
+func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sendFunc sendFunction) error {
+	op := "bot.commandHandle"
+	// Extract the command from the Message.
+	log := bot.log.With(
+		slog.String("op", op),
+	)
 
-// 			log.Info().Msgf("read openAI config: %v", openAIConfig)
+	msg := update.Message
 
-// 			if err != nil {
-// 				return fmt.Errorf("gbot.commandHandle: %w", err)
-// 			}
+	switch update.Message.Command() {
+	case "setsystempromt":
+		replyText := ""
+		isAdmin, err := bot.isAdmin(update.Message)
 
-// 			openAIConfig.SystemRolePromt = strings.TrimPrefix(msg.Text, "/setsystempromt ")
+		log.Debug("setsystempromt",
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("message", update.Message.Text),
+			slog.String("is admin", strconv.FormatBool(isAdmin)),
+		)
 
-// 			err = bot.botConfig.WriteOpenAIConfig(&openAIConfig)
-// 			if err != nil {
-// 				return fmt.Errorf("tgbot.commandHandle: %w", err)
-// 			}
+		if err != nil {
+			return fmt.Errorf("bot.commandHandle: %w", err)
+		}
 
-// 			replyText = "👍 System role promt changed 👍"
-// 			err = bot.sendReplyMessage(msg, replyText)
-// 			if err != nil {
-// 				return fmt.Errorf("tgbot.commandHandle: %w", err)
-// 			}
-// 		}
+		if isAdmin {
 
-// 	case "getsystempromt":
+			bot.cfg.BotConfig.AI.SystemRolePromt = strings.TrimPrefix(
+				update.Message.Text, "/setsystempromt ")
 
-// 		log.Info().Msgf("Input getsystempromt")
+			err = bot.cfg.Write()
+			if err != nil {
+				return fmt.Errorf("bot.commandHandle: %w", err)
+			}
 
-// 		replyText := ""
-// 		isAdmin, err := bot.isAdmin(msg)
+			replyText = "👍 System role promt changed 👍"
+			err = bot.sendReplyMessage(update.Message, replyText)
+			if err != nil {
+				return fmt.Errorf("tgbot.commandHandle: %w", err)
+			}
+		}
 
-// 		log.Info().Msgf("getsystempromt. %s is admin: %v", msg.From.UserName, isAdmin)
+	case "getsystempromt":
 
-// 		if err != nil {
-// 			return fmt.Errorf("tgbot.commandHandle: %w", err)
-// 		}
-// 		if isAdmin {
-// 			openAIConfig, err := bot.botConfig.ReadOpenAIConfig()
+		replyText := ""
+		isAdmin, err := bot.isAdmin(update.Message)
 
-// 			log.Info().Msgf("read openAI config: %v", openAIConfig)
+		log.Debug("getsystempromt",
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("message", update.Message.Text),
+			slog.String("is admin", strconv.FormatBool(isAdmin)),
+		)
 
-// 			if err != nil {
-// 				return fmt.Errorf("tgbot.commandHandle: %w", err)
-// 			}
+		if err != nil {
+			return fmt.Errorf("tgbot.commandHandle: %w", err)
+		}
 
-// 			replyText = openAIConfig.SystemRolePromt
+		if isAdmin {
 
-// 			err = bot.sendReplyMessage(msg, replyText)
-// 			if err != nil {
-// 				return fmt.Errorf("tgbot.commandHandle: %w", err)
-// 			}
-// 		}
+			replyText = bot.cfg.BotConfig.AI.SystemRolePromt
 
-// 	case "askbot":
-// 		bot.sendMessageToOpenaiTopic(bot.ctx, msg)
+			err = bot.sendReplyMessage(update.Message, replyText)
+			if err != nil {
+				return fmt.Errorf("tgbot.commandHandle: %w", err)
+			}
+		}
 
-// 	case "start":
-// 		replyText := fmt.Sprintf("Hi, %s! Ask your questions.", msg.From.UserName)
-// 		err := bot.sendReplyMessage(msg, replyText)
-// 		if err != nil {
-// 			return fmt.Errorf("tgbot.commandHandle: %w", err)
-// 		}
+	case "askbot":
+		ctxTimeout, cancel := context.WithTimeout(ctx, 60*time.Second)
+		defer cancel()
+		response, err := bot.AIBot.ProcessMessage(
+			ctxTimeout,
+			update.Message.From.ID,
+			bot.textFilter(update.Message.Text),
+		)
+		if err != nil {
+			sl.Err(err)
+		}
+	
+		err = sendFunc(update.Message, response)
+		if err != nil {
+			sl.Err(err)
+		}
 
-// 	default:
-// 		replyText := "I don't know this command"
-// 		err := bot.sendReplyMessage(msg, replyText)
-// 		if err != nil {
-// 			return fmt.Errorf("tgbot.commandHandle: %w", err)
-// 		}
-// 	}
+	case "start":
+		replyText := fmt.Sprintf("Hi, %s! Ask your questions.", msg.From.UserName)
+		err := bot.sendMessage(msg, replyText)
+		if err != nil {
+			return fmt.Errorf("tgbot.commandHandle: %w", err)
+		}
 
-// 	return nil
-// }
+	default:
+		replyText := "I don't know this command"
+		err := bot.sendReplyMessage(msg, replyText)
+		if err != nil {
+			return fmt.Errorf("tgbot.commandHandle: %w", err)
+		}
+	}
 
-// // func (bot *Bot) replyHandler(msg *tgbotapi.Message) {
-// // 	log.Info().Msgf("Reply message from: %s", msg.From.UserName)
+	return nil
+}
 
-// // 	replyText, err := bot.sendMessageToOpenAI(msg)
-// // 	if err != nil {
-// // 		log.Error().Msgf("Error tgbot.update: %v", err)
-// // 		return
-// // 	}
+func (bot *Bot) textFilter(msg string) string {
 
-// // 	log.Info().Msgf("Last GPT message: %s", replyText)
+	msgText := strings.TrimPrefix(msg, "/askbot ")
 
-// // 	err = bot.sendReplyMessage(msg, replyText)
-// // 	if err != nil {
-// // 		log.Error().Msgf("Error tgbot.update: %v", err)
-// // 		return
-// // 	}
-// // }
-
-// // func (bot *Bot) privateHandler(msg *tgbotapi.Message) {
-// // 	log.Info().Msgf("Self message: %sfrom: %v %s %s %s,",  msg.Text, msg.From.ID, msg.From.UserName, msg.From.LastName, msg.From.FirstName)
-
-// // 	replyText, err := bot.sendMessageToOpenAI(msg)
-// // 	if err != nil {
-// // 		log.Error().Msgf("Error tgbot.update: %v", err)
-// // 		return
-// // 	}
-
-// // 	log.Info().Msgf("Last GPT message: %s", replyText)
-
-// // 	err = bot.sendReplyMessage(msg, replyText)
-// // 	if err != nil {
-// // 		log.Error().Msgf("Error tgbot.update: %v", err)
-// // 		return
-// // 	}
-// // }
-
-// // func (bot *Bot) channelHandler(msg *tgbotapi.Message) {
-// // 	log.Info().Msgf("Channel: %s. Message from: %s", msg.Chat.Title, msg.From.UserName)
-
-// // 	replyText, err := bot.sendMessageToOpenAI(msg)
-// // 	if err != nil {
-// // 		log.Error().Msgf("Error tgbot.update: %v", err)
-// // 		return
-// // 	}
-
-// // 	log.Info().Msgf("Last GPT message: %s", replyText)
-
-// // 	err = bot.sendReplyMessage(msg, replyText)
-// // 	if err != nil {
-// // 		log.Error().Msgf("Error tgbot.update: %v", err)
-// // 		return
-// // 	}
-// // }
+	words := strings.Split(msgText, " ")
+	var filteredWords []string
+	for _, word := range words {
+		if !strings.HasPrefix(word, "@") {
+			filteredWords = append(filteredWords, word)
+		}
+	}
+	msgText = strings.Join(filteredWords, " ")
+	return msgText
+}

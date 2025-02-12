@@ -8,13 +8,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rs/zerolog/log"
+	"log/slog"
 )
 
 type Operation func(ctx context.Context) error
 
 // gracefulShutdown waits for termination syscalls and doing clean up operations after received it
-func GracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string]Operation) <-chan struct{} {
+func GracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string]Operation, logger *slog.Logger) <-chan struct{} {
+	op := "GracefulShutdown()"
+	log := logger.With(
+		slog.String("op", op))
+		
 	wait := make(chan struct{})
 	go func() {
 		s := make(chan os.Signal, 1)
@@ -23,7 +27,7 @@ func GracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 		signal.Notify(s, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 		<-s
 
-		log.Info().Msgf("shutting down")
+		log.Info("shutting down")
 
 		// set timeout for the ops to be done to prevent system hang
 		// timeoutFunc := time.AfterFunc(timeout, func() {
@@ -46,18 +50,18 @@ func GracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 			go func() {
 				defer wg.Done()
 
-				log.Info().Msgf("cleaning up: %s", innerKey)
+				log.Info("cleaning up: ", slog.String("process", innerKey))
 				if err := innerOp(ctxTimeout); err != nil {
-					log.Error().Msgf("%s: clean up failed: %s", innerKey, err.Error())
+					log.Error("error clean up", slog.String("process", innerKey), slog.String("error", err.Error()))
 					return
 				}
 
-				log.Info().Msgf("%s was shutdown gracefully", innerKey)
+				log.Info("shutdown gracefully", slog.String("process", innerKey))
 			}()
 		}
 
 		wg.Wait()
-		log.Info().Msgf("Graceful shutdown completed")
+		log.Info("Graceful shutdown completed")
 
 		close(wait)
 	}()

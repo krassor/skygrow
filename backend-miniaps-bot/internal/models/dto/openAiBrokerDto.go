@@ -1,6 +1,6 @@
 package dto
 
-type OpenaiMsg struct {
+type AIMsg struct {
 	Source string
 	ChatId string
 	UserId string

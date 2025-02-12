@@ -3,10 +3,11 @@ package utils
 import (
 	"encoding/json"
 	"net/http"
+	"regexp"
 )
 
-func Message(status bool, message interface{}) map[string]interface{} {
-	if status {
+func Message(statusOK bool, message interface{}) map[string]interface{} {
+	if statusOK {
 		return map[string]interface{}{"status": "OK", "message": message}
 	}
 	return map[string]interface{}{"status": "error", "message": message}
@@ -53,4 +54,9 @@ func Err(w http.ResponseWriter, httpCode int, err error) error {
 		return returnErr
 	}
 	return nil
+}
+
+func IsEmailValid(e string) bool {
+	emailRegex := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	return emailRegex.MatchString(e)
 }

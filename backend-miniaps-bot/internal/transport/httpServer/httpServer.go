@@ -1,63 +1,67 @@
 package httpServer
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"net/http"
-// 	"os"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"github.com/go-chi/chi/v5"
+	"app/main.go/internal/config"
+	"app/main.go/internal/utils/logger/sl"
+	"log/slog"
+	"net/http"
 
-// 	"github.com/go-chi/chi/v5"
-// 	"github.com/rs/zerolog/log"
+	"app/main.go/internal/transport/httpServer/routers"
+)
 
-// 	"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer/routers"
-// )
+type HttpServer struct {
+	router     *routers.Router
+	httpServer *http.Server
+	cfg        *config.Config
+	log        *slog.Logger
+}
 
-// type HttpServer struct {
-// 	Router     *routers.BotRouter
-// 	httpServer *http.Server
-// }
+func NewHttpServer(log *slog.Logger, router *routers.Router, cfg *config.Config) *HttpServer {
+	return &HttpServer{
+		router: router,
+		cfg:    cfg,
+		log:    log,
+	}
+}
 
-// func NewHttpServer(router *routers.BotRouter) *HttpServer {
-// 	return &HttpServer{
-// 		Router: router,
-// 	}
-// }
+func (h *HttpServer) Listen() {
+	op := "httpServer.Listen()"
+	h.log.With(
+		slog.String("op", op))
 
-// func (h *HttpServer) Listen() {
-// 	app := chi.NewRouter()
-// 	h.Router.Router(app)
+	mux := chi.NewRouter()
+	h.router.Router(mux)
 
-// 	serverPort, ok := os.LookupEnv("HTTP_SERVER_PORT")
-// 	if !ok {
-// 		serverPort = "80"
-// 	}
-// 	serverAddress, ok := os.LookupEnv("HTTP_SERVER_ADDRESS_LISTEN")
-// 	if !ok {
-// 		serverAddress = "0.0.0.0"
-// 	}
+	serverPort := h.cfg.HttpServer.Port
+	serverAddress := h.cfg.HttpServer.Address
 
-// 	h.httpServer = &http.Server{
-// 		Addr:    fmt.Sprintf("%s:%s", serverAddress, serverPort),
-// 		Handler: app,
-// 	}
+	h.httpServer = &http.Server{
+		Addr:    fmt.Sprintf("%s:%s", serverAddress, serverPort),
+		Handler: mux,
+	}
+	h.log.Info("http server starts on ",
+		slog.String("address", serverAddress),
+		slog.String("port", serverPort))
 
-// 	log.Info().Msgf("Starting http server on %s:%s ...", serverAddress, serverPort)
+	err := h.httpServer.ListenAndServe()
 
-// 	err := h.httpServer.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		h.log.Error("error start httpServer", sl.Err(err))
+	}
 
-// 	if err != nil && err != http.ErrServerClosed {
-// 		log.Warn().Msgf("httpServer.ListenAndServe() Error: %s", err)
-// 	}
+	if errors.Is(err, http.ErrServerClosed) {
+		h.log.Info("httpServer closed", sl.Err(err))
+	}
 
-// 	if err == http.ErrServerClosed {
-// 		log.Info().Msgf("%s", err)
-// 	}
+}
 
-// }
-
-// func (h *HttpServer) Shutdown(ctx context.Context) error {
-// 	if err := h.httpServer.Shutdown(ctx); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+func (h *HttpServer) Shutdown(ctx context.Context) error {
+	if err := h.httpServer.Shutdown(ctx); err != nil {
+		return err
+	}
+	return nil
+}

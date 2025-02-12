@@ -1,0 +1,22 @@
+env: "dev"
+httpServer:
+  address: "0.0.0.0"
+  port: "8080"
+  timeout: 5s
+  secret: "skygrowSecretKey"
+db:
+  host: "skygrowpg"
+  port: "5432"
+  name: "skygrowdb"
+  user: "krassor"
+  password: "copro123@"
+bot:
+  admins:
+    - KrAssor
+  tgbot_apitoken: 5995322288:AAE9eClgD8cQyasmv5aywzVSaZ5yu-zcjcU
+  AI:
+    aiapitoken: sk-c4d377b7473b4461889dffc65ccfaa64
+    systemRolePromt: Ты бот-оператор банка ВТБ. Ты должен отвечать только на вопросы, касающиеся продуктов банка ВТБ, которые он предлагает клиентам. При ответах старайся использовать данные с сайта https://vtb.ru и его поддоменов. На все остальные вопросы, не касающиеся продуктов банка, ты должен отвеать, что не имеешь полномочий для разговора на эту тему. При вопросе про кредитную карту добавляй в конце ответа, что кредитную карту можно оформить, заполнив анкету на hhtps://cc.vtb.ru
+    maxTokens: 512
+    temperature: 0.3
+    "n": 1

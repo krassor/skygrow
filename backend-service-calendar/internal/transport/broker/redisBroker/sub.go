@@ -1,49 +1,49 @@
 package redisBroker
 
 import (
-	"context"
-	"encoding/json"
+	// "context"
+	// "encoding/json"
 
-	//"fmt"
+	// //"fmt"
 
-	"github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
+	// "github.com/krassor/skygrow/backend-service-calendar/internal/models/dto"
 
-	"github.com/rs/zerolog/log"
+	// "github.com/rs/zerolog/log"
 )
 
-func (c *RedisClient) Subscribe(ctx context.Context, channels ...string) <-chan dto.OpenaiMsg {
-	ch := make(chan dto.OpenaiMsg)
+// func (c *RedisClient) Subscribe(ctx context.Context, channels ...string) <-chan dto.OpenaiMsg {
+// 	ch := make(chan dto.OpenaiMsg)
 
-	op := "SubscribeOpenAiRequest"
-	log.Info().Msgf("channel %s. %s: starting subscriber...", channels, op)
+// 	op := "SubscribeOpenAiRequest"
+// 	log.Info().Msgf("channel %s. %s: starting subscriber...", channels, op)
 
-	msg := dto.OpenaiMsg{}
+// 	msg := dto.OpenaiMsg{}
 
-	sub := c.Client.Subscribe(ctx, channels...)
+// 	sub := c.Client.Subscribe(ctx, channels...)
 
-	go func() {
-		messages := sub.Channel()
-		for message := range messages {
-			select {
-			// case <-c.shutdownChannel:
-			// 	close(ch)
-			// 	return
-			case <-ctx.Done():
-				close(ch)
-				return
-			default:
-				log.Info().Msgf("%s. Message: %v", op, message)
-				err := json.Unmarshal([]byte(message.Payload), &msg)
-				if err != nil {
-					log.Error().Msgf("%s: %s", op, err)
-					continue
-				}
-				ch <- msg
-			}
-		}
-	}()
-	return ch
-}
+// 	go func() {
+// 		messages := sub.Channel()
+// 		for message := range messages {
+// 			select {
+// 			// case <-c.shutdownChannel:
+// 			// 	close(ch)
+// 			// 	return
+// 			case <-ctx.Done():
+// 				close(ch)
+// 				return
+// 			default:
+// 				log.Info().Msgf("%s. Message: %v", op, message)
+// 				err := json.Unmarshal([]byte(message.Payload), &msg)
+// 				if err != nil {
+// 					log.Error().Msgf("%s: %s", op, err)
+// 					continue
+// 				}
+// 				ch <- msg
+// 			}
+// 		}
+// 	}()
+// 	return ch
+// }
 
 // func (c *RedisClient) Shutdown(ctx context.Context) error {
 // 	for {

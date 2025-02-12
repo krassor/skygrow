@@ -3,37 +3,37 @@ package routers
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-
-	//"github.com/krassor/skygrow/tg-gpt-bot/internal/transport/httpServer/handlers"
-
-	//"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/go-chi/cors"
+	"app/main.go/internal/transport/httpServer/handlers"
+	myMiddleware "app/main.go/internal/transport/httpServer/middleware"
 )
 
-type BotRouter struct {
-	//openAiHandler handlers.openAiHandler
+type Router struct {
+	calendarHandler *handlers.CalendarHandler
+	secret          string
 }
-func NewBotRouter( /*deviceHandler handlers.DeviceHandlers*/ ) *BotRouter {
-	return &BotRouter{
-		//DeviceHandler: deviceHandler,
+
+func NewRouter(calendarHandler *handlers.CalendarHandler, secret string) *Router {
+	return &Router{
+		calendarHandler: calendarHandler,
+		secret:          secret,
 	}
 }
 
-func (br *BotRouter) Router(r *chi.Mux) {
+func (r *Router) Router(mux *chi.Mux) {
+	mux.Route("/api", func(mux chi.Router) {
+		mux.Route("/v1", func(mux chi.Router) {
+			mux.Use(cors.AllowAll().Handler)
+			mux.Use(myMiddleware.LoggerMiddleware)
+			mux.Use(middleware.Heartbeat("/ping"))
 
-	r.Use(middleware.Heartbeat("/ping"))
-
-	//Public
-	// r.Group(func(r chi.Router) {
-	// 	r.Handle("/metrics", promhttp.Handler())
-	// })
-
-	// r.Route("/api", func(r chi.Router) {
-	// 	//Private
-	// 	r.Group(func(r chi.Router) {
-	// 		r.Use(middleware.Logger)
-	// 		//r.Use(middleware.BasicAuth())
-	// 		r.Post("/createchatcompletion", br.BookOrderHandler.CreateBookOrder)
-	// 	})
-	// })
+			//Private
+			mux.Group(func(mux chi.Router) {
+				mux.Use(myMiddleware.Authorization(r.secret))
+				mux.Post("/calendar", r.calendarHandler.Create)
+				mux.Get("/calendar", r.calendarHandler.Get)
+			})
+		})
+	})
 
 }

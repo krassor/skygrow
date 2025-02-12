@@ -1,61 +1,92 @@
 package main
 
 import (
+	"app/main.go/internal/config"
+	"app/main.go/internal/graceful"
+	"app/main.go/internal/utils/logger/handlers/slogpretty"
 	"context"
-	"fmt"
+	"log/slog"
+	"os"
 	"time"
+	telegramBot "app/main.go/internal/telegram"
+	deepseek "app/main.go/internal/deepseek"
+	inMemory "app/main.go/internal/cache/inMemory"
+)
 
-	"github.com/krassor/skygrow/backend-miniaps-bot/internal/config"
-	"github.com/krassor/skygrow/backend-miniaps-bot/internal/graceful"
-	"github.com/krassor/skygrow/backend-miniaps-bot/internal/logger"
-	"github.com/krassor/skygrow/backend-miniaps-bot/internal/openai"
-	"github.com/krassor/skygrow/backend-miniaps-bot/internal/repository"
-	telegramBot "github.com/krassor/skygrow/backend-miniaps-bot/internal/telegram"
-	"github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/broker/redisBroker"
-	"github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/httpServer"
-	"github.com/krassor/skygrow/backend-miniaps-bot/internal/transport/httpServer/routers"
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
 )
 
 var Version = "dev"
 
 func main() {
-	//1233
-	// fmt.Printf("Version: %s\n", Version)
+	cfg := config.MustLoad()
 
-	// logger.InitLogger()
+	log := setupLogger(cfg.Env)
 
-	// appConfig := config.InitConfig()
-	// repo := repository.NewMessageRepository()
+	log.Info(
+		"starting backend-miniaps-bot",
+		slog.String("env", cfg.Env),
+		slog.String("version", Version),
+	)
+	log.Debug("debug messages are enabled")
 
-	// broker := redisBroker.NewRedisClient()
+	inMemoryCache := inMemory.NewInMemoryRepository()
+	AIBot := deepseek.NewClient(log, cfg, inMemoryCache)
+	tgBot := telegramBot.New(log, cfg, AIBot)
 
-	// gptBot := openai.NewGPTBot(appConfig, repo, broker)
-	// tgBot := telegramBot.NewBot(appConfig, broker)
+	maxSecond := 15 * time.Second
+	waitShutdown := graceful.GracefulShutdown(
+		context.Background(),
+		maxSecond,
+		map[string]graceful.Operation{
+			// "http": func(ctx context.Context) error {
+			// 	return httpServer.Shutdown(ctx)
+			// },
+			"tgBot": func(ctx context.Context) error {
+				return tgBot.Shutdown(ctx)
+			},
+		},
+		log,
+	)
+	go tgBot.Update(60)
+	// go httpServer.Listen()
+	<-waitShutdown
+}
 
-	// botRouter := routers.NewBotRouter()
-	// newHttpServer := httpServer.NewHttpServer(botRouter)
+func setupLogger(env string) *slog.Logger {
+	var log *slog.Logger
 
-	// maxSecond := 15 * time.Second
-	// waitShutdown := graceful.GracefulShutdown(
-	// 	context.Background(),
-	// 	maxSecond,
-	// 	map[string]graceful.Operation{
-	// 		"tgBot": func(ctx context.Context) error {
-	// 			return tgBot.Shutdown(ctx)
-	// 		},
-	// 		"newHttpServer": func(ctx context.Context) error {
-	// 			return newHttpServer.Shutdown(ctx)
-	// 		},
-	// 		"gptBot": func(ctx context.Context) error {
-	// 			return gptBot.Shutdown(ctx)
-	// 		},
-	// 	},
-	// )
+	switch env {
+	case envLocal:
+		log = setupPrettySlog()
+	case envDev:
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	case envProd:
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
+	default: // If env config is invalid, set prod settings by default due to security
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
+	}
 
-	// go gptBot.Start()
-	// go tgBot.Update(60)
-	// go newHttpServer.Listen()
+	return log
+}
 
-	// <-waitShutdown
+func setupPrettySlog() *slog.Logger {
+	opts := slogpretty.PrettyHandlerOptions{
+		SlogOpts: &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		},
+	}
 
+	handler := opts.NewPrettyHandler(os.Stdout)
+
+	return slog.New(handler)
 }
