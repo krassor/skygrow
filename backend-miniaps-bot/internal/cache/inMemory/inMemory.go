@@ -4,23 +4,21 @@ import (
 	"context"
 	"fmt"
 	"sync"
-
-	dsmod "github.com/cohesion-org/deepseek-go"
 )
 
 type InMemoryCache struct {
-	InMemoryMap map[int64][]dsmod.ChatCompletionMessage
+	InMemoryMap map[int64][]interface{}
 	mutex       sync.RWMutex
 }
 
 func NewInMemoryRepository() *InMemoryCache {
-	m := make(map[int64][]dsmod.ChatCompletionMessage)
+	m := make(map[int64][]interface{})
 	return &InMemoryCache{
 		InMemoryMap: m,
 	}
 }
 
-func (r *InMemoryCache) Save(ctx context.Context, userID int64, history []dsmod.ChatCompletionMessage) error {
+func (r *InMemoryCache) Save(ctx context.Context, userID int64, history []interface{}) error {
 	if r.InMemoryMap == nil {
 		return fmt.Errorf("SaveUserMessage error: Map is not initializate")
 	}
@@ -56,7 +54,7 @@ func (r *InMemoryCache) IsUserExist(ctx context.Context, userID int64) (bool, er
 
 }
 
-func (r *InMemoryCache) Get(ctx context.Context, userID int64) ([]dsmod.ChatCompletionMessage, error) {
+func (r *InMemoryCache) Get(ctx context.Context, userID int64) ([]interface{}, error) {
 	if r.InMemoryMap == nil {
 		return nil, fmt.Errorf("Load error: Map is not initializate")
 	}

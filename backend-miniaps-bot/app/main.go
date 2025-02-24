@@ -3,14 +3,16 @@ package main
 import (
 	"app/main.go/internal/config"
 	"app/main.go/internal/graceful"
+	telegramBot "app/main.go/internal/telegram"
 	"app/main.go/internal/utils/logger/handlers/slogpretty"
 	"context"
 	"log/slog"
 	"os"
 	"time"
-	telegramBot "app/main.go/internal/telegram"
+
 	deepseek "app/main.go/internal/deepseek"
 	inMemory "app/main.go/internal/cache/inMemory"
+	//openai "app/main.go/internal/openai"
 )
 
 const (
@@ -35,6 +37,7 @@ func main() {
 
 	inMemoryCache := inMemory.NewInMemoryRepository()
 	AIBot := deepseek.NewClient(log, cfg, inMemoryCache)
+	//AIBot := openai.NewClient(log, cfg, inMemoryCache)
 	tgBot := telegramBot.New(log, cfg, AIBot)
 
 	maxSecond := 15 * time.Second

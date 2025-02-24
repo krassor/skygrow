@@ -13,8 +13,8 @@ import (
 )
 
 type Cache interface {
-	Save(ctx context.Context, userID int64, history []dsmod.ChatCompletionMessage) error
-	Get(ctx context.Context, userID int64) ([]dsmod.ChatCompletionMessage, error)
+	Save(ctx context.Context, userID int64, history []interface{}) error
+	Get(ctx context.Context, userID int64) ([]interface{}, error)
 	Delete(ctx context.Context, id int64) error
 }
 
@@ -43,7 +43,7 @@ func NewClient(
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	client := dsmod.NewClient(aiToken)
+	client := dsmod.NewClient(aiToken, config.BotConfig.AI.BaseURL)
 
 	log.Info("Creating deepseek client")
 
@@ -65,6 +65,8 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 		slog.Int64("userID", userID),
 	)
 
+	log.Debug("input message", slog.String("message", message))
+
 	// Получаем историю сообщений из cache
 	history, err := ds.cache.Get(ctx, userID)
 	if err != nil {
@@ -80,19 +82,31 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 	// Обрезаем историю если превышен лимит сообщений
 	history = ds.truncateHistory(history)
 
+	// Convert history to []dsmod.ChatCompletionMessage
+	messages := make([]dsmod.ChatCompletionMessage, len(history))
+	for i, msg := range history {
+		if chatMsg, ok := msg.(dsmod.ChatCompletionMessage); ok {
+			messages[i] = chatMsg
+		}
+	}
+
+	log.Debug("created chat completion request", slog.Any("messages", messages))
+
 	resp, err := ds.Client.CreateChatCompletion(
 		ctx,
 		&dsmod.ChatCompletionRequest{
-			Model:    dsmod.DeepSeekChat,
-			Messages: history,
+			// TODO: вынести в параметры конфигурации openai
+			Model:    ds.config.BotConfig.AI.ModelName,
+			Messages: messages,
 		},
 	)
 
 	if err != nil {
-		return "", err
+		log.Error("error creating chat completion request", slog.String("error", err.Error()))
+		return "", fmt.Errorf("%w", err)
 	}
 
-	//response := fmt.Sprintf("%s\n-----------\nCompletion tokens usage: %v\nPrompt tokens usage%v\nTotal tokens usage: %v", resp.Choices[0].Message.Content, resp.Usage.CompletionTokens, resp.Usage.PromptTokens, resp.Usage.TotalTokens)
+	log.Debug("received chat completion response", slog.Any("response", resp))
 
 	//Save response from openai GPT bot as an assistant response
 	msg := dsmod.ChatCompletionMessage{
@@ -109,24 +123,21 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 	return resp.Choices[0].Message.Content, nil
 }
 
-func (ds *DeepSeek) truncateHistory(history []dsmod.ChatCompletionMessage) []dsmod.ChatCompletionMessage {
+func (ds *DeepSeek) truncateHistory(history []interface{}) []interface{} {
 
 	if len(history) > 11 {
 		return history[len(history)-6:]
 	}
 
-	//Восстанавливаем системный промт в [0] сообщении
-	systemRoleMessage := make([]dsmod.ChatCompletionMessage, 1)
-	systemRoleMessage[0] = dsmod.ChatCompletionMessage{
-		Role:    constants.ChatMessageRoleSystem,
-		Content: ds.config.BotConfig.AI.SystemRolePromt,
-	}
-
-	if history[0].Role != constants.ChatMessageRoleSystem {
+	if history[0].(dsmod.ChatCompletionMessage).Role != constants.ChatMessageRoleSystem {
+		//Восстанавливаем системный промт в [0] сообщении
+		systemRoleMessage := make([]interface{}, 1)
+		systemRoleMessage[0] = dsmod.ChatCompletionMessage{
+			Role:    constants.ChatMessageRoleSystem,
+			Content: ds.config.BotConfig.AI.SystemRolePromt,
+		}
 		//Добавляем системное сообщение вперед
 		history = append(systemRoleMessage, history...)
-	} else {
-		history[0] = systemRoleMessage[0]
 	}
 
 	return history

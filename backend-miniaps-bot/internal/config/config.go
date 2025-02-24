@@ -11,45 +11,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Config struct {
-	Env        string           `yaml:"env" env-default:"local"`
-	HttpServer HttpServerConfig `yaml:"httpServer" env-required:"true"`
-	DBConfig   DBConfig         `yaml:"db" env-required:"true"`
-	BotConfig  BotConfig        `yaml:"bot" env-required:"true"`
-	configPath string
-	//MigrationsPath string
-	//TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
-}
-
-type HttpServerConfig struct {
-	Address string        `yaml:"address" env-required:"true" env-default:"localhost"`
-	Port    string        `yaml:"port" env-required:"true" env-default:"8080"`
-	Timeout time.Duration `yaml:"timeout" env-default:"5"`
-	Secret  string        `yaml:"secret" env-required:"true" env-default:"secret"`
-}
-
-type DBConfig struct {
-	Host     string `yaml:"host" env:"DB_HOST" env-default:"localhost"`
-	Port     string `yaml:"port" env:"DB_PORT" env-default:"5432"`
-	Name     string `yaml:"name" env:"DB_NAME" env-default:"postgres"`
-	User     string `yaml:"user" env:"DB_USER" env-default:"user"`
-	Password string `yaml:"password" env:"DB_PASSWORD" env-default:"password"`
-}
-
-type AIConfig struct {
-	AIApiToken      string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
-	SystemRolePromt string  `yaml:"systemRolePromt" env-default:""`
-	MaxTokens       int     `yaml:"maxTokens" env-default:"4096"`
-	Temperature     float32 `yaml:"temperature" env-default:"0.5"`
-	N               int     `yaml:"n" env-default:"1"`
-}
-
-type BotConfig struct {
-	Admins        []string `yaml:"admins" env-default:"KrAssor"`
-	TgbotApiToken string   `yaml:"tgbot_apitoken" env:"TGBOT_APITOKEN" env-required:"true"`
-	AI            AIConfig `yaml:"AI"`
-}
-
 func MustLoad() *Config {
 	configPath := fetchConfigPath()
 	if configPath == "" {
@@ -105,4 +66,13 @@ func (cfg *Config) Write() error {
 		return fmt.Errorf("error config.Write() write file: %w", err)
 	}
 	return nil
+}
+
+func (c *AIConfig) GetTimeout() time.Duration {
+	return time.Duration(c.Timeout) * time.Second
+}
+
+// SetTimeout sets the timeout value
+func (c *AIConfig) SetTimeout(timeout time.Duration) {
+	c.Timeout = int(timeout.Seconds())
 }

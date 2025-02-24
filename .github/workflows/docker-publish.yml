@@ -20,6 +20,7 @@ jobs:
     outputs:
       backend-service-auth: ${{ steps.filter.outputs.backend-service-auth }}
       tg-gpt-bot: ${{ steps.filter.outputs.tg-gpt-bot }}
+      backend-miniaps-bot: ${{ steps.filter.outputs.backend-miniaps-bot}}
     steps:
     - uses: actions/checkout@v4
     - uses: dorny/paths-filter@v3
@@ -30,6 +31,8 @@ jobs:
             - 'backend-service-auth/**'
           tg-gpt-bot:
             - 'tg-gpt-bot/**'
+          backend-miniaps-bot:
+            - 'backend-miniaps-bot/**'
 
   backend-service-auth:
     needs: changes
@@ -104,6 +107,44 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: tg-gpt-bot
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  backend-miniaps-bot:
+    needs: changes
+    name: Push Docker image to Docker Hub. backend-miniaps-bot
+    if: ${{ needs.changes.outputs.backend-miniaps-bot == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+     # - name: Check out the repo
+      #  uses: actions/checkout@v4
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_BACKEND_MINIAPS_BOT_REPO_NAME }}
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image backend-miniaps-bot
+        uses: docker/build-push-action@v6
+        with:
+          context: backend-miniaps-bot
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

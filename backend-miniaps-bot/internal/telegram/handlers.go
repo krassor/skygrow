@@ -28,8 +28,8 @@ func (bot *Bot) defaultHandler(ctx context.Context, update *tgbotapi.Update, sen
 		slog.String("last name", update.Message.From.LastName),
 		slog.String("message id", strconv.Itoa(update.Message.MessageID)),
 	)
-
-	ctxTimeout, cancel := context.WithTimeout(ctx, 60*time.Second)
+	bot.tgbot.Send(tgbotapi.NewChatAction(update.FromChat().ID, tgbotapi.ChatTyping))
+	ctxTimeout, cancel := context.WithTimeout(ctx, bot.cfg.BotConfig.AI.GetTimeout())
 	defer cancel()
 
 	response, err := bot.AIBot.ProcessMessage(
@@ -39,12 +39,18 @@ func (bot *Bot) defaultHandler(ctx context.Context, update *tgbotapi.Update, sen
 	)
 	if err != nil {
 		sl.Err(err)
+		log.Error("failed to process message with AI", sl.Err(err))
 	}
+
+	log.Debug("Got response from AI", slog.String("response", response))
 
 	err = sendFunc(update.Message, response)
 	if err != nil {
-		sl.Err(err)
+		log.Error("failed to send response to user", sl.Err(err))
+	} else {
+		log.Debug("Sent response to user")
 	}
+
 }
 
 func (bot *Bot) stubHandler(ctx context.Context, update *tgbotapi.Update) {
@@ -144,7 +150,7 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 		if err != nil {
 			sl.Err(err)
 		}
-	
+
 		err = sendFunc(update.Message, response)
 		if err != nil {
 			sl.Err(err)
@@ -168,6 +174,16 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 	return nil
 }
 
+// textFilter processes the input message by removing the "/askbot" prefix
+// and filtering out words that start with "@". This function is used to
+// clean up user input before processing it further.
+//
+// Parameters:
+//   - msg: A string containing the original message text.
+//
+// Returns:
+//
+//	A string with the "/askbot" prefix removed and any words starting with "@" filtered out.
 func (bot *Bot) textFilter(msg string) string {
 
 	msgText := strings.TrimPrefix(msg, "/askbot ")
