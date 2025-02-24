@@ -117,7 +117,7 @@ jobs:
     if: ${{ needs.changes.outputs.backend-miniaps-bot == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repo
+      - name: Check out the repo 
         uses: actions/checkout@v4
 
       - name: Extract metadata (tags, labels) for Docker
