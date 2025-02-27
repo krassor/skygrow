@@ -60,11 +60,11 @@ func fetchConfigPath() string {
 	flag.Parse()
 
 	if res != "" {
-		log.Warn("load config path from command line.", slog.String("path", res))
+		log.Info("load config path from command line.", slog.String("path", res))
 		return res
 	}
-	res = os.Getenv("CONFIG_PATH")
-	log.Warn("load config path from env ", slog.String("CONFIG_PATH", res))
+	res = os.Getenv("CONFIG_FILEPATH") + os.Getenv("CONFIG_FILENAME")
+	log.Info("load config path from env ", slog.String("CONFIG_PATH", res))
 	return res
 }
 
