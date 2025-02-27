@@ -149,7 +149,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            CONFIG_PATH=/etc/backend-miniaps-bot
+            CONFIG_FILEPATH=config/
+            CONFIG_FILENAME=config.yml
 
  # server_update:
  #   needs: push_to_registry
