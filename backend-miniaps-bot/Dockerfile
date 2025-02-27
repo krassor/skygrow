@@ -24,7 +24,7 @@ ENV HTTP_SERVER_ADDRESS_LISTEN=0.0.0.0
 
 
 # Создаем volume для конфигурационных файлов
-VOLUME ${CONFIG_PATH}
+VOLUME ${CONFIG_FILEPATH}
 
 EXPOSE $HTTP_SERVER_PORT
 ENTRYPOINT ["/bin/backend-miniaps-bot"]
