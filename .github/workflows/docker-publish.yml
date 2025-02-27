@@ -148,9 +148,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            CONFIG_FILEPATH=config/
-            CONFIG_FILENAME=config.yml
+          # build-args: |
+          #   CONFIG_FILEPATH=config/
+          #   CONFIG_FILENAME=config.yml
 
  # server_update:
  #   needs: push_to_registry
