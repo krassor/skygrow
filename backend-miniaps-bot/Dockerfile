@@ -10,15 +10,18 @@ RUN go build -o bin/backend-miniaps-bot app/main.go
 FROM alpine:latest
 
 # Аргумент для пути конфигурации
-ARG CONFIG_PATH=/etc/backend-miniaps-bot
-ENV CONFIG_PATH=${CONFIG_PATH}
+# ARG CONFIG_PATH=/etc/backend-miniaps-bot
+ARG CONFIG_FILENAME=config.yml
+ARG CONFIG_FILEPATH=config/
+ENV CONFIG_FILEPATH=${CONFIG_FILEPATH}
+ENV CONFIG_FILENAME=${CONFIG_FILENAME}
 
 COPY --from=builder /build/bin/backend-miniaps-bot /bin/backend-miniaps-bot 
-COPY ./config/ ${CONFIG_PATH}/
+COPY ./config/${CONFIG_FILENAME} ${CONFIG_PATH}${CONFIG_FILENAME}
 
 ENV HTTP_SERVER_PORT=8080
 ENV HTTP_SERVER_ADDRESS_LISTEN=0.0.0.0
-ENV CONFIG_FILEPATH=${CONFIG_PATH}/config.yml
+
 
 # Создаем volume для конфигурационных файлов
 VOLUME ${CONFIG_PATH}

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -12,10 +13,17 @@ import (
 )
 
 func MustLoad() *Config {
+	op := "config.MustLoad()"
+	log := slog.With(
+		slog.String("op", op),
+	)
+	defaultConfigPath := "config.yml"
+
 	configPath := fetchConfigPath()
+
 	if configPath == "" {
-		log.Println("config path is empty. Load default path: \"config/config.yml\"")
-		configPath = "config/config.yml"
+		log.Warn("config path is empty. Loading default config path", slog.String("defaultConfigPath", defaultConfigPath))
+		configPath = defaultConfigPath
 	}
 
 	return MustLoadPath(configPath)
@@ -41,17 +49,22 @@ func MustLoadPath(configPath string) *Config {
 // Priority: flag > env > default.
 // Default value is empty string.
 func fetchConfigPath() string {
+	op := "config.fetchConfigPath()"
+	log := slog.With(
+		slog.String("op", op),
+	)
+
 	var res string
 
 	flag.StringVar(&res, "config", "", "path to config file")
 	flag.Parse()
 
 	if res != "" {
-		log.Println("load config path from command line.", "path", res)
+		log.Warn("load config path from command line.", slog.String("path", res))
 		return res
 	}
 	res = os.Getenv("CONFIG_PATH")
-	log.Println("load config path from env ", "CONFIG_PATH", res)
+	log.Warn("load config path from env ", slog.String("CONFIG_PATH", res))
 	return res
 }
 

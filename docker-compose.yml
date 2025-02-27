@@ -1,76 +1,92 @@
 services:
-  app-tg-gpt-bot:
-    hostname: app-tg-gpt-bot
-    container_name: app-tg-gpt-bot
-    build:
-      context: tg-gpt-bot
-      dockerfile: Dockerfile
+  app-backend-miniaps-bot:
+    image: krassor/backend-miniaps-bot:main
+    pull_policy: always
+    hostname: backend-miniaps-bot
+    container_name: backend-miniaps-bot
+    restart: always
     ports:
-      - 8080:8080
-    volumes:
-      - ./tg-gpt-bot/config/:/etc/tg-gpt-bot/
+      - "8080:8080"
+    environment:
+      - CONFIG_FILEPATH=''
+      - CONFIG_FILENAME=config.yml
+    # volumes:
+    #   - backend-miniaps-bot-data:/etc/backend-miniaps-bot/
     networks:
       - back-tier
+
+#   app-tg-gpt-bot:
+#     hostname: app-tg-gpt-bot
+#     container_name: app-tg-gpt-bot
+#     build:
+#       context: tg-gpt-bot
+#       dockerfile: Dockerfile
+#     ports:
+#       - 8080:8080
+#     volumes:
+#       - ./tg-gpt-bot/config/:/etc/tg-gpt-bot/
+#     networks:
+#       - back-tier
       
-  app-auth-service:
-    hostname: app-auth-service
-    depends_on:
-      - skygrow-pg
-    container_name: app-auth-service
-    build:
-      context: backend-service-auth
-      dockerfile: Dockerfile
-    ports:
-        - 8011:8011
-    environment:
-      - DB_NAME=skygrowdb
-      - DB_PASSWORD=copro123@
-      - DB_USER=krassor
-      - DB_HOST=skygrow-pg
-      - DB_PORT=5432
-      - HTTP_PORT=8011
-      - HTTP_HOST_LISTEN=0.0.0.0
-    networks:
-      - back-tier
+#   app-auth-service:
+#     hostname: app-auth-service
+#     depends_on:
+#       - skygrow-pg
+#     container_name: app-auth-service
+#     build:
+#       context: backend-service-auth
+#       dockerfile: Dockerfile
+#     ports:
+#         - 8011:8011
+#     environment:
+#       - DB_NAME=skygrowdb
+#       - DB_PASSWORD=copro123@
+#       - DB_USER=krassor
+#       - DB_HOST=skygrow-pg
+#       - DB_PORT=5432
+#       - HTTP_PORT=8011
+#       - HTTP_HOST_LISTEN=0.0.0.0
+#     networks:
+#       - back-tier
 
-  app-calendar-service:
-    hostname: app-calendar-service
-    depends_on:
-      - skygrow-pg
-    container_name: app-calendar-service
-    build:
-      context: backend-service-calendar
-      dockerfile: Dockerfile
-    ports:
-      - 8080:8080
-#    environment:
-#      - DB_NAME=skygrowdb
-#      - DB_PASSWORD=copro123@
-#      - DB_USER=krassor
-#      - DB_HOST=skygrow-pg
-#      - DB_PORT=5432
-#      - HTTP_PORT=8080
-#      - HTTP_HOST_LISTEN=0.0.0.0
-    networks:
-      - back-tier
+#   app-calendar-service:
+#     hostname: app-calendar-service
+#     depends_on:
+#       - skygrow-pg
+#     container_name: app-calendar-service
+#     build:
+#       context: backend-service-calendar
+#       dockerfile: Dockerfile
+#     ports:
+#       - 8080:8080
+# #    environment:
+# #      - DB_NAME=skygrowdb
+# #      - DB_PASSWORD=copro123@
+# #      - DB_USER=krassor
+# #      - DB_HOST=skygrow-pg
+# #      - DB_PORT=5432
+# #      - HTTP_PORT=8080
+# #      - HTTP_HOST_LISTEN=0.0.0.0
+#     networks:
+#       - back-tier
 
-  skygrow-pg:
-    image: postgres
-    hostname: skygrow-pg
-    container_name: skygrow-pg
-    ports:
-      - 5432:5432
-    environment:
-      - POSTGRES_DB=skygrowdb
-      - POSTGRES_USER=krassor
-      - POSTGRES_PASSWORD=copro123@
-    # command:
-    #   - 'echo "host skygrowdb krassor all trust" >> /var/lib/postgresql/data/pg_hba.conf'
-    restart: unless-stopped
-    volumes:
-      - pg_data:/var/lib/postgres
-    networks:
-      - back-tier
+#   skygrow-pg:
+#     image: postgres
+#     hostname: skygrow-pg
+#     container_name: skygrow-pg
+#     ports:
+#       - 5432:5432
+#     environment:
+#       - POSTGRES_DB=skygrowdb
+#       - POSTGRES_USER=krassor
+#       - POSTGRES_PASSWORD=copro123@
+#     # command:
+#     #   - 'echo "host skygrowdb krassor all trust" >> /var/lib/postgresql/data/pg_hba.conf'
+#     restart: unless-stopped
+#     volumes:
+#       - pg_data:/var/lib/postgres
+#     networks:
+#       - back-tier
 
   # pgadmin:
   #   image: dpage/pgadmin4
@@ -124,7 +140,8 @@ services:
 volumes:
   prom_data: 
   pg_data:
-  # pgadmin-data:
+  pgadmin-data:
+  # backend-miniaps-bot-data:
 
 networks:
   back-tier:
