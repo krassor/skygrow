@@ -117,8 +117,8 @@ jobs:
     if: ${{ needs.changes.outputs.backend-miniaps-bot == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      # - name: Check out the repo 
-      #   uses: actions/checkout@v4
+      - name: Check out the repo 
+        uses: actions/checkout@v4
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -144,13 +144,13 @@ jobs:
       - name: Build and push Docker image backend-miniaps-bot
         uses: docker/build-push-action@v6
         with:
-          context: backend-miniaps-bot
+          context: ${{ github.workspace }}/backend-miniaps-bot
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # build-args: |
-          #   CONFIG_FILEPATH=config/
-          #   CONFIG_FILENAME=config.yml
+          build-args: |
+            CONFIG_FILEPATH=config/
+            CONFIG_FILENAME=config.yml
 
  # server_update:
  #   needs: push_to_registry

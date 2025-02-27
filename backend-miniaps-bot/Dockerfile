@@ -11,7 +11,6 @@ FROM alpine:latest
 
 # Аргумент для пути конфигурации
 # ARG CONFIG_PATH=/etc/backend-miniaps-bot
-
 ARG CONFIG_FILENAME=config.yml
 ARG CONFIG_FILEPATH=config/
 ENV CONFIG_FILEPATH=${CONFIG_FILEPATH}
