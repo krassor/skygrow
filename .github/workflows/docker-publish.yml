@@ -152,17 +152,16 @@ jobs:
             CONFIG_FILEPATH=config/
             CONFIG_FILENAME=config.yml
 
- # server_update:
- #   needs: push_to_registry
- #   name: Update server buy ssh
- #   runs-on: ubuntu-latest
- #   steps:
- #     - name: Connect and run script
- #       uses: appleboy/ssh-action@master
- #       with:
- #         host: ${{ secrets.SERVER_IP }}
- #         port: ${{ secrets.SERVER_PORT }}
- #         username: ${{ secrets.SERVER_USER_LOGIN }}
- #         password: ${{ secrets.SERVER_USER_PASSWORD }}
- #         script_stop: true
- #         script: bash deploy.sh
+  server_update:
+    needs: [backend-service-auth, tg-gpt-bot, backend-miniaps-bot]
+    name: Update server buy ssh
+    runs-on: ubuntu-latest
+    steps:
+      - name: Connect and run script
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER_LOGIN }}
+          password: ${{ secrets.SERVER_USER_PASSWORD }}
+          script: /home/skygrow/run_docker_build.sh
