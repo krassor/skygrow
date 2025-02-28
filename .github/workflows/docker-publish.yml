@@ -153,13 +153,7 @@ jobs:
             CONFIG_FILENAME=config.yml
 
   server_update:
-    needs: [backend-service-auth, tg-gpt-bot, backend-miniaps-bot]
-    if: |
-      (
-        needs.backend-service-auth.result == 'success' ||
-        needs.tg-gpt-bot.result == 'success' ||
-        needs.backend-miniaps-bot.result == 'success'
-      )
+    needs: [changes]
     name: Update server buy ssh
     runs-on: ubuntu-latest
     steps:
