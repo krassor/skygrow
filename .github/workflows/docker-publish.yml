@@ -166,4 +166,5 @@ jobs:
           password: ${{ secrets.SERVER_USER_PASSWORD }}
           script: |
             chmod +x /home/skygrow/run_docker_build.sh
-            /home/skygrow/run_docker_build.sh
+            cd /home/skygrow/
+            .run_docker_build.sh
