@@ -154,6 +154,12 @@ jobs:
 
   server_update:
     needs: [backend-service-auth, tg-gpt-bot, backend-miniaps-bot]
+    if: |
+      success() && (
+        needs.backend-service-auth.result == 'success' ||
+        needs.tg-gpt-bot.result == 'success' ||
+        needs.backend-miniaps-bot.result == 'success'
+      )
     name: Update server buy ssh
     runs-on: ubuntu-latest
     steps:
@@ -164,4 +170,6 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           username: ${{ secrets.SERVER_USER_LOGIN }}
           password: ${{ secrets.SERVER_USER_PASSWORD }}
-          script: /home/skygrow/run_docker_build.sh
+          script: |
+            chmod +x /home/skygrow/run_docker_build.sh
+            /home/skygrow/run_docker_build.sh
