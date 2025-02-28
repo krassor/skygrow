@@ -123,24 +123,70 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 	return resp.Choices[0].Message.Content, nil
 }
 
+// func (ds *DeepSeek) truncateHistory(history []interface{}) []interface{} {
+
+// 	if len(history) > 11 {
+// 		return history[len(history)-6:]
+// 	}
+
+// 	if history[0].(dsmod.ChatCompletionMessage).Role != constants.ChatMessageRoleSystem {
+// 		//Восстанавливаем системный промт в [0] сообщении
+// 		systemRoleMessage := make([]interface{}, 1)
+// 		systemRoleMessage[0] = dsmod.ChatCompletionMessage{
+// 			Role:    constants.ChatMessageRoleSystem,
+// 			Content: ds.config.BotConfig.AI.SystemRolePromt,
+// 		}
+// 		//Добавляем системное сообщение вперед
+// 		history = append(systemRoleMessage, history...)
+// 	}
+
+// 	return history
+// }
+
 func (ds *DeepSeek) truncateHistory(history []interface{}) []interface{} {
+    const (
+        maxHistoryLength = 10
+        keepLastN        = 5
+    )
 
-	if len(history) > 11 {
-		return history[len(history)-6:]
-	}
+    // Добавление системного промпта
+    if len(history) == 0 || getMessageRole(history[0]) != constants.ChatMessageRoleSystem {
+        systemMsg := createSystemMessage(ds.config.BotConfig.AI.SystemRolePromt)
+        history = prependSystemMessage(history, systemMsg)
+    }
 
-	if history[0].(dsmod.ChatCompletionMessage).Role != constants.ChatMessageRoleSystem {
-		//Восстанавливаем системный промт в [0] сообщении
-		systemRoleMessage := make([]interface{}, 1)
-		systemRoleMessage[0] = dsmod.ChatCompletionMessage{
-			Role:    constants.ChatMessageRoleSystem,
-			Content: ds.config.BotConfig.AI.SystemRolePromt,
-		}
-		//Добавляем системное сообщение вперед
-		history = append(systemRoleMessage, history...)
-	}
+    // Обрезка истории
+    if len(history) > maxHistoryLength {
+        keepFrom := len(history) - keepLastN
+        if keepFrom < 1 { // Всегда оставляем системное сообщение
+            keepFrom = 1
+        }
+        return append([]interface{}{history[0]}, history[keepFrom:]...)
+    }
 
-	return history
+    return history
+}
+
+// Вспомогательные функции
+func getMessageRole(msg interface{}) string {
+    if m, ok := msg.(dsmod.ChatCompletionMessage); ok {
+        return m.Role
+    }
+    return ""
+}
+
+func createSystemMessage(prompt string) interface{} {
+    return dsmod.ChatCompletionMessage{
+        Role:    constants.ChatMessageRoleSystem,
+        Content: prompt,
+    }
+}
+
+func prependSystemMessage(history []interface{}, systemMsg interface{}) []interface{} {
+    if len(history) > 0 && getMessageRole(history[0]) == constants.ChatMessageRoleSystem {
+        return history
+    }
+    return append([]interface{}{systemMsg}, history...)
 }
 
 func (ds *DeepSeek) Shutdown(ctx context.Context) error {
