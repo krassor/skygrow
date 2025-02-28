@@ -155,7 +155,7 @@ jobs:
   server_update:
     needs: [backend-service-auth, tg-gpt-bot, backend-miniaps-bot]
     if: |
-      success() && (
+      (
         needs.backend-service-auth.result == 'success' ||
         needs.tg-gpt-bot.result == 'success' ||
         needs.backend-miniaps-bot.result == 'success'
