@@ -3,7 +3,7 @@ httpServer:
   address: "localhost"
   port: "8080"
   timeout: 6s
-  secret: "skygrowSecretKey"
+  secret: ""
 db:
   host: "localhost"
   port: "5432"
