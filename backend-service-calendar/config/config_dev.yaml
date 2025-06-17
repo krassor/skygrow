@@ -3,13 +3,13 @@ httpServer:
   address: "0.0.0.0"
   port: "8080"
   timeout: 5s
-  secret: "skygrowSecretKey"
+  secret: ""
 db:
   host: "skygrow-pg"
   port: "5432"
-  name: "skygrowdb"
-  user: "krassor"
-  password: "copro123@"
+  name: ""
+  user: ""
+  password: ""
 googleAuthConfig:
   credPath: "/etc/backend-service-calendar/credentials/client_secret.json"
   tokenPath: "/etc/backend-service-calendar/credentials/token.json"
