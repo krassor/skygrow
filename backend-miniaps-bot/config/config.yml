@@ -3,28 +3,28 @@ httpServer:
   address: "0.0.0.0"
   port: "8080"
   timeout: 5s
-  secret: "skygrowSecretKey"
+  secret: ""
 db:
-  host: "skygrowpg"
+  host: ""
   port: "5432"
-  name: "skygrowdb"
-  user: "krassor"
-  password: "copro123@"
+  name: ""
+  user: ""
+  password: ""
 bot:
   admins:
     - KrAssor
-  tgbot_apitoken: 5995322288:AAE9eClgD8cQyasmv5aywzVSaZ5yu-zcjcU
+  tgbot_apitoken: 
   AI:
     timeout: 300
     #deepseek 
-    #aiapitoken: sk-c4d377b7473b4461889dffc65ccfaa64
+    #aiapitoken: 
     #openai
-    # aiapitoken: sk-s8-0MiVQJ5ngvGrUHI6Kwaj1S_7Q9khSsoEske4s3HT3BlbkFJ1g7ALLCvvlFkXeEecdrDOOefNKng_DrWUGVGnPYpEA
+    # aiapitoken: 
     #openrouter
-    aiapitoken: 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
-    systemRolePromt: Ты бот-оператор банка ВТБ. Ты должен отвечать только на вопросы, касающиеся продуктов банка ВТБ, которые он предлагает клиентам. Ответы должны быть в официальном стиле, панибратский стиль недопустим. При ответах необходимо использовать данные с сайтов https://www.vtb.ru/personal/karty/kreditnye/ и https://cc.vtb.ru. На все остальные вопросы, не касающиеся продуктов банка, ты должен отвеать, что не имеешь полномочий для разговора на эту тему. При вопросе про кредитную карту добавляй в конце ответа, что кредитную карту можно оформить, заполнив анкету на hhtps://cc.vtb.ru.
+    aiapitoken: 
+    systemRolePromt: 
     maxTokens: 4096
     temperature: 0.1
     n: 1
     baseURL: https://openrouter.ai/api/v1/
-    modelName: mistralai/mistral-small-3.1-24b-instruct:free
+    modelName: cognitivecomputations/dolphin3.0-r1-mistral-24b:free

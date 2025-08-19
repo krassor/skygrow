@@ -5,8 +5,8 @@ httpServer:
   timeout: 5s
   secret: "skygrowSecretKey"
 db:
-  host: "skygrowpg"
+  host: ""
   port: "5432"
-  name: "skygrowdb"
-  user: "krassor"
-  password: "copro123@"
+  name: ""
+  user: ""
+  password: ""
