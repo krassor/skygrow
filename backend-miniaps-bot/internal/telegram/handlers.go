@@ -28,15 +28,36 @@ func (bot *Bot) defaultHandler(ctx context.Context, update *tgbotapi.Update, sen
 		slog.String("last name", update.Message.From.LastName),
 		slog.String("message id", strconv.Itoa(update.Message.MessageID)),
 	)
-	bot.tgbot.Send(tgbotapi.NewChatAction(update.FromChat().ID, tgbotapi.ChatTyping))
+
 	ctxTimeout, cancel := context.WithTimeout(ctx, bot.cfg.BotConfig.AI.GetTimeout())
 	defer cancel()
+
+// Этот анонимный функциональный литерал используется для отправки сообщения о наборе текста в чате.
+// Он запускается в отдельной горутине, чтобы не блокировать основной поток выполнения.
+//
+// Функция использует `select` для проверки, не был ли контекст отменен.
+// Если контекст был отменен, функция возвращает управление.
+// В противном случае, функция отправляет сообщение о наборе текста в чате.
+//
+// После отправки сообщения, функция "спит" на 2 секунды, чтобы имитировать задержку при наборе текста.
+go func() {
+   select {
+   case <-ctx.Done():
+       return
+   default:
+       bot.tgbot.Send(tgbotapi.NewChatAction(update.FromChat().ID, tgbotapi.ChatTyping))
+   }
+   time.Sleep(2 * time.Second)
+}()
+
 
 	response, err := bot.AIBot.ProcessMessage(
 		ctxTimeout,
 		update.Message.From.ID,
 		bot.textFilter(update.Message.Text),
 	)
+	cancel()
+
 	if err != nil {
 		sl.Err(err)
 		log.Error("failed to process message with AI", sl.Err(err))
@@ -159,6 +180,12 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 	case "start":
 		replyText := fmt.Sprintf("Hi, %s! Ask your questions.", msg.From.UserName)
 		err := bot.sendMessage(msg, replyText)
+		if err != nil {
+			return fmt.Errorf("tgbot.commandHandle: %w", err)
+		}
+	
+	case "calendar":
+		err := bot.sendMenu(msg, "Calendar")
 		if err != nil {
 			return fmt.Errorf("tgbot.commandHandle: %w", err)
 		}

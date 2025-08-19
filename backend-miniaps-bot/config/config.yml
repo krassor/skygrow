@@ -27,4 +27,4 @@ bot:
     temperature: 0.1
     n: 1
     baseURL: https://openrouter.ai/api/v1/
-    modelName: cognitivecomputations/dolphin3.0-r1-mistral-24b:free
+    modelName: mistralai/mistral-small-3.1-24b-instruct:free

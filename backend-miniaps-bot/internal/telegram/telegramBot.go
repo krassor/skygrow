@@ -191,6 +191,33 @@ func (bot *Bot) sendMessage(inputMsg *tgbotapi.Message, replyText string) error 
 	return nil
 }
 
+func (bot *Bot) sendMenu(inputMsg *tgbotapi.Message, replyText string) error {
+	op := "tgBot.sendMenu()"
+	log := bot.log.With(
+		slog.String("op", op),
+	)
+	rows := []tgbotapi.InlineKeyboardButton{
+		tgbotapi.NewInlineKeyboardButtonData("Посмотреть календарь", "schedule"),
+		tgbotapi.NewInlineKeyboardButtonData("Забронировать слот", "feedback"),
+	}
+
+	if inputMsg.From.ID == bot.tgbot.Self.ID {
+		rows = append(rows, tgbotapi.NewInlineKeyboardButtonData("Закрыть", "close"))
+	}
+
+	inlineKeyboard:= tgbotapi.NewInlineKeyboardMarkup(rows)
+	replyMsg := tgbotapi.NewMessage(inputMsg.Chat.ID, replyText)
+	replyMsg.ReplyMarkup = inlineKeyboard
+
+	_, err := bot.tgbot.Send(replyMsg)
+	if err != nil {
+		return fmt.Errorf("tgbot.sendMessage: %w", err)
+	}
+
+	log.Info("sent menu")
+	return nil
+}
+
 // Shutdown gracefully stops the Telegram bot's operations.
 //
 // It attempts to close all necessary channels and stop receiving updates.
