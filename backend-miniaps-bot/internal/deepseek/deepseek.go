@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"app/main.go/internal/config"
 	"app/main.go/internal/utils/logger/sl"
@@ -13,8 +14,8 @@ import (
 )
 
 type Cache interface {
-	Save(ctx context.Context, userID int64, history []interface{}) error
-	Get(ctx context.Context, userID int64) ([]interface{}, error)
+	Save(ctx context.Context, userID int64, history []any) error
+	Get(ctx context.Context, userID int64) ([]any, error)
 	Delete(ctx context.Context, id int64) error
 }
 
@@ -95,7 +96,6 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 	resp, err := ds.Client.CreateChatCompletion(
 		ctx,
 		&dsmod.ChatCompletionRequest{
-			// TODO: вынести в параметры конфигурации openai
 			Model:    ds.config.BotConfig.AI.ModelName,
 			Messages: messages,
 		},
@@ -103,6 +103,11 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 
 	if err != nil {
 		log.Error("error creating chat completion request", slog.String("error", err.Error()))
+
+		if isRateLimitError(err) {
+			return "Provider rate limit. Please try again later.", nil
+		}
+
 		return "", fmt.Errorf("%w", err)
 	}
 
@@ -113,6 +118,7 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 		Role:    constants.ChatMessageRoleAssistant,
 		Content: resp.Choices[0].Message.Content,
 	}
+
 	// Добавляем ответ в кэш
 	history = append(history, msg)
 	err = ds.cache.Save(ctx, userID, history)
@@ -123,70 +129,56 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 	return resp.Choices[0].Message.Content, nil
 }
 
-// func (ds *DeepSeek) truncateHistory(history []interface{}) []interface{} {
+func (ds *DeepSeek) truncateHistory(history []any) []any {
+	const (
+		maxHistoryLength = 30
+		keepLastN        = 25
+	)
 
-// 	if len(history) > 11 {
-// 		return history[len(history)-6:]
-// 	}
+	// Добавление системного промпта
+	if len(history) == 0 || getMessageRole(history[0]) != constants.ChatMessageRoleSystem {
+		systemMsg := createSystemMessage(ds.config.BotConfig.AI.SystemRolePromt)
+		history = prependSystemMessage(history, systemMsg)
+	}
 
-// 	if history[0].(dsmod.ChatCompletionMessage).Role != constants.ChatMessageRoleSystem {
-// 		//Восстанавливаем системный промт в [0] сообщении
-// 		systemRoleMessage := make([]interface{}, 1)
-// 		systemRoleMessage[0] = dsmod.ChatCompletionMessage{
-// 			Role:    constants.ChatMessageRoleSystem,
-// 			Content: ds.config.BotConfig.AI.SystemRolePromt,
-// 		}
-// 		//Добавляем системное сообщение вперед
-// 		history = append(systemRoleMessage, history...)
-// 	}
+	// Обрезка истории
+	if len(history) > maxHistoryLength {
+		keepFrom := max(len(history)-keepLastN, 1)
+		return append([]any{history[0]}, history[keepFrom:]...)
+	}
 
-// 	return history
-// }
-
-func (ds *DeepSeek) truncateHistory(history []interface{}) []interface{} {
-    const (
-        maxHistoryLength = 10
-        keepLastN        = 5
-    )
-
-    // Добавление системного промпта
-    if len(history) == 0 || getMessageRole(history[0]) != constants.ChatMessageRoleSystem {
-        systemMsg := createSystemMessage(ds.config.BotConfig.AI.SystemRolePromt)
-        history = prependSystemMessage(history, systemMsg)
-    }
-
-    // Обрезка истории
-    if len(history) > maxHistoryLength {
-        keepFrom := len(history) - keepLastN
-        if keepFrom < 1 { // Всегда оставляем системное сообщение
-            keepFrom = 1
-        }
-        return append([]interface{}{history[0]}, history[keepFrom:]...)
-    }
-
-    return history
+	return history
 }
 
 // Вспомогательные функции
-func getMessageRole(msg interface{}) string {
-    if m, ok := msg.(dsmod.ChatCompletionMessage); ok {
-        return m.Role
-    }
-    return ""
+func getMessageRole(msg any) string {
+	if m, ok := msg.(dsmod.ChatCompletionMessage); ok {
+		return m.Role
+	}
+	return ""
 }
 
-func createSystemMessage(prompt string) interface{} {
-    return dsmod.ChatCompletionMessage{
-        Role:    constants.ChatMessageRoleSystem,
-        Content: prompt,
-    }
+func createSystemMessage(prompt string) any {
+	return dsmod.ChatCompletionMessage{
+		Role:    constants.ChatMessageRoleSystem,
+		Content: prompt,
+	}
 }
 
-func prependSystemMessage(history []interface{}, systemMsg interface{}) []interface{} {
-    if len(history) > 0 && getMessageRole(history[0]) == constants.ChatMessageRoleSystem {
-        return history
-    }
-    return append([]interface{}{systemMsg}, history...)
+func prependSystemMessage(history []any, systemMsg any) []any {
+	if len(history) > 0 && getMessageRole(history[0]) == constants.ChatMessageRoleSystem {
+		return history
+	}
+	return append([]any{systemMsg}, history...)
+}
+
+func isRateLimitError(err error) bool {
+	// Если библиотека возвращает ошибку с полем Code:
+	// if e, ok := err.(interface{ Code() int }); ok && e.Code() == 429 {
+	// 	return true
+	// }
+	// Или проверка по строке ошибки (менее надёжно):
+	return strings.Contains(err.Error(), "HTTP 429")
 }
 
 func (ds *DeepSeek) Shutdown(ctx context.Context) error {

@@ -7,7 +7,7 @@ import (
 )
 
 type InMemoryCache struct {
-	InMemoryMap map[int64][]interface{}
+	InMemoryMap map[int64][]any
 	mutex       sync.RWMutex
 }
 
@@ -18,7 +18,7 @@ func NewInMemoryRepository() *InMemoryCache {
 	}
 }
 
-func (r *InMemoryCache) Save(ctx context.Context, userID int64, history []interface{}) error {
+func (r *InMemoryCache) Save(ctx context.Context, userID int64, history []any) error {
 	if r.InMemoryMap == nil {
 		return fmt.Errorf("SaveUserMessage error: Map is not initializate")
 	}
@@ -26,8 +26,10 @@ func (r *InMemoryCache) Save(ctx context.Context, userID int64, history []interf
 	if userID <= 0 {
 		return fmt.Errorf("Save error: Empty key \"userID\"")
 	}
+
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
+	
 	r.InMemoryMap[userID] = append(r.InMemoryMap[userID], history...)
 
 	return nil
@@ -54,7 +56,7 @@ func (r *InMemoryCache) IsUserExist(ctx context.Context, userID int64) (bool, er
 
 }
 
-func (r *InMemoryCache) Get(ctx context.Context, userID int64) ([]interface{}, error) {
+func (r *InMemoryCache) Get(ctx context.Context, userID int64) ([]any, error) {
 	if r.InMemoryMap == nil {
 		return nil, fmt.Errorf("Load error: Map is not initializate")
 	}

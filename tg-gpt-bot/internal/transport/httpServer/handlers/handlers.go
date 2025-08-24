@@ -3,15 +3,15 @@ package handlers
 import (
 	//"encoding/json"
 	//"fmt"
-	"net/http"
+	//"net/http"
 	//"net/url"
 	//"github.com/rs/zerolog/log"
 	//"github.com/krassor/skygrow/tg-gpt-bot/pkg/utils"
 )
 
-type DeviceHandlers interface {
-	CreateDevice(w http.ResponseWriter, r *http.Request)
-}
+// type DeviceHandlers interface {
+// 	CreateDevice(w http.ResponseWriter, r *http.Request)
+// }
 
 // type deviceHandler struct {
 // 	deviceService services.DevicesRepoService

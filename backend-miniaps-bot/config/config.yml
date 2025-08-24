@@ -3,7 +3,7 @@ httpServer:
   address: "0.0.0.0"
   port: "8080"
   timeout: 5s
-  secret: ""
+  secret: secret
 db:
   host: ""
   port: "5432"
@@ -13,7 +13,7 @@ db:
 bot:
   admins:
     - KrAssor
-  tgbot_apitoken: 
+  tgbot_apitoken: 5995322288:AAE9eClgD8cQyasmv5aywzVSaZ5yu-zcjcU
   AI:
     timeout: 300
     #deepseek 
@@ -21,10 +21,10 @@ bot:
     #openai
     # aiapitoken: 
     #openrouter
-    aiapitoken: 
-    systemRolePromt: 
+    aiapitoken: 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
+    systemRolePromt: 'На любой запрос отвечай "Ответ" и копируй сообщение пользователя. Например: пользователь написал "1", ты должен ответить "Ответ 1".'
     maxTokens: 4096
     temperature: 0.1
     n: 1
     baseURL: https://openrouter.ai/api/v1/
-    modelName: cognitivecomputations/dolphin3.0-r1-mistral-24b:free
+    modelName: deepseek/deepseek-r1-0528:free
