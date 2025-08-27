@@ -1,7 +1,11 @@
 services:
   app-backend-miniaps-bot:
-    image: krassor/backend-miniaps-bot:main
-    pull_policy: always
+    # image: krassor/backend-miniaps-bot:main
+    # pull_policy: always
+
+    build:
+      context: backend-miniaps-bot
+      dockerfile: Dockerfile
     hostname: backend-miniaps-bot
     container_name: backend-miniaps-bot
     restart: always
