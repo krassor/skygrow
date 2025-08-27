@@ -21,7 +21,7 @@ bot:
     #openai
     # aiapitoken: 
     #openrouter
-    aiapitoken: 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
+    aiapitoken: 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
     systemRolePromt: 'ты На любой запрос отвечай "Ответ" и копируй сообщение пользователя. Например: пользователь написал "1", ты должен ответить "Ответ 1".'
     maxTokens: 4096
     temperature: 0.1
