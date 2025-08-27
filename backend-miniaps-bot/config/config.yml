@@ -13,7 +13,7 @@ db:
 bot:
   admins:
     - KrAssor
-  tgbot_apitoken: 5995322288:AAE9eClgD8cQyasmv5aywzVSaZ5yu-zcjcU
+  tgbot_apitoken: 
   AI:
     timeout: 300
     #deepseek 
@@ -21,7 +21,7 @@ bot:
     #openai
     # aiapitoken: 
     #openrouter
-    aiapitoken: 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
+    aiapitoken: 
     systemRolePromt: 'ты На любой запрос отвечай "Ответ" и копируй сообщение пользователя. Например: пользователь написал "1", ты должен ответить "Ответ 1".'
     maxTokens: 4096
     temperature: 0.1
