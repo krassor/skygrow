@@ -182,13 +182,30 @@ func (bot *Bot) sendReplyMessage(inputMsg *tgbotapi.Message, replyText string) e
 
 func (bot *Bot) sendMessage(inputMsg *tgbotapi.Message, replyText string) error {
 	replyMsg := tgbotapi.NewMessage(inputMsg.Chat.ID, "")
-	replyMsg.Text = replyText
 
-	_, err := bot.tgbot.Send(replyMsg)
-	if err != nil {
-		return fmt.Errorf("tgbot.sendMessage: %w", err)
+	chunks := splitTextIntoChunks(replyText, 4096)
+
+	for _, chunk := range chunks {
+		replyMsg.Text = chunk
+
+		_, err := bot.tgbot.Send(replyMsg)
+		if err != nil {
+			return fmt.Errorf("tgbot.sendMessage: %w", err)
+		}
 	}
 	return nil
+}
+
+func splitTextIntoChunks(text string, chunkSize int) []string {
+	var chunks []string
+	for i := 0; i < len(text); i += chunkSize {
+		end := i + chunkSize
+		if end > len(text) {
+			end = len(text)
+		}
+		chunks = append(chunks, text[i:end])
+	}
+	return chunks
 }
 
 func (bot *Bot) sendMenu(inputMsg *tgbotapi.Message, replyText string) error {
@@ -205,7 +222,7 @@ func (bot *Bot) sendMenu(inputMsg *tgbotapi.Message, replyText string) error {
 		rows = append(rows, tgbotapi.NewInlineKeyboardButtonData("Закрыть", "close"))
 	}
 
-	inlineKeyboard:= tgbotapi.NewInlineKeyboardMarkup(rows)
+	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows)
 	replyMsg := tgbotapi.NewMessage(inputMsg.Chat.ID, replyText)
 	replyMsg.ReplyMarkup = inlineKeyboard
 
