@@ -1,4 +1,5 @@
 .vscode
+.idea
 Procfile
 .DS_Store
 run_docker_build.sh
@@ -11,3 +12,4 @@ docker-compose-dev.yml
 run_docker_build_dev.sh
 qodana.yaml
 docker-compose.yml
+config.yml
