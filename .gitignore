@@ -12,4 +12,4 @@ docker-compose-dev.yml
 run_docker_build_dev.sh
 qodana.yaml
 docker-compose.yml
-config.yml
+*config*.yml
