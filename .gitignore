@@ -11,5 +11,5 @@ Dockerfile.dev
 docker-compose-dev.yml
 run_docker_build_dev.sh
 qodana.yaml
-docker-compose.yml
+*docker-compose*.yml
 *config*.yml
