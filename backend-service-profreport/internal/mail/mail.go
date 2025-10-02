@@ -258,6 +258,9 @@ func (m *Mailer) send(to string, subject string, body string) error {
 }
 
 func (m *Mailer) sendWithGomail(to string, subject string, body string) error {
+	// Создаем временную зону с фиксированным смещением +3 часа (10800 секунд)
+	location := time.FixedZone("MSK", 3*3600) // 3 часа = 10800 секунд
+
 	msg := gomail.NewMessage()
 	msg.SetHeader("From", m.cfg.MailConfig.FromAddress)
 	msg.SetHeader("To", to)
@@ -265,7 +268,7 @@ func (m *Mailer) sendWithGomail(to string, subject string, body string) error {
 	msg.SetHeader("MIME-Version", "1.0")
 	msg.SetHeader("Content-Type", "text/html; charset=\"UTF-8\"")
 	msg.SetHeader("Content-Transfer-Encoding", "8bit")
-	msg.SetHeader("Date", time.Now().UTC().Format(time.RFC1123Z))
+	msg.SetHeader("Date", time.Now().UTC().In(location).Format(time.RFC1123Z))
 	msg.SetHeader("Message-ID", fmt.Sprintf("<%d.%s>", time.Now().UnixNano(), m.cfg.MailConfig.FromAddress))
 	msg.SetHeader("X-Mailer", "proffreportServiceApp/1.0")
 
