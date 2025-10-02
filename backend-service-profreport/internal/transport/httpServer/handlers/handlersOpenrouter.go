@@ -83,7 +83,9 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.mailerService.AddJob(questionnaireDto.User.Email, "Prof Report", response)
+	mailBody := "Здравствуйте!\n По Вашему запросу был сгенерирован отчет" + response + "\nС уважением, команда profreport."
+
+	err = h.mailerService.AddJob(questionnaireDto.User.Email, "Prof Report", mailBody)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
 		return
