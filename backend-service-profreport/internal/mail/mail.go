@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"gopkg.in/gomail.v2"
+
 	"app/main.go/internal/config"
 )
 
@@ -148,7 +150,7 @@ func (m *Mailer) handleJob(id int) {
 				case <-m.shutdownChannel:
 					return
 				default:
-					e = m.send(job.To, job.Subject, job.Body)
+					e = m.sendWithGomail(job.To, job.Subject, job.Body)
 				}
 				if e != nil {
 					err = e
@@ -250,6 +252,37 @@ func (m *Mailer) send(to string, subject string, body string) error {
 	_, err = fmt.Fprint(wc, message)
 	if err != nil {
 		return fmt.Errorf("failed to write email body: %w", err)
+	}
+
+	return nil
+}
+
+func (m *Mailer) sendWithGomail(to string, subject string, body string) error {
+	msg := gomail.NewMessage()
+	msg.SetHeader("From", m.cfg.MailConfig.FromAddress)
+	msg.SetHeader("To", to)
+	msg.SetHeader("Subject", "Prof report")
+	msg.SetHeader("MIME-Version", "1.0")
+	msg.SetHeader("Content-Type", "text/html; charset=\"UTF-8\"")
+	msg.SetHeader("Content-Transfer-Encoding", "quoted-printable")
+	msg.SetHeader("Date", time.Now().Format(time.RFC1123Z))
+	msg.SetHeader("Message-ID", fmt.Sprintf("<%d@casaelraval.tilda.ws", time.Now().UnixNano()))
+	msg.SetHeader("X-Mailer", "proffreport service app 1.0")
+
+	msg.SetBody("text/html", body)
+
+	d := gomail.NewDialer(
+		m.cfg.MailConfig.SMTPHost,
+		m.cfg.MailConfig.SMTPPort,
+		m.cfg.MailConfig.Username,
+		m.cfg.MailConfig.Password)
+
+	d.TLSConfig = &tls.Config{
+		ServerName: m.cfg.MailConfig.SMTPHost,
+	}
+
+	if err := d.DialAndSend(msg); err != nil {
+		return err
 	}
 
 	return nil
