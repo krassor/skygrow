@@ -83,7 +83,7 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mailBody := "Здравствуйте!\n По Вашему запросу был сгенерирован отчет" + response + "\nС уважением, команда profreport."
+	mailBody := "Здравствуйте!\n По Вашему запросу был сгенерирован отчет\n" + response + "\nС уважением, команда profreport."
 
 	err = h.mailerService.AddJob(questionnaireDto.User.Email, "Prof Report", mailBody)
 	if err != nil {

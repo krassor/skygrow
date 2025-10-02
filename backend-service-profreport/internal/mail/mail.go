@@ -265,7 +265,7 @@ func (m *Mailer) sendWithGomail(to string, subject string, body string) error {
 	msg.SetHeader("MIME-Version", "1.0")
 	msg.SetHeader("Content-Type", "text/html; charset=\"UTF-8\"")
 	msg.SetHeader("Content-Transfer-Encoding", "8bit")
-	msg.SetHeader("Date", time.Now().Format(time.RFC1123Z))
+	//msg.SetHeader("Date", time.Now().Format(time.RFC1123Z))
 	msg.SetHeader("Message-ID", fmt.Sprintf("<%d.%s>", time.Now().UnixNano(), m.cfg.MailConfig.FromAddress))
 	msg.SetHeader("X-Mailer", "proffreportServiceApp/1.0")
 
