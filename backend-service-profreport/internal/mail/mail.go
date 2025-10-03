@@ -273,7 +273,7 @@ func (m *Mailer) sendWithGomail(to string, subject string, body string) error {
 	msg.SetHeader("X-Mailer", "proffreportServiceApp/1.0")
 	msg.SetHeader("List-Unsubscribe", fmt.Sprintf("mailto:%s?subject=unsubscribe", m.cfg.MailConfig.FromAddress))
 
-	msg.SetBody("text/html", body)
+	msg.SetBody("text/plain", body)
 
 	m.logger.Debug(
 		"mail headers",
