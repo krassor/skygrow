@@ -266,11 +266,12 @@ func (m *Mailer) sendWithGomail(to string, subject string, body string) error {
 	msg.SetHeader("To", to)
 	msg.SetHeader("Subject", "Prof report")
 	msg.SetHeader("MIME-Version", "1.0")
-	msg.SetHeader("Content-Type", "text/html; charset=\"UTF-8\"")
+	msg.SetHeader("Content-Type", "text/plain; charset=\"UTF-8\"")
 	msg.SetHeader("Content-Transfer-Encoding", "8bit")
 	msg.SetHeader("Date", time.Now().UTC().In(location).Format(time.RFC1123Z))
 	msg.SetHeader("Message-ID", fmt.Sprintf("<%d.%s>", time.Now().UnixNano(), m.cfg.MailConfig.FromAddress))
 	msg.SetHeader("X-Mailer", "proffreportServiceApp/1.0")
+	msg.SetHeader("List-Unsubscribe", fmt.Sprintf("mailto:%s?subject=unsubscribe", m.cfg.MailConfig.FromAddress))
 
 	msg.SetBody("text/html", body)
 
