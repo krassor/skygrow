@@ -129,6 +129,23 @@ func (ds *DeepSeek) ProcessMessage(ctx context.Context, userID int64, message st
 	return resp.Choices[0].Message.Content, nil
 }
 
+// truncateHistory обрезает историю чата до максимально допустимой длины,
+// сохраняя первое системное сообщение и последние N сообщений.
+//
+// Параметры:
+//   - history: история сообщений в виде среза интерфейсов `any`.
+//
+// Возвращает:
+//   - Обновлённую историю сообщений:
+//     1. Гарантирует наличие системного сообщения в начале (если его нет, добавляет).
+//     2. Ограничивает длину истории значением `maxHistoryLength` (30):
+//        - Сохраняет первое сообщение (системное).
+//        - Сохраняет последние `keepLastN` (25) сообщений.
+//        - Итоговая длина: 1 (системное) + 25 = 26 сообщений.
+//
+// Пример:
+//   Вход: [systemMsg, msg1, msg2, ..., msg40]
+//   Выход: [systemMsg, msg16, msg17, ..., msg40] (сохранено 25 последних после systemMsg)
 func (ds *DeepSeek) truncateHistory(history []any) []any {
 	const (
 		maxHistoryLength = 30
@@ -150,7 +167,9 @@ func (ds *DeepSeek) truncateHistory(history []any) []any {
 	return history
 }
 
-// Вспомогательные функции
+// getMessageRole извлекает роль сообщения из элемента истории.
+// Предполагается, что элемент содержит поле "role" с типом string.
+// Реализация зависит от внутренней структуры сообщения.
 func getMessageRole(msg any) string {
 	if m, ok := msg.(dsmod.ChatCompletionMessage); ok {
 		return m.Role
@@ -158,6 +177,17 @@ func getMessageRole(msg any) string {
 	return ""
 }
 
+// createSystemMessage создает системное сообщение для чата с заданным текстом подсказки.
+//
+// Параметры:
+//   - prompt: текст подсказки, который будет использоваться в качестве содержимого системного сообщения.
+//
+// Возвращает:
+//   - Объект типа dsmod.ChatCompletionMessage с ролью `constants.ChatMessageRoleSystem` и указанным содержимым.
+//
+// Использование:
+//   - Формирование начального системного сообщения для инициализации контекста чата.
+//   - Добавление правил или инструкций для модели обработки диалога.
 func createSystemMessage(prompt string) any {
 	return dsmod.ChatCompletionMessage{
 		Role:    constants.ChatMessageRoleSystem,
@@ -165,6 +195,17 @@ func createSystemMessage(prompt string) any {
 	}
 }
 
+// prependSystemMessage добавляет системное сообщение в начало истории чата,
+// если оно ещё не присутствует.
+//
+// Параметры:
+//   - history: история сообщений в виде среза интерфейсов `any`.
+//   - systemMsg: системное сообщение, которое нужно добавить.
+//
+// Возвращает:
+//   - Обновлённую историю сообщений:
+//     - Если первое сообщение в `history` уже является системным — возвращает `history` без изменений.
+//     - В противном случае — возвращает новый срез, где `systemMsg` добавлен в начало `history`.
 func prependSystemMessage(history []any, systemMsg any) []any {
 	if len(history) > 0 && getMessageRole(history[0]) == constants.ChatMessageRoleSystem {
 		return history

@@ -14,3 +14,6 @@ qodana.yaml
 *docker-compose*.yml
 *config*.yml
 questionnaire.json
+*.conf
+data
+letsencrypt

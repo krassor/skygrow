@@ -1,40 +1,48 @@
 package handlers
 
 import (
-	"app/main.go/internal/mail"
 	"app/main.go/internal/models/dto"
-	"app/main.go/internal/openrouter"
 	"app/main.go/internal/utils"
 	"app/main.go/internal/utils/logger/sl"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
-
-	// "app/main.go/internal/models/domain"
-	// "app/main.go/internal/models/dto"
-	// "app/main.go/internal/utils"
-	// "app/main.go/internal/utils/logger/sl"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 var (
 	ErrInternalServer = errors.New("internal server error")
 )
 
-type QuestionnaireHandler struct {
-	openrouterService *openrouter.Openrouter
-	mailerService     *mail.Mailer
-	log               *slog.Logger
+type LLMService interface {
+	CreateChatCompletion(
+		ctx context.Context,
+		prompt string,
+	) (string, error)
 }
 
-func NewQuestionnaireHandler(log *slog.Logger, openrouterService *openrouter.Openrouter, mailer *mail.Mailer) *QuestionnaireHandler {
+type MailService interface {
+	AddJob(
+		to string,
+		subject string,
+		body string,
+	) error
+}
+
+type QuestionnaireHandler struct {
+	LLMService  LLMService
+	MailService MailService
+	log         *slog.Logger
+}
+
+func NewQuestionnaireHandler(log *slog.Logger, LLMService LLMService, MailService MailService) *QuestionnaireHandler {
 	return &QuestionnaireHandler{
-		openrouterService: openrouterService,
-		mailerService:     mailer,
-		log:               log,
+		LLMService:  LLMService,
+		MailService: MailService,
+		log:         log,
 	}
 }
 
@@ -58,6 +66,10 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		h.err(log, fmt.Errorf("email is empty"), fmt.Errorf("email is empty"), w, http.StatusBadRequest)
 		return
 	}
+	if !utils.IsEmailValid(questionnaireDto.User.Email) {
+		h.err(log, fmt.Errorf("email is wrong"), fmt.Errorf("email is wrong: %s", questionnaireDto.User.Email), w, http.StatusBadRequest)
+		return
+	}
 	if len(questionnaireDto.RIASEC) == 0 {
 		h.err(log, fmt.Errorf("RIASEC test is empty"), fmt.Errorf("RIASEC test is empty"), w, http.StatusBadRequest)
 		return
@@ -77,7 +89,7 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	response, err := h.openrouterService.CreateChatCompletion(ctx, h.splitQuestionnaire(&questionnaireDto))
+	response, err := h.LLMService.CreateChatCompletion(ctx, h.splitQuestionnaire(&questionnaireDto))
 	if err != nil {
 		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
 		return
@@ -85,10 +97,16 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	mailBody := "Здравствуйте!\n По Вашему запросу был сгенерирован отчет\n" + response + "\nС уважением, команда profreport."
 
-	err = h.mailerService.AddJob(questionnaireDto.User.Email, "Prof Report", mailBody)
+	err = h.MailService.AddJob(questionnaireDto.User.Email, "Prof Report", mailBody)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
 		return
+	}
+
+	responseSuccess := utils.Message(true, "")
+	err = utils.Json(w, http.StatusOK, responseSuccess)
+	if err != nil {
+		log.Error("error encode response to json", sl.Err(err))
 	}
 
 }

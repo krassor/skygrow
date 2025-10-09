@@ -56,17 +56,9 @@ func (or *Openrouter) CreateChatCompletion(ctx context.Context, message string) 
 	)
 
 	log.Debug("input message", slog.String("message", message))
-
-	// resp, err := or.Client.CreateChatCompletion(
-	// 	ctx,
-	// 	&dsmod.ChatCompletionRequest{
-	// 		Model:    or.config.BotConfig.AI.ModelName,
-	// 		Messages: messages,
-	// 	},
-	// )
 	var resp openrouter.ChatCompletionResponse
 	var err error
-	for {
+	for retry := range retryCount {
 		var r openrouter.ChatCompletionResponse
 		var e error
 		select {
@@ -90,6 +82,7 @@ func (or *Openrouter) CreateChatCompletion(ctx context.Context, message string) 
 			log.Error(
 				"rate limit CreateChatCompletion 429",
 				slog.String("error", err.Error()),
+				slog.Int("retry", retry),
 			)
 			time.Sleep(retryDuration)
 			continue

@@ -6,15 +6,15 @@ import (
 	"regexp"
 )
 
-func Message(statusOK bool, message interface{}) map[string]interface{} {
+func Message(statusOK bool, message any) map[string]any {
 	if statusOK {
-		return map[string]interface{}{"status": "OK", "message": message}
+		return map[string]any{"status": "OK", "message": message}
 	}
-	return map[string]interface{}{"status": "error", "message": message}
+	return map[string]any{"status": "error", "message": message}
 
 }
 
-func Respond(w http.ResponseWriter, data map[string]interface{}) error {
+func Respond(w http.ResponseWriter, data map[string]any) error {
 	w.Header().Add("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
@@ -23,7 +23,7 @@ func Respond(w http.ResponseWriter, data map[string]interface{}) error {
 	return nil
 }
 
-func Json(w http.ResponseWriter, httpCode int, data interface{}) error {
+func Json(w http.ResponseWriter, httpCode int, data any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpCode)
 	err := json.NewEncoder(w).Encode(&data)
