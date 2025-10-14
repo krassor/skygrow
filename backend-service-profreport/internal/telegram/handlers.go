@@ -83,6 +83,66 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 			}
 		}
 
+	case "setmodel":
+		replyText := ""
+		isAdmin, err := bot.isAdmin(update.Message)
+
+		log.Debug("setmodel",
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("message", update.Message.Text),
+			slog.String("is admin", strconv.FormatBool(isAdmin)),
+		)
+
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		if isAdmin {
+
+			bot.cfg.BotConfig.AI.ModelName = strings.TrimPrefix(
+				update.Message.Text, "/setmodel ")
+
+			err = bot.cfg.Write()
+			if err != nil {
+				return fmt.Errorf("%s: %w", op, err)
+			}
+
+			log.Debug(
+				"system model changed",
+				slog.String("model", bot.cfg.BotConfig.AI.ModelName),
+			)
+
+			replyText = "👍 Model changed 👍"
+			err := sendFunc(update.Message, replyText)
+			if err != nil {
+				return fmt.Errorf("%s: %w", op, err)
+			}
+		}
+
+	case "getmodel":
+
+		replyText := ""
+		isAdmin, err := bot.isAdmin(update.Message)
+
+		log.Debug("getmodel",
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("message", update.Message.Text),
+			slog.String("is admin", strconv.FormatBool(isAdmin)),
+		)
+
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		if isAdmin {
+
+			replyText = bot.cfg.BotConfig.AI.ModelName
+			err := sendFunc(update.Message, replyText)
+			if err != nil {
+				return fmt.Errorf("%s: %w", op, err)
+			}
+		}
+
 	case "start":
 		replyText := fmt.Sprintf("Hi, %s! Ask your questions.", msg.From.UserName)
 		err := sendFunc(update.Message, replyText)
