@@ -17,3 +17,4 @@ questionnaire.json
 *.conf
 data
 letsencrypt
+promt.md

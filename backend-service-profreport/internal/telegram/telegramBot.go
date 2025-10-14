@@ -19,8 +19,8 @@ type AIBotApi interface {
 }
 
 type Bot struct {
-	tgbot           *tgbotapi.BotAPI
-	cfg             *config.Config
+	tgbot *tgbotapi.BotAPI
+	cfg   *config.Config
 	// AIBot           AIBotApi
 	shutdownChannel chan struct{}
 	ctx             context.Context
@@ -28,7 +28,7 @@ type Bot struct {
 	log             *slog.Logger
 }
 
-func New(logger *slog.Logger, cfg *config.Config, /*AIBot AIBotApi*/) *Bot {
+func New(logger *slog.Logger, cfg *config.Config /*AIBot AIBotApi*/) *Bot {
 	op := "telegramBot.New()"
 	log := logger.With(
 		slog.String("op", op),
@@ -46,8 +46,8 @@ func New(logger *slog.Logger, cfg *config.Config, /*AIBot AIBotApi*/) *Bot {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Bot{
-		tgbot:           bot,
-		cfg:             cfg,
+		tgbot: bot,
+		cfg:   cfg,
 		// AIBot:           AIBot,
 		shutdownChannel: make(chan struct{}),
 		ctx:             ctx,
@@ -171,9 +171,8 @@ func (bot *Bot) isReplyToBotMessage(update *tgbotapi.Update) bool {
 func (bot *Bot) sendReplyMessage(inputMsg *tgbotapi.Message, replyText string) error {
 	replyMsg := tgbotapi.NewMessage(inputMsg.Chat.ID, "")
 	replyMsg.ReplyToMessageID = inputMsg.MessageID
-	replyMsg.Text = replyText
 
-	chunks := splitTextIntoChunks(replyText, 4096)
+	chunks := splitTextIntoChunks(replyText, 4095)
 
 	for _, chunk := range chunks {
 		replyMsg.Text = chunk

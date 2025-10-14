@@ -23,7 +23,7 @@ const (
 	envProd  = "prod"
 )
 
-var Version = "dev"
+var Version = "0.1"
 
 func main() {
 	cfg := config.MustLoad()
@@ -37,12 +37,21 @@ func main() {
 	)
 	log.Debug("debug messages are enabled")
 
+	err := cfg.ReadPromtFromFile()
+	if err != nil {
+		log.Error(
+			"main read prompt error",
+			slog.String("error", err.Error()),
+		)
+		os.Exit(1)
+	}
+
 	tgBot := telegramBot.New(log, cfg)
 
 	openRouterService := openrouter.NewClient(log, cfg)
 	mailService := mail.NewMailer(log, cfg)
 	questionnaireHandler := handlers.NewQuestionnaireHandler(log, openRouterService, mailService)
-	router := routers.NewRouter(questionnaireHandler, "123")
+	router := routers.NewRouter(questionnaireHandler, "TODO")
 	httpServer := httpServer.NewHttpServer(log, router, cfg)
 
 	maxSecond := 15 * time.Second

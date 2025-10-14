@@ -31,6 +31,8 @@ type AIConfig struct {
 	ModelName       string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
 	AIApiToken      string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
 	SystemRolePromt string  `yaml:"systemRolePromt" env-default:""`
+	PromtFilePath   string  `yaml:"promtPath" env:"PROMT_FILEPATH" env-default:""`
+	PromtFileName   string  `yaml:"promtName" env:"PROMT_FILENAME" env-default:""`
 	MaxTokens       int     `yaml:"maxTokens" env-default:"65000"`
 	Temperature     float32 `yaml:"temperature" env-default:"0.5"`
 	N               int     `yaml:"n" env-default:"1"`

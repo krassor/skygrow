@@ -65,7 +65,6 @@ func (or *Openrouter) CreateChatCompletion(ctx context.Context, message string) 
 		case <-or.shutdownChannel:
 			return "", fmt.Errorf("shutdown openrouter client")
 		default:
-
 			r, e = or.Client.CreateChatCompletion(
 				ctx,
 				openrouter.ChatCompletionRequest{

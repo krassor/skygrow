@@ -81,6 +81,33 @@ func (cfg *Config) Write() error {
 	return nil
 }
 
+func (cfg *Config) ReadPromtFromFile() error {
+	if cfg.BotConfig.AI.PromtFilePath == "" {
+		return fmt.Errorf("promt filepath is emtpy")
+	}
+	if cfg.BotConfig.AI.PromtFileName == "" {
+		return fmt.Errorf("promt filename is emtpy")
+	}
+	fullPath := cfg.BotConfig.AI.PromtFilePath + cfg.BotConfig.AI.PromtFileName
+
+	systemPrompt, err := os.ReadFile(fullPath)
+	if err != nil {
+		return fmt.Errorf("failed to read system prompt file: %s: %w", fullPath, err)
+	}
+
+	cfg.BotConfig.AI.SystemRolePromt = string(systemPrompt)
+
+	err = cfg.Write()
+	if err != nil {
+		return fmt.Errorf(
+			"failed to write system prompt to config file: %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
 func (c *AIConfig) GetTimeout() time.Duration {
 	return time.Duration(c.Timeout) * time.Second
 }
