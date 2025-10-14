@@ -4,6 +4,7 @@ import (
 	"app/main.go/internal/models/dto"
 	"app/main.go/internal/utils"
 	"app/main.go/internal/utils/logger/sl"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/yuin/goldmark"
 )
 
 var (
@@ -95,7 +98,13 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mailBody := "Здравствуйте!\n По Вашему запросу был сгенерирован отчет\n" + response + "\nС уважением, команда profreport."
+	//mailBody := "Здравствуйте!\n По Вашему запросу был сгенерирован отчет\n" + response + "\nС уважением, команда profreport."
+
+	mailBody, err := mdToHTML(response)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
+		return
+	}
 
 	err = h.MailService.AddJob(questionnaireDto.User.Email, "Prof Report", mailBody)
 	if err != nil {
@@ -145,4 +154,12 @@ func splitTest(testHeader string, answers []dto.QuestionAnswer) string {
 			fmt.Sprintf("Ответ: %s\n\n", answer.Answer)
 	}
 	return result
+}
+
+func mdToHTML(md string) (string, error) {
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(md), &buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
