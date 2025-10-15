@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"app/main.go/internal/config"
 	"app/main.go/internal/models/dto"
 	"app/main.go/internal/utils"
 	"app/main.go/internal/utils/logger/sl"
@@ -11,7 +12,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/yuin/goldmark"
 )
@@ -38,14 +38,16 @@ type MailService interface {
 type QuestionnaireHandler struct {
 	LLMService  LLMService
 	MailService MailService
+	cfg         *config.Config
 	log         *slog.Logger
 }
 
-func NewQuestionnaireHandler(log *slog.Logger, LLMService LLMService, MailService MailService) *QuestionnaireHandler {
+func NewQuestionnaireHandler(log *slog.Logger, cfg *config.Config, LLMService LLMService, MailService MailService) *QuestionnaireHandler {
 	return &QuestionnaireHandler{
 		LLMService:  LLMService,
 		MailService: MailService,
 		log:         log,
+		cfg:         cfg,
 	}
 }
 
@@ -89,7 +91,7 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), h.cfg.BotConfig.AI.GetTimeout())
 	defer cancel()
 
 	response, err := h.LLMService.CreateChatCompletion(ctx, h.splitQuestionnaire(&questionnaireDto))

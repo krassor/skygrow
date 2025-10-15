@@ -50,7 +50,7 @@ func main() {
 
 	openRouterService := openrouter.NewClient(log, cfg)
 	mailService := mail.NewMailer(log, cfg)
-	questionnaireHandler := handlers.NewQuestionnaireHandler(log, openRouterService, mailService)
+	questionnaireHandler := handlers.NewQuestionnaireHandler(log, cfg, openRouterService, mailService)
 	router := routers.NewRouter(questionnaireHandler, "TODO")
 	httpServer := httpServer.NewHttpServer(log, router, cfg)
 
