@@ -34,7 +34,6 @@ func NewClient(
 		slog.String("op", op),
 	)
 
-	//client := dsmod.NewClient(aiToken, config.BotConfig.AI.BaseURL)
 	client := openrouter.NewClient(
 		config.BotConfig.AI.AIApiToken,
 	)
@@ -49,13 +48,13 @@ func NewClient(
 	}
 }
 
-func (or *Openrouter) CreateChatCompletion(ctx context.Context, message string) (string, error) {
+func (or *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logger, message string) (string, error) {
 	op := "deepseek.CreateChatCompletion()"
-	log := or.logger.With(
+	log := logger.With(
 		slog.String("op", op),
 	)
 
-	log.Debug("input message", slog.String("message", message))
+	//log.Debug("input message", slog.String("message", message))
 	var resp openrouter.ChatCompletionResponse
 	var err error
 	for retry := range retryCount {
@@ -96,7 +95,7 @@ func (or *Openrouter) CreateChatCompletion(ctx context.Context, message string) 
 		return "", fmt.Errorf("error creating chat completion request: %w", err)
 	}
 
-	log.Debug("received chat completion response", slog.Any("response", resp))
+	log.Debug("received chat completion response", slog.Any("response role", resp.Choices[0].Message.Role))
 
 	return resp.Choices[0].Message.Content.Text, nil
 }

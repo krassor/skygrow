@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/yuin/goldmark"
 )
 
@@ -23,12 +24,14 @@ var (
 type LLMService interface {
 	CreateChatCompletion(
 		ctx context.Context,
+		logger *slog.Logger,
 		prompt string,
 	) (string, error)
 }
 
 type MailService interface {
 	AddJob(
+		ID uuid.UUID,
 		to string,
 		subject string,
 		body string,
@@ -53,9 +56,11 @@ func NewQuestionnaireHandler(log *slog.Logger, cfg *config.Config, LLMService LL
 
 func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 	op := "httpServer.handlers.QuestionnaireHandler.Create()"
+	requestID := uuid.New()
 	log := h.log
 	log.With(
 		slog.String("op", op),
+		slog.String("requestID", requestID.String()),
 	)
 
 	questionnaireDto := dto.QuestionnaireDto{}
@@ -94,7 +99,7 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.cfg.BotConfig.AI.GetTimeout())
 	defer cancel()
 
-	response, err := h.LLMService.CreateChatCompletion(ctx, h.splitQuestionnaire(&questionnaireDto))
+	response, err := h.LLMService.CreateChatCompletion(ctx, log, h.splitQuestionnaire(&questionnaireDto))
 	if err != nil {
 		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
 		return
@@ -108,7 +113,9 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.MailService.AddJob(questionnaireDto.User.Email, "Prof Report", mailBody)
+	log.Debug("html mail body", slog.String("mailBody", mailBody))
+
+	err = h.MailService.AddJob(requestID, questionnaireDto.User.Email, "Prof Report", mailBody)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
 		return

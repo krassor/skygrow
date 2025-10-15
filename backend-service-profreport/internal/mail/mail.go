@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"gopkg.in/gomail.v2"
 
 	"app/main.go/internal/config"
@@ -21,6 +22,7 @@ const (
 )
 
 type Job struct {
+	ID      uuid.UUID
 	To      string
 	Subject string
 	Body    string
@@ -87,12 +89,13 @@ func (m *Mailer) Start() {
 //   - ошибку в следующих случаях:
 //     1. Адрес электронной почты `to` имеет некорректный формат.
 //     2. Буфер задач (`jobs`) заполнен до максимальной ёмкости, заданной в конфигурации.
-func (m *Mailer) AddJob(to string, subject string, body string) error {
+func (m *Mailer) AddJob(requestID uuid.UUID, to string, subject string, body string) error {
 	if _, err := mail.ParseAddress(to); err != nil {
 		return fmt.Errorf("Mailer.AddJob(). invalid email address")
 	}
 	if len(m.jobs) < m.cfg.MailConfig.JobBufferSize {
 		m.jobs <- Job{
+			ID:      requestID,
 			To:      to,
 			Subject: subject,
 			Body:    body,
@@ -123,7 +126,6 @@ func validateConfig(cfg *config.MailConfig) error {
 	return nil
 }
 
-// Send отправляет электронное письмо на указанный адрес.
 func (m *Mailer) handleJob(id int) {
 	defer m.wg.Done()
 	op := "mail.handleJob()"
@@ -140,7 +142,9 @@ func (m *Mailer) handleJob(id int) {
 				log.Error("failed to send email",
 					slog.String("error", "channel is closed"),
 					slog.String("to", job.To),
-					slog.String("subject", job.Subject))
+					slog.String("subject", job.Subject),
+					slog.String("requestID", job.ID.String()),
+				)
 				return
 			}
 			var err error
