@@ -56,8 +56,8 @@ type MailConfig struct {
 }
 
 type PdfConfig struct {
-	PdfHost      string `yaml:"smtpHost" env:"PDF_HOST" env-required:"true" env-default:"localhost"`
-	PdfPort      int    `yaml:"smtpPort" env:"PDF_PORT" env-required:"true" env-default:"3000"`
+	PdfHost      string `yaml:"pdfHost" env:"PDF_HOST" env-required:"true" env-default:"localhost"`
+	PdfPort      int    `yaml:"pdfPort" env:"PDF_PORT" env-required:"true" env-default:"3000"`
 	// Username      string `yaml:"username" env:"MAIL_USERNAME" env-required:"true" env-default:"proffreport@rambler.ru"`
 	// Password      string `yaml:"password" env:"MAIL_PASSWORD" env-required:"true" env-default:""`
 	JobBufferSize int `yaml:"jobBufferSize" env:"JOB_BUFFER_SIZE" env-default:"10"`
