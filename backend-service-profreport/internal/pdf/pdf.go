@@ -170,7 +170,7 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 		return fmt.Errorf("failed to create gotenberg client: %w", err)
 	}
 
-	indexHTML, err := markdown.FS.ReadFile("template.html")
+	indexHTML, err := markdown.FS.ReadFile("/etc/backend-service-profreport/config/template.html")
 	if err != nil {
 		return fmt.Errorf("Failed to read template.html: %w", err)
 	}
@@ -198,7 +198,7 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 	}
 	defer response.Body.Close()
 
-	file, err := os.Create("markdown-example.pdf")
+	file, err := os.Create(fmt.Sprintf("/etc/backend-service-profreport/config/%s.pdf", requestID.String()))
 	if err != nil {
 		return fmt.Errorf("Failed to create output file: %w", err)
 	}
