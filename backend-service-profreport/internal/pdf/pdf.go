@@ -217,3 +217,16 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 
 	return nil
 }
+
+func (m *PdfService) Shutdown(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("exit Pdf service: %w", ctx.Err())
+		default:
+			close(m.shutdownChannel)
+			close(m.jobs)
+			return nil
+		}
+	}
+}

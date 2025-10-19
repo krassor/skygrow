@@ -38,17 +38,32 @@ type MailService interface {
 	) error
 }
 
+type PdfService interface {
+	AddJob(
+		requestId uuid.UUID,
+		inputMarkdown string,
+	) error
+}
+
 type QuestionnaireHandler struct {
 	LLMService  LLMService
 	MailService MailService
+	PdfService  PdfService
 	cfg         *config.Config
 	log         *slog.Logger
 }
 
-func NewQuestionnaireHandler(log *slog.Logger, cfg *config.Config, LLMService LLMService, MailService MailService) *QuestionnaireHandler {
+func NewQuestionnaireHandler(
+	log *slog.Logger,
+	cfg *config.Config,
+	LLMService LLMService,
+	MailService MailService,
+	PdfService PdfService,
+) *QuestionnaireHandler {
 	return &QuestionnaireHandler{
 		LLMService:  LLMService,
 		MailService: MailService,
+		PdfService:  PdfService,
 		log:         log,
 		cfg:         cfg,
 	}
@@ -116,6 +131,12 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 	log.Debug("html mail body", slog.String("mailBody", mailBody))
 
 	err = h.MailService.AddJob(requestID, questionnaireDto.User.Email, "Prof Report", mailBody)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
+		return
+	}
+
+	err = h.PdfService.AddJob(requestID, response)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
 		return

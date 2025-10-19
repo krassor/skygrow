@@ -5,6 +5,7 @@ import (
 	"app/main.go/internal/graceful"
 	"app/main.go/internal/mail"
 	"app/main.go/internal/openrouter"
+	"app/main.go/internal/pdf"
 	telegramBot "app/main.go/internal/telegram"
 	"app/main.go/internal/transport/httpServer"
 	"app/main.go/internal/transport/httpServer/handlers"
@@ -50,7 +51,14 @@ func main() {
 
 	openRouterService := openrouter.NewClient(log, cfg)
 	mailService := mail.NewMailer(log, cfg)
-	questionnaireHandler := handlers.NewQuestionnaireHandler(log, cfg, openRouterService, mailService)
+	pdfService := pdf.New(log, cfg)
+	questionnaireHandler := handlers.NewQuestionnaireHandler(
+		log,
+		cfg,
+		openRouterService,
+		mailService,
+		pdfService,
+	)
 	router := routers.NewRouter(questionnaireHandler, "TODO")
 	httpServer := httpServer.NewHttpServer(log, router, cfg)
 
@@ -71,11 +79,15 @@ func main() {
 			"Mailer": func(ctx context.Context) error {
 				return mailService.Shutdown(ctx)
 			},
+			"Pdf service": func(ctx context.Context) error {
+				return pdfService.Shutdown(ctx)
+			},
 		},
 		log,
 	)
 	go tgBot.Update(60)
 	go mailService.Start()
+	go pdfService.Start()
 	go httpServer.Listen()
 	// err := mailService.AddJob("krassor86@yandex.ru", "test proffreport", "body2")
 	// if err != nil {
