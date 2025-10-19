@@ -8,6 +8,7 @@ type Config struct {
 	DBConfig   DBConfig         `yaml:"db" env-required:"true"`
 	BotConfig  BotConfig        `yaml:"bot" env-required:"true"`
 	MailConfig MailConfig       `yaml:"mail" env-required:"true"`
+	PdfConfig  PdfConfig        `yaml:"pdf" env-required:"false"`
 	configPath string
 }
 
@@ -52,4 +53,13 @@ type MailConfig struct {
 	FromAddress   string `yaml:"fromAddress" env:"MAIL_FROM_ADDRESS" env-required:"true" env-default:"proffreport@rambler.ru"`
 	JobBufferSize int    `yaml:"jobBufferSize" env:"JOB_BUFFER_SIZE" env-default:"10"`
 	WorkersCount  int    `yaml:"workersCount" env:"MAIL_WORKERS_COUNT" env-default:"3"`
+}
+
+type PdfConfig struct {
+	PdfHost      string `yaml:"smtpHost" env:"PDF_HOST" env-required:"true" env-default:"localhost"`
+	PdfPort      int    `yaml:"smtpPort" env:"PDF_PORT" env-required:"true" env-default:"3000"`
+	// Username      string `yaml:"username" env:"MAIL_USERNAME" env-required:"true" env-default:"proffreport@rambler.ru"`
+	// Password      string `yaml:"password" env:"MAIL_PASSWORD" env-required:"true" env-default:""`
+	JobBufferSize int `yaml:"jobBufferSize" env:"JOB_BUFFER_SIZE" env-default:"10"`
+	WorkersCount  int `yaml:"workersCount" env:"MAIL_WORKERS_COUNT" env-default:"3"`
 }
