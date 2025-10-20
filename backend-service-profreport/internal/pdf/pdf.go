@@ -1,12 +1,12 @@
 package pdf
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -179,10 +179,10 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 	// 	return fmt.Errorf("Failed to read content.md: %w", err)
 	// }
 
-	// indexHTML, err := os.ReadFile(fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName))
-	// if err != nil {
-	// 	return fmt.Errorf("Failed to read template.html: %w", err)
-	// }
+	indexHTML, err := os.ReadFile(fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName))
+	if err != nil {
+		return fmt.Errorf("Failed to read template.html: %w", err)
+	}
 
 	//markdownContent := []byte(inputMd)
 
@@ -194,19 +194,9 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 	// 	slog.String("markdownContent", string(markdownContent)),
 	// )
 
-	// response, err := client.Chromium().
-	// 	ConvertMarkdown(ctx, bytes.NewReader(indexHTML)).
-	// 	File("content.md", bytes.NewReader(markdownContent)).
-	// 	PaperSizeA4().
-	// 	Landscape().
-	// 	Margins(1, 1, 1, 1).
-	// 	OutputFilename(fmt.Sprintf("%s.pdf", requestID.String())).
-	// 	Send()
-
-	htmlReader := strings.NewReader(inputMd)
-
 	response, err := client.Chromium().
-		ConvertHTML(ctx, htmlReader).
+		ConvertMarkdown(ctx, bytes.NewReader(indexHTML)).
+		//File("content.md", bytes.NewReader(markdownContent)).
 		PaperSizeA4().
 		Landscape().
 		Margins(1, 1, 1, 1).
