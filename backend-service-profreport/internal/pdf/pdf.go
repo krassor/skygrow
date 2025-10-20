@@ -14,7 +14,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nativebpm/gotenberg"
-	"github.com/nativebpm/gotenberg/examples/pkg/templates/markdown"
 )
 
 const (
@@ -170,15 +169,20 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 		return fmt.Errorf("failed to create gotenberg client: %w", err)
 	}
 
-	indexHTML, err := markdown.FS.ReadFile("/etc/backend-service-profreport/config/template.html")
-	if err != nil {
-		return fmt.Errorf("Failed to read template.html: %w", err)
-	}
+	// indexHTML, err := markdown.FS.ReadFile("/etc/backend-service-profreport/config/template.html")
+	// if err != nil {
+	// 	return fmt.Errorf("Failed to read template.html: %w", err)
+	// }
 
 	// markdownContent, err := markdown.FS.ReadFile("content.md")
 	// if err != nil {
 	// 	return fmt.Errorf("Failed to read content.md: %w", err)
 	// }
+
+	indexHTML, err := os.ReadFile(fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName))
+	if err != nil {
+		return fmt.Errorf("Failed to read template.html: %w", err)
+	}
 
 	markdownContent := []byte(inputMd)
 
@@ -198,7 +202,7 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 	}
 	defer response.Body.Close()
 
-	file, err := os.Create(fmt.Sprintf("/etc/backend-service-profreport/config/%s.pdf", requestID.String()))
+	file, err := os.Create(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.HtmlTemplateFilePath, requestID.String()))
 	if err != nil {
 		return fmt.Errorf("Failed to create output file: %w", err)
 	}
