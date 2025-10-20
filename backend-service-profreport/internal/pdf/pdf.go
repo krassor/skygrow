@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -184,8 +185,6 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 		return fmt.Errorf("Failed to read template.html: %w", err)
 	}
 
-	//markdownContent := []byte(inputMd)
-
 	ctx := context.Background()
 
 	// log.Debug(
@@ -196,7 +195,7 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 
 	response, err := client.Chromium().
 		ConvertMarkdown(ctx, bytes.NewReader(indexHTML)).
-		//File("content.md", bytes.NewReader(markdownContent)).
+		File("content.md", strings.NewReader(inputMd)).
 		PaperSizeA4().
 		Landscape().
 		Margins(1, 1, 1, 1).
