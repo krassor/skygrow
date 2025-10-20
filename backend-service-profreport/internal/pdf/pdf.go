@@ -188,6 +188,12 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 
 	ctx := context.Background()
 
+	log.Debug(
+		"input data",
+		slog.String("indexHTML", string(indexHTML)),
+		slog.String("markdownContent", string(markdownContent)),
+	)
+
 	response, err := client.Chromium().
 		ConvertMarkdown(ctx, bytes.NewReader(indexHTML)).
 		File("content.md", bytes.NewReader(markdownContent)).

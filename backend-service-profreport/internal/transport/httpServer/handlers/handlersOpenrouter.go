@@ -122,19 +122,17 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	//mailBody := "Здравствуйте!\n По Вашему запросу был сгенерирован отчет\n" + response + "\nС уважением, команда profreport."
 
-	mailBody, err := mdToHTML(response)
-	if err != nil {
-		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
-		return
-	}
+	// mailBody, err := mdToHTML(response)
+	// if err != nil {
+	// 	h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
+	// 	return
+	// }
 
-	log.Debug("html mail body", slog.String("mailBody", mailBody))
-
-	err = h.MailService.AddJob(requestID, questionnaireDto.User.Email, "Prof Report", mailBody)
-	if err != nil {
-		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
-		return
-	}
+	// err = h.MailService.AddJob(requestID, questionnaireDto.User.Email, "Prof Report", mailBody)
+	// if err != nil {
+	// 	h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
+	// 	return
+	// }
 
 	err = h.PdfService.AddJob(requestID, response)
 	if err != nil {
