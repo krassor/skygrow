@@ -134,8 +134,6 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	response = h.cfg.BotConfig.AI.SystemRolePromt
-
 	err = h.PdfService.AddJob(requestID, response)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
