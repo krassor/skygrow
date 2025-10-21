@@ -42,7 +42,7 @@ type PdfService interface {
 	AddJob(
 		requestId uuid.UUID,
 		inputMarkdown string,
-	) error
+	) (chan struct{}, error)
 }
 
 type QuestionnaireHandler struct {
@@ -120,6 +120,14 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	chanDone, err := h.PdfService.AddJob(requestID, response)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
+		return
+	}
+
+	<-chanDone
+
 	mailBody := "Здравствуйте, " + questionnaireDto.User.Name + "!\n По Вашему запросу был сгенерирован отчет\n" + response + "\nС уважением, команда profreport."
 
 	// mailBody, err := mdToHTML(response)
@@ -129,12 +137,6 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	err = h.MailService.AddJob(requestID, questionnaireDto.User.Email, "Prof Report", mailBody)
-	if err != nil {
-		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
-		return
-	}
-
-	err = h.PdfService.AddJob(requestID, response)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
 		return

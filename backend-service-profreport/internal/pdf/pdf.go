@@ -26,6 +26,7 @@ const (
 type Job struct {
 	requestID uuid.UUID
 	inputMd   string
+	Done      chan struct{}
 }
 
 // Mailer представляет собой клиент для отправки электронных писем.
@@ -66,28 +67,40 @@ func (m *PdfService) Start() {
 	}
 }
 
-// AddJob добавляет новую задачу на отправку письма в очередь.
+// AddJob добавляет новую задачу на конвертацию Markdown в PDF в очередь.
 //
 // Параметры:
-//   - to: адрес электронной почты получателя (валидируется через net/mail).
-//   - subject: тема письма.
-//   - body: текстовое содержимое письма.
+//   - requestID: уникальный идентификатор запроса (UUID).
+//   - inputMarkdown: строка с содержимым Markdown, которое необходимо обработать.
 //
 // Возвращает:
-//   - nil, если задача успешно добавлена в очередь.
-//   - ошибку в следующих случаях:
-//     1. Адрес электронной почты `to` имеет некорректный формат.
-//     2. Буфер задач (`jobs`) заполнен до максимальной ёмкости, заданной в конфигурации.
-func (m *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string) error {
-
-	if len(m.jobs) < m.cfg.PdfConfig.JobBufferSize {
-		m.jobs <- Job{
+//   - Канал `chan struct{}` для отслеживания завершения обработки задачи.
+//     Клиент должен слушать этот канал, чтобы получить сигнал о завершении.
+//   - Ошибку `error`, если буфер задач переполнен (возвращается `nil` для канала).
+//
+// Логика работы:
+// 1. Создаётся новая задача (`Job`) с указанным `requestID` и `inputMarkdown`.
+// 2. Если в буфере (`m.jobs`) есть свободное место, задача отправляется в канал,
+//    а клиент получает канал `Done` для отслеживания завершения.
+// 3. Если буфер заполнен, возвращается ошибка `fmt.Errorf("job buffer is full")`.
+//
+// Пример использования:
+//   done, err := service.AddJob(uuid.New(), "# Заголовок\nТекст")
+//   if err != nil {
+//       log.Fatal(err)
+//   }
+//   <-done // Ждём завершения обработки
+func (m *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string) (chan struct{}, error) {
+	newJob := Job{
 			requestID: requestID,
 			inputMd:   inputMarkdown,
-		}
-		return nil
+			Done:      make(chan struct{}),
+		} 
+	if len(m.jobs) < m.cfg.PdfConfig.JobBufferSize {
+		m.jobs <- newJob
+		return newJob.Done, nil
 	} else {
-		return fmt.Errorf("job buffer is full")
+		return nil, fmt.Errorf("job buffer is full")
 	}
 }
 
@@ -148,6 +161,9 @@ func (m *PdfService) handleJob(id int) {
 				slog.Int("id", id),
 				slog.String("requestID", job.requestID.String()),
 			)
+
+			close(job.Done)
+
 		}
 	}
 }
