@@ -128,7 +128,10 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	<-chanDone
 
-	mailBody := "Здравствуйте, " + questionnaireDto.User.Name + "!\n По Вашему запросу был сгенерирован отчет\n" + response + "\nС уважением, команда profreport."
+	mailBody := "Здравствуйте, " + questionnaireDto.User.Name + "!\n" +
+		"По Вашему запросу был сгенерирован отчет\n" +
+		"Отчет прикреплен к письму во вложении.\n" +
+		"\n\nС уважением, команда proffreport."
 
 	// mailBody, err := mdToHTML(response)
 	// if err != nil {
