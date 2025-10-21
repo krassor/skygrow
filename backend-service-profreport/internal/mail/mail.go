@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/mail"
-	"net/smtp"
 	"sync"
 	"time"
 
@@ -154,7 +153,7 @@ func (m *Mailer) handleJob(id int) {
 				case <-m.shutdownChannel:
 					return
 				default:
-					e = m.sendWithGomail(job.To, job.Subject, job.Body)
+					e = m.sendWithGomail(job.ID, job.To, job.Subject, job.Body)
 				}
 				if e != nil {
 					err = e
@@ -191,84 +190,14 @@ func (m *Mailer) handleJob(id int) {
 	}
 }
 
-// sendv3 sends an email using SMTP with TLS.
-func (m *Mailer) send(to string, subject string, body string) error {
-	fromAddress := m.cfg.MailConfig.FromAddress
-	username := m.cfg.MailConfig.Username
-	password := m.cfg.MailConfig.Password
-	smtpHost := m.cfg.MailConfig.SMTPHost
-	smtpPort := m.cfg.MailConfig.SMTPPort
-	smtpAddr := fmt.Sprintf("%s:%d", smtpHost, smtpPort)
-
-	// Формирование заголовков письма
-	header := fmt.Sprintf("From: %s\r\n", fromAddress) +
-		fmt.Sprintf("To: %s\r\n", to) +
-		fmt.Sprintf("Subject: %s\r\n", subject)
-
-	// Формирование тела письма
-	message := header + "\r\n" + body + "\r\n"
-
-	// Создание TLS-конфигурации
-	tlsConfig := &tls.Config{
-		ServerName: smtpHost,
-	}
-
-	// Установка TLS-соединения
-	conn, err := tls.Dial("tcp", smtpAddr, tlsConfig)
-	if err != nil {
-		return fmt.Errorf("failed to dial: %w", err)
-	}
-	defer conn.Close()
-
-	// Создание SMTP-клиента
-	c, err := smtp.NewClient(conn, smtpHost)
-	if err != nil {
-		return fmt.Errorf("failed to create client: %w", err)
-	}
-	defer c.Quit()
-
-	// // Start TLS
-	// if err := c.StartTLS(tlsConfig); err != nil {
-	// 	return fmt.Errorf("failed to start TLS. c.StartTLS: %w", err)
-	// }
-
-	// Auth
-	auth := smtp.PlainAuth("", username, password, smtpHost)
-	if err := c.Auth(auth); err != nil {
-		return fmt.Errorf("failed to authenticate: %w", err)
-	}
-
-	// Set the sender and recipient first
-	if err := c.Mail(fromAddress); err != nil {
-		return fmt.Errorf("failed to set sender: %w", err)
-	}
-	if err := c.Rcpt(to); err != nil {
-		return fmt.Errorf("failed to set recipient: %w", err)
-	}
-
-	// Send the email body.
-	wc, err := c.Data()
-	if err != nil {
-		return fmt.Errorf("failed to create data writer: %w", err)
-	}
-	defer wc.Close()
-
-	_, err = fmt.Fprint(wc, message)
-	if err != nil {
-		return fmt.Errorf("failed to write email body: %w", err)
-	}
-
-	return nil
-}
-
-func (m *Mailer) sendWithGomail(to string, subject string, body string) error {
+func (m *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, body string) error {
 	// Создаем временную зону с фиксированным смещением +3 часа (10800 секунд)
 	location := time.FixedZone("MSK", 3*3600) // 3 часа = 10800 секунд
 
 	msg := gomail.NewMessage()
 	msg.SetHeader("From", m.cfg.MailConfig.FromAddress)
 	msg.SetHeader("To", to)
-	msg.SetHeader("Subject", "Prof report")
+	msg.SetHeader("Subject", subject)
 	msg.SetHeader("MIME-Version", "1.0")
 	msg.SetHeader("Content-Type", "text/html; charset=\"UTF-8\"")
 	msg.SetHeader("Content-Transfer-Encoding", "8bit")
@@ -278,6 +207,8 @@ func (m *Mailer) sendWithGomail(to string, subject string, body string) error {
 	msg.SetHeader("List-Unsubscribe", fmt.Sprintf("mailto:%s?subject=unsubscribe", m.cfg.MailConfig.FromAddress))
 
 	msg.SetBody("text/html", body)
+
+	msg.Attach(fmt.Sprintf("%s.pdf", requestID))
 
 	m.logger.Debug(
 		"mail headers",
