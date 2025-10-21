@@ -208,7 +208,7 @@ func (m *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, 
 
 	msg.SetBody("text/html", body)
 
-	msg.Attach(fmt.Sprintf("%s.pdf", requestID))
+	msg.Attach(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.HtmlTemplateFilePath,requestID))
 
 	m.logger.Debug(
 		"mail headers",
