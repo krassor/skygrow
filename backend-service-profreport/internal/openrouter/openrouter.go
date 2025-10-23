@@ -52,10 +52,11 @@ func NewClient(
 }
 
 func (or *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logger, requestId uuid.UUID, message string) (string, error) {
-	op := "deepseek.CreateChatCompletion()"
+	op := "openrouter.CreateChatCompletion()"
 	log := logger.With(
 		slog.String("op", op),
 	)
+	log.Info("start create chat completion")
 
 	//log.Debug("input message", slog.String("message", message))
 	var resp openrouter.ChatCompletionResponse

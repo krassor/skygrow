@@ -79,23 +79,24 @@ func (m *PdfService) Start() {
 //   - Ошибку `error`, если буфер задач переполнен (возвращается `nil` для канала).
 //
 // Логика работы:
-// 1. Создаётся новая задача (`Job`) с указанным `requestID` и `inputMarkdown`.
-// 2. Если в буфере (`m.jobs`) есть свободное место, задача отправляется в канал,
-//    а клиент получает канал `Done` для отслеживания завершения.
-// 3. Если буфер заполнен, возвращается ошибка `fmt.Errorf("job buffer is full")`.
+//  1. Создаётся новая задача (`Job`) с указанным `requestID` и `inputMarkdown`.
+//  2. Если в буфере (`m.jobs`) есть свободное место, задача отправляется в канал,
+//     а клиент получает канал `Done` для отслеживания завершения.
+//  3. Если буфер заполнен, возвращается ошибка `fmt.Errorf("job buffer is full")`.
 //
 // Пример использования:
-//   done, err := service.AddJob(uuid.New(), "# Заголовок\nТекст")
-//   if err != nil {
-//       log.Fatal(err)
-//   }
-//   <-done // Ждём завершения обработки
+//
+//	done, err := service.AddJob(uuid.New(), "# Заголовок\nТекст")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	<-done // Ждём завершения обработки
 func (m *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string) (chan struct{}, error) {
 	newJob := Job{
-			requestID: requestID,
-			inputMd:   inputMarkdown,
-			Done:      make(chan struct{}),
-		} 
+		requestID: requestID,
+		inputMd:   inputMarkdown,
+		Done:      make(chan struct{}),
+	}
 	if len(m.jobs) < m.cfg.PdfConfig.JobBufferSize {
 		m.jobs <- newJob
 		return newJob.Done, nil
@@ -110,6 +111,9 @@ func (m *PdfService) handleJob(id int) {
 	log := m.logger.With(
 		slog.String("op", op),
 	)
+
+	log.Info("start pdf job handler")
+
 	for {
 
 		select {

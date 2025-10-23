@@ -131,6 +131,9 @@ func (m *Mailer) handleJob(id int) {
 	log := m.logger.With(
 		slog.String("op", op),
 	)
+
+	log.Info("start mail job handler")
+
 	for {
 
 		select {
