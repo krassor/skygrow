@@ -63,8 +63,12 @@ func fetchConfigPath() string {
 		log.Info("load config path from command line.", slog.String("path", res))
 		return res
 	}
-	res = os.Getenv("CONFIG_FILEPATH") + os.Getenv("CONFIG_FILENAME")
-	log.Info("load config path from env ", slog.String("CONFIG_PATH", res))
+	res = fmt.Sprintf("%s%s", os.Getenv("CONFIG_FILEPATH"), os.Getenv("CONFIG_FILENAME"))
+	log.Info(
+		"load config path from env ",
+		slog.String("CONFIG_FILEPATH", os.Getenv("CONFIG_FILEPATH")),
+		slog.String("CONFIG_FILENAME", os.Getenv("CONFIG_FILENAME")),
+	)
 	return res
 }
 
