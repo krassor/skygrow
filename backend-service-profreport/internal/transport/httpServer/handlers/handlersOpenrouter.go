@@ -114,7 +114,6 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	log.Info(
 		"start http handler Create",
-		slog.String("request ID", requestID.String()),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), h.cfg.BotConfig.AI.GetTimeout())
