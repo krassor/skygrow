@@ -25,6 +25,7 @@ type LLMService interface {
 	CreateChatCompletion(
 		ctx context.Context,
 		logger *slog.Logger,
+		requestId uuid.UUID,
 		prompt string,
 	) (string, error)
 }
@@ -111,44 +112,44 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	responseSuccess := utils.Message(true, "")
+	err = utils.Json(w, http.StatusOK, responseSuccess)
+	if err != nil {
+		log.Error("error encode response to json", sl.Err(err))
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), h.cfg.BotConfig.AI.GetTimeout())
 	defer cancel()
 
-	response, err := h.LLMService.CreateChatCompletion(ctx, log, h.splitQuestionnaire(&questionnaireDto))
+	response, err := h.LLMService.CreateChatCompletion(ctx, log, requestID, h.splitQuestionnaire(&questionnaireDto))
 	if err != nil {
-		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
+		sl.Err(err)
 		return
 	}
 
 	chanDone, err := h.PdfService.AddJob(requestID, response)
 	if err != nil {
-		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
+		sl.Err(err)
 		return
 	}
 
 	<-chanDone
 
-	mailBody := "Здравствуйте, " + questionnaireDto.User.Name + "!\n" +
-		"По Вашему запросу был сгенерирован отчет\n" +
-		"Отчет прикреплен к письму во вложении.\n" +
-		"\n\nС уважением, команда proffreport."
+	mailBody := "Здравствуйте, " + questionnaireDto.User.Name + "!\r\n" +
+		"По Вашему запросу был сгенерирован отчет\r\n" +
+		"Отчет прикреплен к письму во вложении.\r\n" +
+		"\r\n\r\nС уважением, команда proffreport."
 
-	// mailBody, err := mdToHTML(response)
-	// if err != nil {
-	// 	h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
-	// 	return
-	// }
-
-	err = h.MailService.AddJob(requestID, questionnaireDto.User.Email, "Prof Report", mailBody)
+	mailBody, err = mdToHTML(mailBody)
 	if err != nil {
-		h.err(log, err, fmt.Errorf("internal server error"), w, http.StatusInternalServerError)
+		sl.Err(err)
 		return
 	}
 
-	responseSuccess := utils.Message(true, "")
-	err = utils.Json(w, http.StatusOK, responseSuccess)
+	err = h.MailService.AddJob(requestID, questionnaireDto.User.Email, "Prof Report", mailBody)
 	if err != nil {
-		log.Error("error encode response to json", sl.Err(err))
+		sl.Err(err)
+		return
 	}
 
 }

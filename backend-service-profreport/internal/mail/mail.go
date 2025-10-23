@@ -163,6 +163,7 @@ func (m *Mailer) handleJob(id int) {
 						slog.String("error", err.Error()),
 						slog.String("to", job.To),
 						slog.String("subject", job.Subject),
+						slog.String("requestID", job.ID.String()),
 					)
 					time.Sleep(retryDuration)
 					continue
@@ -176,7 +177,9 @@ func (m *Mailer) handleJob(id int) {
 				log.Error(fmt.Sprintf("failed to send email after %d retries", retryCount),
 					slog.String("error", err.Error()),
 					slog.String("to", job.To),
-					slog.String("subject", job.Subject))
+					slog.String("subject", job.Subject),
+					slog.String("requestID", job.ID.String()),
+				)
 				return
 			}
 
@@ -185,6 +188,7 @@ func (m *Mailer) handleJob(id int) {
 				slog.String("to", job.To),
 				slog.String("subject", job.Subject),
 				slog.Int("id", id),
+				slog.String("requestID", job.ID.String()),
 			)
 		}
 	}
@@ -208,7 +212,8 @@ func (m *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, 
 
 	msg.SetBody("text/html", body)
 
-	msg.Attach(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.HtmlTemplateFilePath,requestID))
+	msg.Attach(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.HtmlTemplateFilePath, requestID))
+	msg.Attach(fmt.Sprintf("%s%s.md", m.cfg.BotConfig.AI.AiResponseFilePath, requestID))
 
 	m.logger.Debug(
 		"mail headers",

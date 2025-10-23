@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 	"time"
 
 	"app/main.go/internal/config"
+	"app/main.go/internal/utils/logger/sl"
 
+	"github.com/google/uuid"
 	openrouter "github.com/revrost/go-openrouter"
 )
 
@@ -48,7 +51,7 @@ func NewClient(
 	}
 }
 
-func (or *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logger, message string) (string, error) {
+func (or *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logger, requestId uuid.UUID, message string) (string, error) {
 	op := "deepseek.CreateChatCompletion()"
 	log := logger.With(
 		slog.String("op", op),
@@ -97,7 +100,17 @@ func (or *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Log
 
 	log.Debug("received chat completion response", slog.Any("response role", resp.Choices[0].Message.Role))
 
-	return resp.Choices[0].Message.Content.Text, nil
+	responseText := resp.Choices[0].Message.Content.Text
+
+	err = or.WriteResponseInFile(requestId.String(), responseText)
+	if err != nil {
+		log.Error(
+			"error write response in file",
+			sl.Err(err),
+		)
+	}
+
+	return responseText, nil
 }
 
 func isRateLimitError(err error) bool {
@@ -111,6 +124,16 @@ func isRateLimitError(err error) bool {
 	} else {
 		return false
 	}
+}
+
+func (or *Openrouter) WriteResponseInFile(requestId string, data string) error {
+	bufWrite := []byte(data)
+	filePath := fmt.Sprintf("%s%s.md", or.config.BotConfig.AI.AiResponseFilePath, requestId)
+	err := os.WriteFile(filePath, bufWrite, 0775)
+	if err != nil {
+		return fmt.Errorf("error write file \"%s\": %w", filePath, err)
+	}
+	return nil
 }
 
 func (or *Openrouter) Shutdown(ctx context.Context) error {

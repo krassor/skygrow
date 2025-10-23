@@ -223,7 +223,7 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 	}
 	defer response.Body.Close()
 
-	file, err := os.Create(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.HtmlTemplateFilePath, requestID.String()))
+	file, err := os.Create(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.PdfFilePath, requestID.String()))
 	if err != nil {
 		return fmt.Errorf("Failed to create output file: %w", err)
 	}

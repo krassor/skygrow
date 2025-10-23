@@ -3,13 +3,15 @@ package config
 import "time"
 
 type Config struct {
-	Env        string           `yaml:"env" env-default:"local"`
-	HttpServer HttpServerConfig `yaml:"httpServer" env-required:"true"`
-	DBConfig   DBConfig         `yaml:"db" env-required:"true"`
-	BotConfig  BotConfig        `yaml:"bot" env-required:"true"`
-	MailConfig MailConfig       `yaml:"mail" env-required:"true"`
-	PdfConfig  PdfConfig        `yaml:"pdf" env-required:"false"`
-	configPath string
+	Env            string           `yaml:"env" env-default:"local"`
+	HttpServer     HttpServerConfig `yaml:"httpServer" env-required:"true"`
+	DBConfig       DBConfig         `yaml:"db" env-required:"true"`
+	BotConfig      BotConfig        `yaml:"bot" env-required:"true"`
+	MailConfig     MailConfig       `yaml:"mail" env-required:"true"`
+	PdfConfig      PdfConfig        `yaml:"pdf" env-required:"false"`
+	ConfigFilePath string           `yaml:"configFilePath" env:"CONFIG_FILEPATH" env-default:""`
+	ConfigFileName string           `yaml:"configFileName" env:"CONFIG_FILENAME" env-default:""`
+	configPath     string
 }
 
 type HttpServerConfig struct {
@@ -28,15 +30,16 @@ type DBConfig struct {
 }
 
 type AIConfig struct {
-	Timeout         int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"300"`
-	ModelName       string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
-	AIApiToken      string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
-	SystemRolePromt string  `yaml:"systemRolePromt" env-default:""`
-	PromtFilePath   string  `yaml:"promtPath" env:"PROMT_FILEPATH" env-default:""`
-	PromtFileName   string  `yaml:"promtName" env:"PROMT_FILENAME" env-default:""`
-	MaxTokens       int     `yaml:"maxTokens" env-default:"65000"`
-	Temperature     float32 `yaml:"temperature" env-default:"0.5"`
-	N               int     `yaml:"n" env-default:"1"`
+	Timeout            int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"300"`
+	ModelName          string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
+	AIApiToken         string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
+	SystemRolePromt    string  `yaml:"systemRolePromt" env-default:""`
+	PromtFilePath      string  `yaml:"promtFilePath" env:"PROMT_FILEPATH" env-required:"true" env-default:""`
+	PromtFileName      string  `yaml:"promtFileName" env:"PROMT_FILENAME" env-required:"true" env-default:""`
+	AiResponseFilePath string  `yaml:"AiResponseFilePath" env:"AI_RESPONSE_FILEPATH" env-required:"true" env-default:""`
+	MaxTokens          int     `yaml:"maxTokens" env-default:"65000"`
+	Temperature        float32 `yaml:"temperature" env-default:"0.5"`
+	N                  int     `yaml:"n" env-default:"1"`
 }
 
 type BotConfig struct {
@@ -62,6 +65,7 @@ type PdfConfig struct {
 	// Password      string `yaml:"password" env:"MAIL_PASSWORD" env-required:"true" env-default:""`
 	HtmlTemplateFilePath string `yaml:"htmlTemplateFilePath" env:"HTML_TEMPLATE_FILEPATH" env-required:"true" env-default:""`
 	HtmlTemplateFileName string `yaml:"htmlTemplateFileName" env:"HTML_TEMPLATE_FILENAME" env-required:"true" env-default:""`
+	PdfFilePath          string `yaml:"pdfFilePath" env:"PDF_FILEPATH" env-required:"true" env-default:""`
 	JobBufferSize        int    `yaml:"jobBufferSize" env:"JOB_BUFFER_SIZE" env-default:"10"`
 	WorkersCount         int    `yaml:"workersCount" env:"MAIL_WORKERS_COUNT" env-default:"3"`
 }
