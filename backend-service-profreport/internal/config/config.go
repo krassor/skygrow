@@ -66,6 +66,7 @@ func fetchConfigPath() string {
 	res = fmt.Sprintf("%s%s", os.Getenv("CONFIG_FILEPATH"), os.Getenv("CONFIG_FILENAME"))
 	log.Info(
 		"load config path from env ",
+		slog.String("VOLUME_PATH", os.Getenv("VOLUME_PATH")),
 		slog.String("CONFIG_FILEPATH", os.Getenv("CONFIG_FILEPATH")),
 		slog.String("CONFIG_FILENAME", os.Getenv("CONFIG_FILENAME")),
 	)
