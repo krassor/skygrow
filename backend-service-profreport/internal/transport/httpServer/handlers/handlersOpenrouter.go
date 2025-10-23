@@ -112,6 +112,11 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Info(
+		"start http handler Create",
+		slog.String("request ID", requestID.String()),
+	)
+
 	responseSuccess := utils.Message(true, "")
 	err = utils.Json(w, http.StatusOK, responseSuccess)
 	if err != nil {
