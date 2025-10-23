@@ -117,12 +117,6 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		slog.String("request ID", requestID.String()),
 	)
 
-	responseSuccess := utils.Message(true, "")
-	err = utils.Json(w, http.StatusOK, responseSuccess)
-	if err != nil {
-		log.Error("error encode response to json", sl.Err(err))
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), h.cfg.BotConfig.AI.GetTimeout())
 	defer cancel()
 
@@ -155,6 +149,15 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sl.Err(err)
 		return
+	}
+	var responseSuccess map[string]any
+	if err != nil {
+		responseSuccess = utils.Message(true, err.Error())
+	}
+	responseSuccess = utils.Message(true, "")
+	err = utils.Json(w, http.StatusOK, responseSuccess)
+	if err != nil {
+		log.Error("error encode response to json", sl.Err(err))
 	}
 
 }
