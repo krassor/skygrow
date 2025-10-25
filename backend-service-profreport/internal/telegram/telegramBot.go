@@ -121,10 +121,11 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 		// case bot.isReplyToBotMessage(update):
 		// 	bot.defaultHandler(bot.ctx, update, bot.sendReplyMessage)
 		default:
-			log.Info("unsupported message type",
-				slog.String("message_type", "unknown"),
-			)
-
+			for _, entity := range update.Message.Entities {
+				log.Info("unsupported message type",
+					slog.String("message_type", entity.Type),
+				)
+			}
 		}
 
 		return
