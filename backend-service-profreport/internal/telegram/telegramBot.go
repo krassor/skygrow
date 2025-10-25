@@ -108,15 +108,9 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 		switch {
 		//Check if message is a command
 		case update.Message.IsCommand():
-			for _, entity := range update.Message.Entities {
-				log.Info("message type",
-					slog.String("message_type", entity.Type),
-				)
-			}
 			if err := bot.commandHandler(bot.ctx, update, bot.sendReplyMessage); err != nil {
 				sl.Err(err)
 			}
-
 		// // Проверяем, если сообщение адресовано самому боту
 		// case update.Message.Chat.IsPrivate():
 		// 	bot.defaultHandler(bot.ctx, update, bot.sendMessage)
@@ -127,11 +121,12 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 		// case bot.isReplyToBotMessage(update):
 		// 	bot.defaultHandler(bot.ctx, update, bot.sendReplyMessage)
 		default:
-			for _, entity := range update.Message.Entities {
-				log.Info("unsupported message type",
-					slog.String("message_type", entity.Type),
-				)
-			}
+			log.Info("unsupported message type",
+				slog.String("message_type", "unknown"),
+				slog.Any("entities", update.Message.Entities),
+			)
+
+			
 		}
 
 		return

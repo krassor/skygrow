@@ -149,11 +149,8 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		sl.Err(err)
 		return
 	}
-	var responseSuccess map[string]any
-	if err != nil {
-		responseSuccess = utils.Message(true, err.Error())
-	}
-	responseSuccess = utils.Message(true, "")
+
+	responseSuccess := utils.Message(true, "")
 	err = utils.Json(w, http.StatusOK, responseSuccess)
 	if err != nil {
 		log.Error("error encode response to json", sl.Err(err))
