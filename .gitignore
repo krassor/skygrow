@@ -20,3 +20,4 @@ letsencrypt
 promt*.md
 template.html
 .env
+*.sh

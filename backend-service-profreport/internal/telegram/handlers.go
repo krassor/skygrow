@@ -3,6 +3,9 @@ package telegramBot
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -54,6 +57,128 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 
 			replyText = "👍 System role promt changed 👍"
 			err := sendFunc(update.Message, replyText)
+			if err != nil {
+				return fmt.Errorf("%s: %w", op, err)
+			}
+		}
+
+	case "setpromtfile":
+		replyText := ""
+		isAdmin, err := bot.isAdmin(update.Message)
+
+		log.Debug("setpromtfile",
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("message", update.Message.Text),
+			slog.String("is admin", strconv.FormatBool(isAdmin)),
+		)
+
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		if isAdmin {
+			// Проверка наличия файла в сообщении
+			if update.Message.Document == nil {
+				log.Info(
+					"no attached file due command /setpromtfile",
+					slog.String("user name", update.Message.From.UserName),
+					slog.String("message", update.Message.Text),
+				)
+				replyText = "No file attached"
+				err := sendFunc(update.Message, replyText)
+				e := fmt.Errorf("No file attached")
+				if err != nil {
+					return fmt.Errorf("%s: %w", op, err)
+				}
+				return fmt.Errorf("%s: %w", op, e)
+			}
+
+			// Обработка файла
+			fileID := update.Message.Document.FileID
+			log.Info(
+				"Received command with file",
+				slog.String("user name", update.Message.From.UserName),
+				slog.String("message", update.Message.Text),
+				slog.String("file_id", fileID),
+			)
+
+			//Получаем file_path
+			fileURL, err := bot.tgbot.GetFileDirectURL(fileID)
+			if err != nil {
+				replyText = "Cannot download file. PLease try again"
+				e := sendFunc(update.Message, replyText)
+				if e != nil {
+					return fmt.Errorf("%s: %w", op, e)
+				}
+				return fmt.Errorf("%s: %w", op, err)
+			}
+
+			// Делаем HTTP GET-запрос по URL
+			resp, err := http.Get(fileURL)
+			if err != nil {
+				replyText = "Cannot download file. PLease try again"
+				e := sendFunc(update.Message, replyText)
+				if e != nil {
+					return fmt.Errorf("%s: %w", op, e)
+				}
+				return fmt.Errorf("%s: %w", op, err)
+			}
+			defer resp.Body.Close()
+
+			//Сохраняем файл на диск
+			buf := make([]byte, resp.ContentLength)
+
+			_, err = resp.Body.Read(buf)
+			if err != nil {
+				replyText = "Cannot download file. PLease try again"
+				e := sendFunc(update.Message, replyText)
+				if e != nil {
+					return fmt.Errorf("%s: %w", op, e)
+				}
+				return fmt.Errorf("%s: %w", op, err)
+			}
+
+			filePath := filepath.Join(bot.cfg.BotConfig.AI.PromtFilePath, bot.cfg.BotConfig.AI.PromtFileName)
+
+			err = os.WriteFile(filePath, buf, 0775)
+			if err != nil {
+				replyText = "Cannot save file. PLease try again"
+				e := sendFunc(update.Message, replyText)
+				if e != nil {
+					return fmt.Errorf("%s: %w", op, e)
+				}
+				return fmt.Errorf("%s: %w", op, err)
+			}
+
+			log.Info(
+				"promt file saved",
+				slog.String("user name", update.Message.From.UserName),
+				slog.String("message", update.Message.Text),
+				slog.String("file_id", fileID),
+				slog.String("file_path", filePath),
+			)
+
+			//Перечитываем заново промт из файла для применения изменений
+			err = bot.cfg.ReadPromtFromFile()
+			if err != nil {
+				replyText = "Promt file saved. But config file not updated. PLease try again"
+				e := sendFunc(update.Message, replyText)
+				if e != nil {
+					return fmt.Errorf("%s: %w", op, e)
+				}
+				return fmt.Errorf("%s: %w", op, err)
+			}
+
+			log.Info(
+				"Promt file saved. Config updated.",
+				slog.String("user name", update.Message.From.UserName),
+				slog.String("message", update.Message.Text),
+				slog.String("file_id", fileID),
+				slog.String("file_path", filePath),
+			)
+
+			replyText = "👍 Promt file saved. Config updated 👍"
+			err = sendFunc(update.Message, replyText)
 			if err != nil {
 				return fmt.Errorf("%s: %w", op, err)
 			}
