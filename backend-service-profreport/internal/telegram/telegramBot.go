@@ -26,6 +26,12 @@ type Bot struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 	log             *slog.Logger
+	UsersState      map[int64]UserState
+}
+
+// UserState хранит состояние пользователя
+type UserState struct {
+	AwaitingFile bool
 }
 
 func New(logger *slog.Logger, cfg *config.Config /*AIBot AIBotApi*/) *Bot {
@@ -53,6 +59,7 @@ func New(logger *slog.Logger, cfg *config.Config /*AIBot AIBotApi*/) *Bot {
 		ctx:             ctx,
 		cancel:          cancel,
 		log:             log,
+		UsersState:      make(map[int64]UserState),
 	}
 }
 
@@ -111,6 +118,10 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 			if err := bot.commandHandler(bot.ctx, update, bot.sendReplyMessage); err != nil {
 				sl.Err(err)
 			}
+		case update.Message.Document != nil :
+			if err := bot.fileHandler(bot.ctx, update, bot.sendReplyMessage); err != nil {
+				sl.Err(err)
+			}
 		// // Проверяем, если сообщение адресовано самому боту
 		// case update.Message.Chat.IsPrivate():
 		// 	bot.defaultHandler(bot.ctx, update, bot.sendMessage)
@@ -126,7 +137,6 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 				slog.Any("entities", update.Message.Entities),
 			)
 
-			
 		}
 
 		return
