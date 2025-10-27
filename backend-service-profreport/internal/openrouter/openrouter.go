@@ -167,6 +167,7 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 	op := "openrouter.CreateChatCompletion()"
 	log := logger.With(
 		slog.String("op", op),
+		slog.String("requestID", requestId.String()),
 	)
 	log.Info("start create chat completion")
 
