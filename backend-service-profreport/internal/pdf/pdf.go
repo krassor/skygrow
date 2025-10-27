@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
@@ -24,6 +25,11 @@ const (
 	timeout       time.Duration = 30 * time.Second
 )
 
+type ViewData struct {
+	User           domain.User
+	AiHtmlResponse string
+}
+
 type MailService interface {
 	AddJob(
 		requestID uuid.UUID,
@@ -34,9 +40,9 @@ type MailService interface {
 
 type Job struct {
 	requestID uuid.UUID
-	inputMd   string
-	user domain.User
-	Done chan struct{}
+	input     string
+	user      domain.User
+	Done      chan struct{}
 }
 
 // Mailer представляет собой клиент для отправки электронных писем.
@@ -110,8 +116,8 @@ func (m *PdfService) Start() {
 func (m *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string, user domain.User) (chan struct{}, error) {
 	newJob := Job{
 		requestID: requestID,
-		inputMd:   inputMarkdown,
-		user: user,
+		input:     inputMarkdown,
+		user:      user,
 		Done:      make(chan struct{}),
 	}
 	if len(m.jobs) < m.cfg.PdfConfig.JobBufferSize {
@@ -151,7 +157,7 @@ func (m *PdfService) handleJob(id int) {
 				case <-m.shutdownChannel:
 					return
 				default:
-					e = m.createPdf(log, job.requestID, job.inputMd)
+					e = m.createPdfFromHtml(log, job)
 				}
 				if e != nil {
 					err = e
@@ -187,13 +193,13 @@ func (m *PdfService) handleJob(id int) {
 				slog.String("requestID", job.requestID.String()),
 			)
 
-
-
 		}
 	}
 }
 
-func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd string) error {
+func (m *PdfService) createPdf(logger *slog.Logger, job Job) error {
+
+	requestID := job.requestID
 
 	log := logger.With(
 		slog.String("op", "PdfService.createPdf()"),
@@ -236,7 +242,7 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 
 	response, err := client.Chromium().
 		ConvertMarkdown(ctx, bytes.NewReader(indexHTML)).
-		File("content.md", strings.NewReader(inputMd)).
+		File("content.md", strings.NewReader(job.input)).
 		PaperSizeA4().
 		Landscape().
 		Margins(1, 1, 1, 1).
@@ -261,6 +267,79 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 
 	log.Info(
 		"Markdown converted to PDF successfully",
+		slog.String("output pdf", fmt.Sprintf("%s.pdf", requestID.String())),
+		slog.String("Gotenberg trace: %s", response.GotenbergTrace),
+	)
+
+	return nil
+}
+
+func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
+
+	requestID := job.requestID
+
+	log := logger.With(
+		slog.String("op", "PdfService.createPdfFromHtml()"),
+		slog.String("requestID", requestID.String()),
+	)
+
+	httpClient := &http.Client{
+		Timeout: timeout,
+	}
+
+	fullPath := fmt.Sprintf("http://%s:%d", m.cfg.PdfConfig.PdfHost, m.cfg.PdfConfig.PdfPort)
+
+	client, err := gotenberg.NewClient(httpClient, fullPath)
+	if err != nil {
+		return fmt.Errorf("failed to create gotenberg client: %w", err)
+	}
+
+	htmlTmplFullPath := fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName)
+
+	user := domain.User{
+		Name:  job.user.Name,
+		Email: job.user.Email,
+	}
+
+	data := ViewData{
+		User:           user,
+		AiHtmlResponse: job.input,
+	}
+
+	var buf []byte
+	buffer := bytes.NewBuffer(buf)
+
+	tmpl, _ := template.ParseFiles(htmlTmplFullPath)
+	tmpl.Execute(buffer, data)
+
+	ctx := context.Background()
+
+	response, err := client.Chromium().
+		ConvertHTML(ctx, buffer).
+		PaperSizeA4().
+		Landscape().
+		Margins(1, 1, 1, 1).
+		OutputFilename(fmt.Sprintf("%s.pdf", requestID.String())).
+		Send()
+
+	if err != nil {
+		return fmt.Errorf("Failed to convert html: %w", err)
+	}
+	defer response.Body.Close()
+
+	file, err := os.Create(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.PdfFilePath, requestID.String()))
+	if err != nil {
+		return fmt.Errorf("Failed to create output file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = file.ReadFrom(response.Body)
+	if err != nil {
+		return fmt.Errorf("Failed to write PDF: %w", err)
+	}
+
+	log.Info(
+		"html converted to PDF successfully",
 		slog.String("output pdf", fmt.Sprintf("%s.pdf", requestID.String())),
 		slog.String("Gotenberg trace: %s", response.GotenbergTrace),
 	)
