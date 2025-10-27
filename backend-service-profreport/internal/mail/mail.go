@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -10,9 +11,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/yuin/goldmark"
 	"gopkg.in/gomail.v2"
 
 	"app/main.go/internal/config"
+	"app/main.go/internal/models/domain"
+	"app/main.go/internal/utils/logger/sl"
 )
 
 const (
@@ -21,10 +25,9 @@ const (
 )
 
 type Job struct {
-	ID      uuid.UUID
-	To      string
-	Subject string
-	Body    string
+	requestID uuid.UUID
+	user      domain.User
+	Subject   string
 }
 
 // Mailer представляет собой клиент для отправки электронных писем.
@@ -88,16 +91,17 @@ func (m *Mailer) Start() {
 //   - ошибку в следующих случаях:
 //     1. Адрес электронной почты `to` имеет некорректный формат.
 //     2. Буфер задач (`jobs`) заполнен до максимальной ёмкости, заданной в конфигурации.
-func (m *Mailer) AddJob(requestID uuid.UUID, to string, subject string, body string) error {
+func (m *Mailer) AddJob(requestID uuid.UUID, user domain.User, subject string) error {
+	to := user.Email
+
 	if _, err := mail.ParseAddress(to); err != nil {
 		return fmt.Errorf("Mailer.AddJob(). invalid email address")
 	}
 	if len(m.jobs) < m.cfg.MailConfig.JobBufferSize {
 		m.jobs <- Job{
-			ID:      requestID,
-			To:      to,
-			Subject: subject,
-			Body:    body,
+			requestID: requestID,
+			user:      user,
+			Subject:   subject,
 		}
 		return nil
 	} else {
@@ -143,20 +147,33 @@ func (m *Mailer) handleJob(id int) {
 			if !ok {
 				log.Error("failed to send email",
 					slog.String("error", "channel is closed"),
-					slog.String("to", job.To),
+					slog.String("to", job.user.Email),
 					slog.String("subject", job.Subject),
-					slog.String("requestID", job.ID.String()),
+					slog.String("requestID", job.requestID.String()),
 				)
 				return
 			}
+
 			var err error
+
+			mailBody := "Здравствуйте, " + job.user.Name+ "!\r\n" +
+				"По Вашему запросу был сгенерирован отчет\r\n" +
+				"Отчет прикреплен к письму во вложении.\r\n" +
+				"\r\n\r\nС уважением, команда proffreport."
+
+			mailBody, err = mdToHTML(mailBody)
+			if err != nil {
+				sl.Err(err)
+				return
+			}
+			
 			for retry := range retryCount {
 				var e error
 				select {
 				case <-m.shutdownChannel:
 					return
 				default:
-					e = m.sendWithGomail(job.ID, job.To, job.Subject, job.Body)
+					e = m.sendWithGomail(job.requestID, job.user.Email, job.Subject, mailBody)
 				}
 				if e != nil {
 					err = e
@@ -164,9 +181,9 @@ func (m *Mailer) handleJob(id int) {
 						"failed to send email",
 						slog.Int("retry", retry),
 						slog.String("error", err.Error()),
-						slog.String("to", job.To),
+						slog.String("to", job.user.Email),
 						slog.String("subject", job.Subject),
-						slog.String("requestID", job.ID.String()),
+						slog.String("requestID", job.requestID.String()),
 					)
 					time.Sleep(retryDuration)
 					continue
@@ -179,19 +196,19 @@ func (m *Mailer) handleJob(id int) {
 			if err != nil {
 				log.Error(fmt.Sprintf("failed to send email after %d retries", retryCount),
 					slog.String("error", err.Error()),
-					slog.String("to", job.To),
+					slog.String("to", job.user.Email),
 					slog.String("subject", job.Subject),
-					slog.String("requestID", job.ID.String()),
+					slog.String("requestID", job.requestID.String()),
 				)
 				return
 			}
 
 			log.Info(
 				"mail sended",
-				slog.String("to", job.To),
+				slog.String("to", job.user.Email),
 				slog.String("subject", job.Subject),
 				slog.Int("id", id),
-				slog.String("requestID", job.ID.String()),
+				slog.String("requestID", job.requestID.String()),
 			)
 		}
 	}
@@ -251,4 +268,12 @@ func (m *Mailer) Shutdown(ctx context.Context) error {
 			return nil
 		}
 	}
+}
+
+func mdToHTML(md string) (string, error) {
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(md), &buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

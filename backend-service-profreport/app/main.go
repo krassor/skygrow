@@ -49,16 +49,15 @@ func main() {
 
 	tgBot := telegramBot.New(log, cfg)
 
-	openRouterService := openrouter.NewClient(log, cfg)
 	mailService := mail.NewMailer(log, cfg)
-	pdfService := pdf.New(log, cfg)
+	pdfService := pdf.New(log, cfg, mailService)
+	openRouterService := openrouter.NewClient(log, cfg, pdfService)
 	questionnaireHandler := handlers.NewQuestionnaireHandler(
 		log,
 		cfg,
 		openRouterService,
-		mailService,
-		pdfService,
 	)
+
 	router := routers.NewRouter(questionnaireHandler, "TODO")
 	httpServer := httpServer.NewHttpServer(log, router, cfg)
 
@@ -82,12 +81,16 @@ func main() {
 			"Pdf service": func(ctx context.Context) error {
 				return pdfService.Shutdown(ctx)
 			},
+			"Openrouter service": func(ctx context.Context) error {
+				return openRouterService.Shutdown(ctx)
+			},
 		},
 		log,
 	)
 	go tgBot.Update(60)
 	go mailService.Start()
 	go pdfService.Start()
+	go openRouterService.Start()
 	go httpServer.Listen()
 	// err := mailService.AddJob("krassor86@yandex.ru", "test proffreport", "body2")
 	// if err != nil {

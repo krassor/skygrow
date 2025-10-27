@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"app/main.go/internal/config"
+	"app/main.go/internal/models/domain"
 
 	"github.com/google/uuid"
 	"github.com/nativebpm/gotenberg"
@@ -23,10 +24,19 @@ const (
 	timeout       time.Duration = 30 * time.Second
 )
 
+type MailService interface {
+	AddJob(
+		requestID uuid.UUID,
+		user domain.User,
+		subject string,
+	) error
+}
+
 type Job struct {
 	requestID uuid.UUID
 	inputMd   string
-	Done      chan struct{}
+	user domain.User
+	Done chan struct{}
 }
 
 // Mailer представляет собой клиент для отправки электронных писем.
@@ -34,16 +44,22 @@ type PdfService struct {
 	logger          *slog.Logger
 	cfg             *config.Config
 	jobs            chan Job
+	mailService     MailService
 	shutdownChannel chan struct{}
 	wg              *sync.WaitGroup
 }
 
 // NewMailer создает новый экземпляр Mailer.
 // Проверяет, что все необходимые параметры присутствуют в конфиге.
-func New(logger *slog.Logger, cfg *config.Config) *PdfService {
+func New(
+	logger *slog.Logger,
+	cfg *config.Config,
+	mailService MailService,
+) *PdfService {
 	return &PdfService{
 		logger:          logger,
 		cfg:             cfg,
+		mailService:     mailService,
 		jobs:            make(chan Job, cfg.PdfConfig.JobBufferSize),
 		shutdownChannel: make(chan struct{}),
 		wg:              &sync.WaitGroup{},
@@ -91,10 +107,11 @@ func (m *PdfService) Start() {
 //	    log.Fatal(err)
 //	}
 //	<-done // Ждём завершения обработки
-func (m *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string) (chan struct{}, error) {
+func (m *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string, user domain.User) (chan struct{}, error) {
 	newJob := Job{
 		requestID: requestID,
 		inputMd:   inputMarkdown,
+		user: user,
 		Done:      make(chan struct{}),
 	}
 	if len(m.jobs) < m.cfg.PdfConfig.JobBufferSize {
@@ -160,13 +177,17 @@ func (m *PdfService) handleJob(id int) {
 				return
 			}
 
+			m.mailService.AddJob(job.requestID, job.user, "Prof Report")
+
+			close(job.Done)
+
 			log.Info(
 				"pdf created",
 				slog.Int("id", id),
 				slog.String("requestID", job.requestID.String()),
 			)
 
-			close(job.Done)
+
 
 		}
 	}
@@ -241,7 +262,7 @@ func (m *PdfService) createPdf(logger *slog.Logger, requestID uuid.UUID, inputMd
 	log.Info(
 		"Markdown converted to PDF successfully",
 		slog.String("output pdf", fmt.Sprintf("%s.pdf", requestID.String())),
-		slog.String("Gotenberg trace: %s\n", response.GotenbergTrace),
+		slog.String("Gotenberg trace: %s", response.GotenbergTrace),
 	)
 
 	return nil

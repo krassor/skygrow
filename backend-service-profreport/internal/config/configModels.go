@@ -40,6 +40,8 @@ type AIConfig struct {
 	MaxTokens          int     `yaml:"maxTokens" env-default:"65000"`
 	Temperature        float32 `yaml:"temperature" env-default:"0.5"`
 	N                  int     `yaml:"n" env-default:"1"`
+	JobBufferSize      int     `yaml:"jobBufferSize" env:"AI_BUFFER_SIZE" env-default:"10"`
+	WorkersCount       int     `yaml:"workersCount" env:"AI_WORKERS_COUNT" env-default:"1"`
 }
 
 type BotConfig struct {
@@ -54,7 +56,7 @@ type MailConfig struct {
 	Username      string `yaml:"username" env:"MAIL_USERNAME" env-required:"true" env-default:"proffreport@rambler.ru"`
 	Password      string `yaml:"password" env:"MAIL_PASSWORD" env-required:"true" env-default:""`
 	FromAddress   string `yaml:"fromAddress" env:"MAIL_FROM_ADDRESS" env-required:"true" env-default:"proffreport@rambler.ru"`
-	JobBufferSize int    `yaml:"jobBufferSize" env:"JOB_BUFFER_SIZE" env-default:"10"`
+	JobBufferSize int    `yaml:"jobBufferSize" env:"MAIL_JOB_BUFFER_SIZE" env-default:"10"`
 	WorkersCount  int    `yaml:"workersCount" env:"MAIL_WORKERS_COUNT" env-default:"3"`
 }
 
@@ -66,6 +68,6 @@ type PdfConfig struct {
 	HtmlTemplateFilePath string `yaml:"htmlTemplateFilePath" env:"HTML_TEMPLATE_FILEPATH" env-required:"true" env-default:""`
 	HtmlTemplateFileName string `yaml:"htmlTemplateFileName" env:"HTML_TEMPLATE_FILENAME" env-required:"true" env-default:""`
 	PdfFilePath          string `yaml:"pdfFilePath" env:"PDF_FILEPATH" env-required:"true" env-default:""`
-	JobBufferSize        int    `yaml:"jobBufferSize" env:"JOB_BUFFER_SIZE" env-default:"10"`
-	WorkersCount         int    `yaml:"workersCount" env:"MAIL_WORKERS_COUNT" env-default:"3"`
+	JobBufferSize        int    `yaml:"jobBufferSize" env:"PDF_JOB_BUFFER_SIZE" env-default:"10"`
+	WorkersCount         int    `yaml:"workersCount" env:"PDF_WORKERS_COUNT" env-default:"3"`
 }

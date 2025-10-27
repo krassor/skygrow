@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"app/main.go/internal/config"
+	"app/main.go/internal/models/domain"
 	"app/main.go/internal/models/dto"
 	"app/main.go/internal/utils"
 	"app/main.go/internal/utils/logger/sl"
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,51 +22,28 @@ var (
 )
 
 type LLMService interface {
-	CreateChatCompletion(
-		ctx context.Context,
-		logger *slog.Logger,
-		requestId uuid.UUID,
-		prompt string,
-	) (string, error)
-}
-
-type MailService interface {
 	AddJob(
-		ID uuid.UUID,
-		to string,
-		subject string,
-		body string,
-	) error
-}
-
-type PdfService interface {
-	AddJob(
-		requestId uuid.UUID,
-		inputMarkdown string,
+		reqyestID uuid.UUID,
+		questionnaire string,
+		user domain.User,
 	) (chan struct{}, error)
 }
 
 type QuestionnaireHandler struct {
-	LLMService  LLMService
-	MailService MailService
-	PdfService  PdfService
-	cfg         *config.Config
-	log         *slog.Logger
+	LLMService LLMService
+	cfg        *config.Config
+	log        *slog.Logger
 }
 
 func NewQuestionnaireHandler(
 	log *slog.Logger,
 	cfg *config.Config,
 	LLMService LLMService,
-	MailService MailService,
-	PdfService PdfService,
 ) *QuestionnaireHandler {
 	return &QuestionnaireHandler{
-		LLMService:  LLMService,
-		MailService: MailService,
-		PdfService:  PdfService,
-		log:         log,
-		cfg:         cfg,
+		LLMService: LLMService,
+		log:        log,
+		cfg:        cfg,
 	}
 }
 
@@ -116,37 +93,15 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		"start http handler Create",
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), h.cfg.BotConfig.AI.GetTimeout())
-	defer cancel()
-
-	response, err := h.LLMService.CreateChatCompletion(ctx, log, requestID, h.splitQuestionnaire(&questionnaireDto))
-	if err != nil {
-		sl.Err(err)
-		return
+	user := domain.User{
+		Email: questionnaireDto.User.Email,
+		Name:  questionnaireDto.User.Name,
 	}
 
-	chanDone, err := h.PdfService.AddJob(requestID, response)
+	_, err = h.LLMService.AddJob(requestID, h.splitQuestionnaire(&questionnaireDto), user)
+
 	if err != nil {
-		sl.Err(err)
-		return
-	}
-
-	<-chanDone
-
-	mailBody := "Здравствуйте, " + questionnaireDto.User.Name + "!\r\n" +
-		"По Вашему запросу был сгенерирован отчет\r\n" +
-		"Отчет прикреплен к письму во вложении.\r\n" +
-		"\r\n\r\nС уважением, команда proffreport."
-
-	mailBody, err = mdToHTML(mailBody)
-	if err != nil {
-		sl.Err(err)
-		return
-	}
-
-	err = h.MailService.AddJob(requestID, questionnaireDto.User.Email, "Prof Report", mailBody)
-	if err != nil {
-		sl.Err(err)
+		h.err(log, err, fmt.Errorf("Internal server error"), w, http.StatusBadRequest)
 		return
 	}
 

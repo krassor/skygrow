@@ -6,9 +6,12 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"app/main.go/internal/config"
+	"app/main.go/internal/models/domain"
+
 	"app/main.go/internal/utils/logger/sl"
 
 	"github.com/google/uuid"
@@ -20,16 +23,35 @@ const (
 	retryDuration time.Duration = 3 * time.Second
 )
 
+type PdfService interface {
+	AddJob(
+		requestId uuid.UUID,
+		inputMarkdown string,
+		user domain.User,
+	) (chan struct{}, error)
+}
+
+type Job struct {
+	requestID     uuid.UUID
+	questionnaire string
+	user domain.User
+	Done      chan struct{}
+}
+
 type Openrouter struct {
 	logger          *slog.Logger
-	config          *config.Config
+	cfg             *config.Config
 	Client          *openrouter.Client
+	pdfService      PdfService
+	jobs            chan Job
 	shutdownChannel chan struct{}
+	wg              *sync.WaitGroup
 }
 
 func NewClient(
 	logger *slog.Logger,
-	config *config.Config,
+	cfg *config.Config,
+	pdfService PdfService,
 ) *Openrouter {
 
 	op := "Openrouter.NewClient()"
@@ -38,20 +60,110 @@ func NewClient(
 	)
 
 	client := openrouter.NewClient(
-		config.BotConfig.AI.AIApiToken,
+		cfg.BotConfig.AI.AIApiToken,
 	)
 
 	log.Info("Creating deepseek client")
 
 	return &Openrouter{
 		logger:          logger,
-		config:          config,
+		cfg:             cfg,
 		Client:          client,
+		pdfService:      pdfService,
+		jobs:            make(chan Job, cfg.BotConfig.AI.JobBufferSize),
 		shutdownChannel: make(chan struct{}),
+		wg:              &sync.WaitGroup{},
 	}
 }
 
-func (or *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logger, requestId uuid.UUID, message string) (string, error) {
+func (s *Openrouter) Start() {
+	op := "PdfService.Start()"
+	log := s.logger.With(
+		slog.String("op", op),
+	)
+	for i := 0; i < s.cfg.PdfConfig.WorkersCount; i++ {
+		s.wg.Add(1)
+		go s.handleJob(i)
+	}
+	log.Info(
+		"pdf service started",
+	)
+	for {
+		s.wg.Wait()
+	}
+}
+
+func (s *Openrouter) AddJob(requestID uuid.UUID, questionnaire string, user domain.User) (chan struct{}, error) {
+	newJob := Job{
+		requestID:     requestID,
+		questionnaire: questionnaire,
+		user: user,
+		Done:      make(chan struct{}),
+	}
+	if len(s.jobs) < s.cfg.PdfConfig.JobBufferSize {
+		s.jobs <- newJob
+		return newJob.Done, nil
+	} else {
+		return nil, fmt.Errorf("job buffer is full")
+	}
+}
+
+func (s *Openrouter) handleJob(id int) {
+	defer s.wg.Done()
+	op := "Openrouter.handleJob()"
+	log := s.logger.With(
+		slog.String("op", op),
+	)
+
+	log.Info("start openrouter job handler")
+
+	for {
+
+		select {
+		case <-s.shutdownChannel:
+			return
+		case job, ok := <-s.jobs:
+			log = log.With(
+				slog.String("requestID", job.requestID.String()),
+			)
+			if !ok {
+				log.Error("failed chat completion",
+					slog.String("error", "channel is closed"),
+				)
+				return
+			}
+
+			response, err := s.CreateChatCompletion(context.TODO(), log, job.requestID, job.questionnaire)
+
+			if err != nil {
+				log.Error("failed chat completion",
+					slog.String("error", err.Error()),
+					//slog.String("requestID", job.requestID.String()),
+				)
+				return
+			}
+
+			_, err = s.pdfService.AddJob(job.requestID, response, job.user)
+			if err != nil {
+				log.Error("failed add job to pdf service",
+					slog.String("error", err.Error()),
+					//slog.String("requestID", job.requestID.String()),
+				)
+			}
+
+			close(job.Done)
+			
+			log.Info(
+				"AI response received",
+				slog.Int("id", id),
+				//slog.String("requestID", job.requestID.String()),
+			)
+
+		}
+	}
+}
+
+func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logger, requestId uuid.UUID, message string) (string, error) {
 	op := "openrouter.CreateChatCompletion()"
 	log := logger.With(
 		slog.String("op", op),
@@ -65,15 +177,15 @@ func (or *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Log
 		var r openrouter.ChatCompletionResponse
 		var e error
 		select {
-		case <-or.shutdownChannel:
+		case <-s.shutdownChannel:
 			return "", fmt.Errorf("shutdown openrouter client")
 		default:
-			r, e = or.Client.CreateChatCompletion(
+			r, e = s.Client.CreateChatCompletion(
 				ctx,
 				openrouter.ChatCompletionRequest{
-					Model: or.config.BotConfig.AI.ModelName,
+					Model: s.cfg.BotConfig.AI.ModelName,
 					Messages: []openrouter.ChatCompletionMessage{
-						openrouter.SystemMessage(or.config.BotConfig.AI.SystemRolePromt),
+						openrouter.SystemMessage(s.cfg.BotConfig.AI.SystemRolePromt),
 						openrouter.UserMessage(message),
 					},
 				},
@@ -103,7 +215,7 @@ func (or *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Log
 
 	responseText := resp.Choices[0].Message.Content.Text
 
-	err = or.WriteResponseInFile(requestId.String(), responseText)
+	err = s.writeResponseInFile(requestId.String(), responseText)
 	if err != nil {
 		log.Error(
 			"error write response in file",
@@ -127,9 +239,9 @@ func isRateLimitError(err error) bool {
 	}
 }
 
-func (or *Openrouter) WriteResponseInFile(requestId string, data string) error {
+func (s *Openrouter) writeResponseInFile(requestId string, data string) error {
 	bufWrite := []byte(data)
-	filePath := fmt.Sprintf("%s%s.md", or.config.BotConfig.AI.AiResponseFilePath, requestId)
+	filePath := fmt.Sprintf("%s%s.md", s.cfg.BotConfig.AI.AiResponseFilePath, requestId)
 	err := os.WriteFile(filePath, bufWrite, 0775)
 	if err != nil {
 		return fmt.Errorf("error write file \"%s\": %w", filePath, err)
@@ -137,13 +249,13 @@ func (or *Openrouter) WriteResponseInFile(requestId string, data string) error {
 	return nil
 }
 
-func (or *Openrouter) Shutdown(ctx context.Context) error {
+func (s *Openrouter) Shutdown(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("force exit AI client: %w", ctx.Err())
 		default:
-			close(or.shutdownChannel)
+			close(s.shutdownChannel)
 			return nil
 		}
 	}
