@@ -156,7 +156,7 @@ func (m *Mailer) handleJob(id int) {
 
 			var err error
 
-			mailBody := "Здравствуйте, " + job.user.Name+ "!\r\n" +
+			mailBody := "Здравствуйте, " + job.user.Name + "!\r\n" +
 				"По Вашему запросу был сгенерирован отчет\r\n" +
 				"Отчет прикреплен к письму во вложении.\r\n" +
 				"\r\n\r\nС уважением, команда proffreport."
@@ -166,7 +166,7 @@ func (m *Mailer) handleJob(id int) {
 				sl.Err(err)
 				return
 			}
-			
+
 			for retry := range retryCount {
 				var e error
 				select {
@@ -233,7 +233,9 @@ func (m *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, 
 	msg.SetBody("text/html", body)
 
 	msg.Attach(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.PdfFilePath, requestID))
-	msg.Attach(fmt.Sprintf("%s%s.md", m.cfg.BotConfig.AI.AiResponseFilePath, requestID))
+
+	//TODO: exclude from production
+	msg.Attach(fmt.Sprintf("%s%s.html", m.cfg.BotConfig.AI.AiResponseFilePath, requestID))
 
 	m.logger.Debug(
 		"mail headers",
