@@ -34,8 +34,8 @@ type PdfService interface {
 type Job struct {
 	requestID     uuid.UUID
 	questionnaire string
-	user domain.User
-	Done      chan struct{}
+	user          domain.User
+	Done          chan struct{}
 }
 
 type Openrouter struct {
@@ -97,8 +97,8 @@ func (s *Openrouter) AddJob(requestID uuid.UUID, questionnaire string, user doma
 	newJob := Job{
 		requestID:     requestID,
 		questionnaire: questionnaire,
-		user: user,
-		Done:      make(chan struct{}),
+		user:          user,
+		Done:          make(chan struct{}),
 	}
 	if len(s.jobs) < s.cfg.PdfConfig.JobBufferSize {
 		s.jobs <- newJob
@@ -152,7 +152,7 @@ func (s *Openrouter) handleJob(id int) {
 			}
 
 			close(job.Done)
-			
+
 			log.Info(
 				"AI response received",
 				slog.Int("id", id),
@@ -215,7 +215,7 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 
 	responseText := resp.Choices[0].Message.Content.Text
 
-	err = s.writeResponseInFile(requestId.String(), responseText)
+	err = s.writeResponseInFile(requestId.String(), responseText, "html")
 	if err != nil {
 		log.Error(
 			"error write response in file",
@@ -239,9 +239,9 @@ func isRateLimitError(err error) bool {
 	}
 }
 
-func (s *Openrouter) writeResponseInFile(requestId string, data string) error {
+func (s *Openrouter) writeResponseInFile(requestId string, data string, fileType string) error {
 	bufWrite := []byte(data)
-	filePath := fmt.Sprintf("%s%s.md", s.cfg.BotConfig.AI.AiResponseFilePath, requestId)
+	filePath := fmt.Sprintf("%s%s.%s", s.cfg.BotConfig.AI.AiResponseFilePath, requestId, fileType)
 	err := os.WriteFile(filePath, bufWrite, 0775)
 	if err != nil {
 		return fmt.Errorf("error write file \"%s\": %w", filePath, err)
