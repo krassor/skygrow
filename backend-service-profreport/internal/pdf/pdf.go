@@ -27,7 +27,7 @@ const (
 
 type ViewData struct {
 	User           domain.User
-	AiHtmlResponse []byte
+	AiHtmlResponse template.HTML
 }
 
 type MailService interface {
@@ -301,10 +301,10 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 		Email: job.user.Email,
 	}
 
-	dataBuf := []byte(job.input)
+	//dataBuf := []byte(job.input)
 	data := ViewData{
 		User:           user,
-		AiHtmlResponse: dataBuf,
+		AiHtmlResponse: template.HTML(job.input),
 	}
 
 	var tmplBuf []byte
