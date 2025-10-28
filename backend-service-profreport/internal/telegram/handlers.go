@@ -85,6 +85,29 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 			bot.UsersState[update.Message.From.ID] = UserState{AwaitingFile: true}
 		}
 
+	case "settemplate":
+		replyText := ""
+		isAdmin, err := bot.isAdmin(update.Message)
+
+		log.Debug("settemplate",
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("message", update.Message.Text),
+			slog.String("is admin", strconv.FormatBool(isAdmin)),
+		)
+
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		if isAdmin {
+			replyText = "Attach a template file"
+			err = sendFunc(update.Message, replyText)
+			if err != nil {
+				return fmt.Errorf("%s: %w", op, err)
+			}
+			bot.UsersState[update.Message.From.ID] = UserState{AwaitingFile: true}
+		}
+
 	case "getsystempromt":
 
 		replyText := ""
@@ -207,95 +230,109 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	if isAdmin {
-		// Проверка наличия файла в сообщении
-		if !bot.UsersState[update.Message.From.ID].AwaitingFile {
-			replyText = "File not awaiting"
-			err := sendFunc(update.Message, replyText)
-			e := fmt.Errorf("File not awaiting")
-			if err != nil {
-				return fmt.Errorf("%s: %w", op, err)
-			}
+	if !isAdmin {
+		return fmt.Errorf("User dont have admin permission")
+	}
+
+	// Проверка наличия файла в сообщении
+	if !bot.UsersState[update.Message.From.ID].AwaitingFile {
+		replyText = "File not awaiting"
+		err := sendFunc(update.Message, replyText)
+		e := fmt.Errorf("File not awaiting")
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+		return fmt.Errorf("%s: %w", op, e)
+	}
+
+	// Обработка файла
+	fileID := update.Message.Document.FileID
+	log.Info(
+		"Received command with file",
+		slog.String("user name", update.Message.From.UserName),
+		slog.String("message", update.Message.Text),
+		slog.String("file_id", fileID),
+	)
+
+	//проверяем имя файла
+	if (update.Message.Document.FileName != bot.cfg.BotConfig.AI.PromtFileName) || (update.Message.Document.FileName != bot.cfg.PdfConfig.HtmlTemplateFileName) {
+		replyText = "wrong file name. PLease try again"
+		err := fmt.Errorf("wrong file name: %s", update.Message.Document.FileName)
+		e := sendFunc(update.Message, replyText)
+		if e != nil {
 			return fmt.Errorf("%s: %w", op, e)
 		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
-		// Обработка файла
-		fileID := update.Message.Document.FileID
-		log.Info(
-			"Received command with file",
-			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
-			slog.String("file_id", fileID),
-		)
-
-		//проверяем имя файла
-		if update.Message.Document.FileName != bot.cfg.BotConfig.AI.PromtFileName {
-			replyText = "wrong file name. PLease try again"
-			err := fmt.Errorf("wrong file name: %s", update.Message.Document.FileName)
-			e := sendFunc(update.Message, replyText)
-			if e != nil {
-				return fmt.Errorf("%s: %w", op, e)
-			}
-			return fmt.Errorf("%s: %w", op, err)
+	//Получаем file_path
+	fileURL, err := bot.tgbot.GetFileDirectURL(fileID)
+	if err != nil {
+		replyText = "Cannot download file. PLease try again"
+		e := sendFunc(update.Message, replyText)
+		if e != nil {
+			return fmt.Errorf("%s: %w", op, e)
 		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
-		//Получаем file_path
-		fileURL, err := bot.tgbot.GetFileDirectURL(fileID)
-		if err != nil {
-			replyText = "Cannot download file. PLease try again"
-			e := sendFunc(update.Message, replyText)
-			if e != nil {
-				return fmt.Errorf("%s: %w", op, e)
-			}
-			return fmt.Errorf("%s: %w", op, err)
+	// Делаем HTTP GET-запрос по URL
+	resp, err := http.Get(fileURL)
+	if err != nil {
+		replyText = "Cannot download file. PLease try again"
+		e := sendFunc(update.Message, replyText)
+		if e != nil {
+			return fmt.Errorf("%s: %w", op, e)
 		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	defer resp.Body.Close()
 
-		// Делаем HTTP GET-запрос по URL
-		resp, err := http.Get(fileURL)
-		if err != nil {
-			replyText = "Cannot download file. PLease try again"
-			e := sendFunc(update.Message, replyText)
-			if e != nil {
-				return fmt.Errorf("%s: %w", op, e)
-			}
-			return fmt.Errorf("%s: %w", op, err)
+	//Сохраняем файл на диск
+	buf := make([]byte, resp.ContentLength)
+
+	_, err = resp.Body.Read(buf)
+	if err != nil {
+		replyText = "Cannot download file. PLease try again"
+		e := sendFunc(update.Message, replyText)
+		if e != nil {
+			return fmt.Errorf("%s: %w", op, e)
 		}
-		defer resp.Body.Close()
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
-		//Сохраняем файл на диск
-		buf := make([]byte, resp.ContentLength)
+	filePath := ""
+	isPromtFile := false
+	isTmplFile := false
+	if update.Message.Document.FileName == bot.cfg.BotConfig.AI.PromtFileName {
+		filePath = filepath.Join(bot.cfg.BotConfig.AI.PromtFilePath, bot.cfg.BotConfig.AI.PromtFileName)
+		isPromtFile = true
+	}
+	if update.Message.Document.FileName == bot.cfg.PdfConfig.HtmlTemplateFileName {
+		filePath = filepath.Join(bot.cfg.PdfConfig.HtmlTemplateFilePath, bot.cfg.PdfConfig.HtmlTemplateFileName)
+		isTmplFile = true
+	}
 
-		_, err = resp.Body.Read(buf)
-		if err != nil {
-			replyText = "Cannot download file. PLease try again"
-			e := sendFunc(update.Message, replyText)
-			if e != nil {
-				return fmt.Errorf("%s: %w", op, e)
-			}
-			return fmt.Errorf("%s: %w", op, err)
+	err = os.WriteFile(filePath, buf, 0775)
+	if err != nil {
+		replyText = "Cannot save file. PLease try again"
+		e := sendFunc(update.Message, replyText)
+		if e != nil {
+			return fmt.Errorf("%s: %w", op, e)
 		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
-		filePath := filepath.Join(bot.cfg.BotConfig.AI.PromtFilePath, bot.cfg.BotConfig.AI.PromtFileName)
+	log.Info(
+		"file saved",
+		slog.String("user name", update.Message.From.UserName),
+		slog.String("message", update.Message.Text),
+		slog.String("file_id", fileID),
+		slog.String("file_path", filePath),
+	)
 
-		err = os.WriteFile(filePath, buf, 0775)
-		if err != nil {
-			replyText = "Cannot save file. PLease try again"
-			e := sendFunc(update.Message, replyText)
-			if e != nil {
-				return fmt.Errorf("%s: %w", op, e)
-			}
-			return fmt.Errorf("%s: %w", op, err)
-		}
-
-		log.Info(
-			"promt file saved",
-			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
-			slog.String("file_id", fileID),
-			slog.String("file_path", filePath),
-		)
-
-		//Перечитываем заново промт из файла для применения изменений
+	//Перечитываем заново промт из файла для применения изменений
+	if isPromtFile {
 		err = bot.cfg.ReadPromtFromFile()
 		if err != nil {
 			replyText = "Promt file saved. But config file not updated. PLease try again"
@@ -319,7 +356,23 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
 		}
+	} else if isTmplFile {
+
+		log.Info(
+			"Template file saved.",
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("message", update.Message.Text),
+			slog.String("file_id", fileID),
+			slog.String("file_path", filePath),
+		)
+
+		replyText = "👍 Template file saved. 👍"
+		err = sendFunc(update.Message, replyText)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
 	}
+
 	bot.UsersState[update.Message.From.ID] = UserState{AwaitingFile: false}
 	return nil
 }
