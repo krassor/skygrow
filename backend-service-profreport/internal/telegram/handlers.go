@@ -255,7 +255,7 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 	)
 
 	//проверяем имя файла
-	if (update.Message.Document.FileName != bot.cfg.BotConfig.AI.PromtFileName) || (update.Message.Document.FileName != bot.cfg.PdfConfig.HtmlTemplateFileName) {
+	if (update.Message.Document.FileName != bot.cfg.BotConfig.AI.PromtFileName) && (update.Message.Document.FileName != bot.cfg.PdfConfig.HtmlTemplateFileName) {
 		replyText = "wrong file name. PLease try again"
 		err := fmt.Errorf("wrong file name: %s", update.Message.Document.FileName)
 		e := sendFunc(update.Message, replyText)
@@ -366,7 +366,7 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 			slog.String("file_path", filePath),
 		)
 
-		replyText = "👍 Template file saved. 👍"
+		replyText = "👍 Template file saved. Config updated 👍"
 		err = sendFunc(update.Message, replyText)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
