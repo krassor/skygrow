@@ -13,3 +13,7 @@ type QuestionnaireDto struct {
 	ObjectsOfActivityKlimov []QuestionAnswer `json:"objectsOfActivityKlimov"`
 	RIASEC                  []QuestionAnswer `json:"RIASEC"`
 }
+
+type ResponseQuestionnaireDto struct {
+	RequestID string `json:"requestID"`
+}

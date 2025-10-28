@@ -105,8 +105,7 @@ func (h *QuestionnaireHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseSuccess := utils.Message(true, "")
-	err = utils.Json(w, http.StatusOK, responseSuccess)
+	err = utils.Json(w, http.StatusOK, dto.ResponseQuestionnaireDto{RequestID: requestID.String()})
 	if err != nil {
 		log.Error("error encode response to json", sl.Err(err))
 	}
