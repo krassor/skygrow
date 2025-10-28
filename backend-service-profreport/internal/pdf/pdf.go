@@ -27,7 +27,7 @@ const (
 
 type ViewData struct {
 	User           domain.User
-	AiHtmlResponse string
+	AiHtmlResponse []byte
 }
 
 type MailService interface {
@@ -301,16 +301,21 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 		Email: job.user.Email,
 	}
 
+	dataBuf := []byte(job.input)
 	data := ViewData{
 		User:           user,
-		AiHtmlResponse: job.input,
+		AiHtmlResponse: dataBuf,
 	}
 
-	var buf []byte
-	buffer := bytes.NewBuffer(buf)
+	var tmplBuf []byte
+	buffer := bytes.NewBuffer(tmplBuf)
 
 	tmpl, _ := template.ParseFiles(htmlTmplFullPath)
-	tmpl.Execute(buffer, data)
+	err = tmpl.Execute(buffer, data)
+
+	if err != nil {
+		return fmt.Errorf("failed to execute html template: %w", err)
+	}
 
 	ctx := context.Background()
 
