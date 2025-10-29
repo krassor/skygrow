@@ -124,6 +124,7 @@ func (s *Openrouter) handleJob(id int) {
 			return
 		case job, ok := <-s.jobs:
 			log = log.With(
+				slog.String("op", op),
 				slog.String("requestID", job.requestID.String()),
 			)
 			if !ok {
@@ -192,10 +193,10 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 				},
 			)
 		}
-		if e != nil && isRateLimitError(err) {
+		if e != nil && (isRateLimitError(e) || isEOFError(e)) {
 			err = e
 			log.Error(
-				"rate limit CreateChatCompletion 429",
+				"Openrouter chat completion response error",
 				slog.String("error", err.Error()),
 				slog.Int("retry", retry),
 			)
@@ -228,6 +229,19 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 }
 
 func isRateLimitError(err error) bool {
+	// Если библиотека возвращает ошибку с полем Code:
+	// if e, ok := err.(interface{ Code() int }); ok && e.Code() == 429 {
+	// 	return true
+	// }
+	// Или проверка по строке ошибки (менее надёжно):
+	if err != nil {
+		return strings.Contains(err.Error(), "EOF")
+	} else {
+		return false
+	}
+}
+
+func isEOFError(err error) bool {
 	// Если библиотека возвращает ошибку с полем Code:
 	// if e, ok := err.(interface{ Code() int }); ok && e.Code() == 429 {
 	// 	return true
