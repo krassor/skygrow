@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -276,25 +277,30 @@ func (m *PdfService) createPdf(logger *slog.Logger, job Job) error {
 
 func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 
-	requestID := job.requestID
-
 	log := logger.With(
 		slog.String("op", "PdfService.createPdfFromHtml()"),
-		slog.String("requestID", requestID.String()),
+		slog.String("requestID", job.requestID.String()),
 	)
+
+	if job.input == "" {
+		return fmt.Errorf("empty input data")
+	}
+
+	requestID := job.requestID
 
 	httpClient := &http.Client{
 		Timeout: timeout,
 	}
 
-	fullPath := fmt.Sprintf("http://%s:%d", m.cfg.PdfConfig.PdfHost, m.cfg.PdfConfig.PdfPort)
+	GotenbergURL := fmt.Sprintf("http://%s:%d", m.cfg.PdfConfig.PdfHost, m.cfg.PdfConfig.PdfPort)
 
-	client, err := gotenberg.NewClient(httpClient, fullPath)
+	client, err := gotenberg.NewClient(httpClient, GotenbergURL)
 	if err != nil {
 		return fmt.Errorf("failed to create gotenberg client: %w", err)
 	}
 
-	htmlTmplFullPath := fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName)
+	//htmlTmplFullPath := fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName)
+	htmlTmplFullPath := filepath.Join(m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName)
 
 	user := domain.User{
 		Name:  job.user.Name,
@@ -307,17 +313,26 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 		AiHtmlResponse: template.HTML(job.input),
 	}
 
+	log.Debug(
+		"Parsing info",
+		slog.String("html template path", htmlTmplFullPath),
+		slog.Any("Data for execute template", data),
+	)
+
 	var tmplBuf []byte
 	buffer := bytes.NewBuffer(tmplBuf)
 
-	tmpl, _ := template.ParseFiles(htmlTmplFullPath)
-	err = tmpl.Execute(buffer, data)
-
+	tmpl, err := template.ParseFiles(htmlTmplFullPath)
 	if err != nil {
-		return fmt.Errorf("failed to execute html template: %w", err)
+		return fmt.Errorf("failed to parse html template \"%s\": %w", htmlTmplFullPath, err)
 	}
 
-	ctx := context.Background()
+	err = tmpl.Execute(buffer, data)
+	if err != nil {
+		return fmt.Errorf("failed to execute html template \"%s\": %w", htmlTmplFullPath, err)
+	}
+
+	ctx := context.TODO()
 
 	response, err := client.Chromium().
 		ConvertHTML(ctx, buffer).
