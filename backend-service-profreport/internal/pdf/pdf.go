@@ -332,10 +332,21 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 		return fmt.Errorf("failed to execute html template \"%s\": %w", htmlTmplFullPath, err)
 	}
 
+	logoHeaderPath := filepath.Join(m.cfg.PdfConfig.HtmlTemplateFilePath, "logo_header.png")
+	logoHeaderBuf, err := os.ReadFile(logoHeaderPath)
+	if err != nil {
+		log.Error(
+			"cannot read logo_header.png",
+			slog.String("error", err.Error()),
+		)
+	}
+	logoHeaderBuffer := bytes.NewBuffer(logoHeaderBuf)
+
 	ctx := context.TODO()
 
 	response, err := client.Chromium().
 		ConvertHTML(ctx, buffer).
+		File("logo_header.png", logoHeaderBuffer).
 		PaperSizeA4().
 		Landscape().
 		Margins(1, 1, 1, 1).

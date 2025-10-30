@@ -123,21 +123,21 @@ func (s *Openrouter) handleJob(id int) {
 		case <-s.shutdownChannel:
 			return
 		case job, ok := <-s.jobs:
-			log = log.With(
+			joblog := log.With(
 				slog.String("op", op),
 				slog.String("requestID", job.requestID.String()),
 			)
 			if !ok {
-				log.Error("failed chat completion",
+				joblog.Error("failed chat completion",
 					slog.String("error", "channel is closed"),
 				)
 				return
 			}
 
-			response, err := s.CreateChatCompletion(context.TODO(), log, job.requestID, job.questionnaire)
+			response, err := s.CreateChatCompletion(context.TODO(), joblog, job.requestID, job.questionnaire)
 
 			if err != nil {
-				log.Error("failed chat completion",
+				joblog.Error("failed chat completion",
 					slog.String("error", err.Error()),
 					//slog.String("requestID", job.requestID.String()),
 				)
@@ -146,7 +146,7 @@ func (s *Openrouter) handleJob(id int) {
 
 			_, err = s.pdfService.AddJob(job.requestID, response, job.user)
 			if err != nil {
-				log.Error("failed add job to pdf service",
+				joblog.Error("failed add job to pdf service",
 					slog.String("error", err.Error()),
 					//slog.String("requestID", job.requestID.String()),
 				)
@@ -154,7 +154,7 @@ func (s *Openrouter) handleJob(id int) {
 
 			close(job.Done)
 
-			log.Info(
+			joblog.Info(
 				"AI response received",
 				slog.Int("id", id),
 				//slog.String("requestID", job.requestID.String()),
