@@ -210,7 +210,7 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 
 	if err != nil {
 		// log.Error("error creating chat completion request", slog.String("error", err.Error()))
-		return "", fmt.Errorf("error creating chat completion request: %w", err)
+		return "", fmt.Errorf("return error creating chat completion request: %w", err)
 	}
 
 	log.Debug("received chat completion response", slog.Any("response role", resp.Choices[0].Message.Role))
@@ -235,7 +235,7 @@ func isRateLimitError(err error) bool {
 	// }
 	// Или проверка по строке ошибки (менее надёжно):
 	if err != nil {
-		return strings.Contains(err.Error(), "EOF")
+		return strings.Contains(err.Error(), "HTTP 429")
 	} else {
 		return false
 	}
@@ -248,7 +248,7 @@ func isEOFError(err error) bool {
 	// }
 	// Или проверка по строке ошибки (менее надёжно):
 	if err != nil {
-		return strings.Contains(err.Error(), "HTTP 429")
+		return strings.Contains(err.Error(), "EOF")
 	} else {
 		return false
 	}
