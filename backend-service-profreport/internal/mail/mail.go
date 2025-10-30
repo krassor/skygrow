@@ -235,7 +235,7 @@ func (m *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, 
 	msg.Attach(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.PdfFilePath, requestID))
 
 	//TODO: exclude from production
-	msg.Attach(fmt.Sprintf("%s%s.html", m.cfg.BotConfig.AI.AiResponseFilePath, requestID))
+	//msg.Attach(fmt.Sprintf("%s%s.html", m.cfg.BotConfig.AI.AiResponseFilePath, requestID))
 
 	m.logger.Debug(
 		"mail headers",
