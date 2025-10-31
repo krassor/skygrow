@@ -20,3 +20,5 @@ letsencrypt
 .env
 *.sh
 config/
+app/test/
+backend-service-profreport/app/test/

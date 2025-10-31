@@ -372,7 +372,7 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 	log.Info(
 		"html converted to PDF successfully",
 		slog.String("output pdf", fmt.Sprintf("%s.pdf", requestID.String())),
-		slog.String("Gotenberg trace: %s", response.GotenbergTrace),
+		slog.String("Gotenberg trace: ", response.GotenbergTrace),
 	)
 
 	return nil
