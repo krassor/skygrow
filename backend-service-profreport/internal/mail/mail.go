@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/mail"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -62,21 +63,21 @@ func NewMailer(logger *slog.Logger, cfg *config.Config) *Mailer {
 	}
 }
 
-func (m *Mailer) Start() {
+func (s *Mailer) Start() {
 	op := "mail.Start()"
-	log := m.logger.With(
+	log := s.logger.With(
 		slog.String("op", op),
 	)
-	for i := 0; i < m.cfg.MailConfig.WorkersCount; i++ {
-		m.wg.Add(1)
-		go m.handleJob(i)
+	for i := 0; i < s.cfg.MailConfig.WorkersCount; i++ {
+		s.wg.Add(1)
+		go s.handleJob(i)
 	}
 	log.Info(
 		"mail service started",
 	)
-	for {
-		m.wg.Wait()
-	}
+
+	s.wg.Wait()
+
 }
 
 // AddJob добавляет новую задачу на отправку письма в очередь.
@@ -91,21 +92,29 @@ func (m *Mailer) Start() {
 //   - ошибку в следующих случаях:
 //     1. Адрес электронной почты `to` имеет некорректный формат.
 //     2. Буфер задач (`jobs`) заполнен до максимальной ёмкости, заданной в конфигурации.
-func (m *Mailer) AddJob(requestID uuid.UUID, user domain.User, subject string) error {
+func (s *Mailer) AddJob(requestID uuid.UUID, user domain.User, subject string) error {
 	to := user.Email
 
 	if _, err := mail.ParseAddress(to); err != nil {
 		return fmt.Errorf("Mailer.AddJob(). invalid email address")
 	}
-	if len(m.jobs) < m.cfg.MailConfig.JobBufferSize {
-		m.jobs <- Job{
-			requestID: requestID,
-			user:      user,
-			Subject:   subject,
+
+	newJob := Job{
+		requestID: requestID,
+		user:      user,
+		Subject:   subject,
+	}
+
+	select {
+	case <-s.shutdownChannel:
+		return fmt.Errorf("service is shutting down")
+	default:
+		if len(s.jobs) < s.cfg.MailConfig.JobBufferSize {
+			s.jobs <- newJob
+			return nil
+		} else {
+			return fmt.Errorf("job buffer is full")
 		}
-		return nil
-	} else {
-		return fmt.Errorf("job buffer is full")
 	}
 }
 
@@ -129,10 +138,10 @@ func validateConfig(cfg *config.MailConfig) error {
 	return nil
 }
 
-func (m *Mailer) handleJob(id int) {
-	defer m.wg.Done()
+func (s *Mailer) handleJob(id int) {
+	defer s.wg.Done()
 	op := "mail.handleJob()"
-	log := m.logger.With(
+	log := s.logger.With(
 		slog.String("op", op),
 	)
 
@@ -141,15 +150,22 @@ func (m *Mailer) handleJob(id int) {
 	for {
 
 		select {
-		case <-m.shutdownChannel:
+		case <-s.shutdownChannel:
 			return
-		case job, ok := <-m.jobs:
+		case job, ok := <-s.jobs:
+
+			requestID := job.requestID
+
+			joblog := log.With(
+				slog.String("op", op),
+				slog.String("requestID", requestID.String()),
+			)
+
 			if !ok {
-				log.Error("failed to send email",
+				joblog.Error("failed to send email",
 					slog.String("error", "channel is closed"),
 					slog.String("to", job.user.Email),
 					slog.String("subject", job.Subject),
-					slog.String("requestID", job.requestID.String()),
 				)
 				return
 			}
@@ -164,26 +180,25 @@ func (m *Mailer) handleJob(id int) {
 			mailBody, err = mdToHTML(mailBody)
 			if err != nil {
 				sl.Err(err)
-				return
+				break
 			}
 
 			for retry := range retryCount {
 				var e error
 				select {
-				case <-m.shutdownChannel:
+				case <-s.shutdownChannel:
 					return
 				default:
-					e = m.sendWithGomail(job.requestID, job.user.Email, job.Subject, mailBody)
+					e = s.sendWithGomail(job.requestID, job.user.Email, job.Subject, mailBody)
 				}
 				if e != nil {
 					err = e
-					log.Error(
+					joblog.Error(
 						"failed to send email",
 						slog.Int("retry", retry),
 						slog.String("error", err.Error()),
 						slog.String("to", job.user.Email),
 						slog.String("subject", job.Subject),
-						slog.String("requestID", job.requestID.String()),
 					)
 					time.Sleep(retryDuration)
 					continue
@@ -194,62 +209,52 @@ func (m *Mailer) handleJob(id int) {
 			}
 
 			if err != nil {
-				log.Error(fmt.Sprintf("failed to send email after %d retries", retryCount),
+				joblog.Error(fmt.Sprintf("failed to send email after %d retries", retryCount),
 					slog.String("error", err.Error()),
 					slog.String("to", job.user.Email),
 					slog.String("subject", job.Subject),
-					slog.String("requestID", job.requestID.String()),
 				)
-				return
+				break
 			}
 
-			log.Info(
+			joblog.Info(
 				"mail sended",
 				slog.String("to", job.user.Email),
 				slog.String("subject", job.Subject),
 				slog.Int("id", id),
-				slog.String("requestID", job.requestID.String()),
 			)
 		}
 	}
 }
 
-func (m *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, body string) error {
+func (s *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, body string) error {
 	// Создаем временную зону с фиксированным смещением +3 часа (10800 секунд)
 	location := time.FixedZone("MSK", 3*3600) // 3 часа = 10800 секунд
 
 	msg := gomail.NewMessage()
-	msg.SetHeader("From", m.cfg.MailConfig.FromAddress)
+	msg.SetHeader("From", s.cfg.MailConfig.FromAddress)
 	msg.SetHeader("To", to)
 	msg.SetHeader("Subject", subject)
 	msg.SetHeader("MIME-Version", "1.0")
 	msg.SetHeader("Content-Type", "text/html; charset=\"UTF-8\"")
 	msg.SetHeader("Content-Transfer-Encoding", "8bit")
 	msg.SetHeader("Date", time.Now().UTC().In(location).Format(time.RFC1123Z))
-	msg.SetHeader("Message-ID", fmt.Sprintf("<%d.%s>", time.Now().UnixNano(), m.cfg.MailConfig.FromAddress))
+	msg.SetHeader("Message-ID", fmt.Sprintf("<%d.%s>", time.Now().UnixNano(), s.cfg.MailConfig.FromAddress))
 	msg.SetHeader("X-Mailer", "proffreportServiceApp/1.0")
-	msg.SetHeader("List-Unsubscribe", fmt.Sprintf("mailto:%s?subject=unsubscribe", m.cfg.MailConfig.FromAddress))
+	msg.SetHeader("List-Unsubscribe", fmt.Sprintf("mailto:%s?subject=unsubscribe", s.cfg.MailConfig.FromAddress))
 
 	msg.SetBody("text/html", body)
 
-	msg.Attach(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.PdfFilePath, requestID))
-
-	//TODO: exclude from production
-	//msg.Attach(fmt.Sprintf("%s%s.html", m.cfg.BotConfig.AI.AiResponseFilePath, requestID))
-
-	m.logger.Debug(
-		"mail headers",
-		slog.Any("Date", msg.GetHeader("Date")),
-	)
+	msg.Attach(filepath.Clean(fmt.Sprintf("%s%s.pdf", s.cfg.PdfConfig.PdfFilePath, requestID)))
 
 	d := gomail.NewDialer(
-		m.cfg.MailConfig.SMTPHost,
-		m.cfg.MailConfig.SMTPPort,
-		m.cfg.MailConfig.Username,
-		m.cfg.MailConfig.Password)
+		s.cfg.MailConfig.SMTPHost,
+		s.cfg.MailConfig.SMTPPort,
+		s.cfg.MailConfig.Username,
+		s.cfg.MailConfig.Password)
 
 	d.TLSConfig = &tls.Config{
-		ServerName: m.cfg.MailConfig.SMTPHost,
+		ServerName: s.cfg.MailConfig.SMTPHost,
 	}
 
 	if err := d.DialAndSend(msg); err != nil {
@@ -259,14 +264,14 @@ func (m *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, 
 	return nil
 }
 
-func (m *Mailer) Shutdown(ctx context.Context) error {
+func (s *Mailer) Shutdown(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("exit Mail service: %w", ctx.Err())
 		default:
-			close(m.shutdownChannel)
-			close(m.jobs)
+			close(s.shutdownChannel)
+			close(s.jobs)
 			return nil
 		}
 	}

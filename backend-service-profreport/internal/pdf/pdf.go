@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -73,21 +72,21 @@ func New(
 	}
 }
 
-func (m *PdfService) Start() {
+func (s *PdfService) Start() {
 	op := "PdfService.Start()"
-	log := m.logger.With(
+	log := s.logger.With(
 		slog.String("op", op),
 	)
-	for i := 0; i < m.cfg.PdfConfig.WorkersCount; i++ {
-		m.wg.Add(1)
-		go m.handleJob(i)
+	for i := 0; i < s.cfg.PdfConfig.WorkersCount; i++ {
+		s.wg.Add(1)
+		go s.handleJob(i)
 	}
 	log.Info(
 		"pdf service started",
 	)
-	for {
-		m.wg.Wait()
-	}
+
+	s.wg.Wait()
+
 }
 
 // AddJob добавляет новую задачу на конвертацию Markdown в PDF в очередь.
@@ -114,25 +113,30 @@ func (m *PdfService) Start() {
 //	    log.Fatal(err)
 //	}
 //	<-done // Ждём завершения обработки
-func (m *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string, user domain.User) (chan struct{}, error) {
+func (s *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string, user domain.User) (chan struct{}, error) {
 	newJob := Job{
 		requestID: requestID,
 		input:     inputMarkdown,
 		user:      user,
 		Done:      make(chan struct{}),
 	}
-	if len(m.jobs) < m.cfg.PdfConfig.JobBufferSize {
-		m.jobs <- newJob
-		return newJob.Done, nil
-	} else {
-		return nil, fmt.Errorf("job buffer is full")
+	select {
+	case <-s.shutdownChannel:
+		return nil, fmt.Errorf("service is shutting down")
+	default:
+		if len(s.jobs) < s.cfg.PdfConfig.JobBufferSize {
+			s.jobs <- newJob
+			return newJob.Done, nil
+		} else {
+			return nil, fmt.Errorf("job buffer is full")
+		}
 	}
 }
 
-func (m *PdfService) handleJob(id int) {
-	defer m.wg.Done()
+func (s *PdfService) handleJob(id int) {
+	defer s.wg.Done()
 	op := "PdfService.handleJob()"
-	log := m.logger.With(
+	log := s.logger.With(
 		slog.String("op", op),
 	)
 
@@ -141,32 +145,41 @@ func (m *PdfService) handleJob(id int) {
 	for {
 
 		select {
-		case <-m.shutdownChannel:
+		case <-s.shutdownChannel:
 			return
-		case job, ok := <-m.jobs:
+		case job, ok := <-s.jobs:
+			defer close(job.Done)
+
+			requestID := job.requestID
+			user := job.user
+
+			joblog := log.With(
+				slog.String("op", op),
+				slog.String("requestID", requestID.String()),
+			)
+
 			if !ok {
-				log.Error("failed to send email",
+				joblog.Error("failed to send email",
 					slog.String("error", "channel is closed"),
-					slog.String("requestID", job.requestID.String()),
 				)
 				return
 			}
+
 			var err error
 			for retry := range retryCount {
 				var e error
 				select {
-				case <-m.shutdownChannel:
+				case <-s.shutdownChannel:
 					return
 				default:
-					e = m.createPdfFromHtml(log, job)
+					e = s.createPdfFromHtml(log, job)
 				}
 				if e != nil {
 					err = e
-					log.Error(
+					joblog.Error(
 						"failed create pdf",
 						slog.Int("retry", retry),
 						slog.String("error", err.Error()),
-						slog.String("requestID", job.requestID.String()),
 					)
 					time.Sleep(retryDuration)
 					continue
@@ -177,105 +190,107 @@ func (m *PdfService) handleJob(id int) {
 			}
 
 			if err != nil {
-				log.Error(fmt.Sprintf("failed to create pdf after %d retries", retryCount),
+				joblog.Error(fmt.Sprintf("failed to create pdf after %d retries", retryCount),
 					slog.String("error", err.Error()),
-					slog.String("requestID", job.requestID.String()),
 				)
-				return
+				break
 			}
 
-			m.mailService.AddJob(job.requestID, job.user, "Prof Report")
+			err = s.mailService.AddJob(requestID, user, "Prof Report")
+			if err != nil {
+				joblog.Error("failed add job to mail service",
+					slog.String("error", err.Error()),
+				)
+				break
+			}
 
-			close(job.Done)
-
-			log.Info(
+			joblog.Info(
 				"pdf created",
 				slog.Int("id", id),
-				slog.String("requestID", job.requestID.String()),
 			)
 
 		}
 	}
 }
 
-func (m *PdfService) createPdf(logger *slog.Logger, job Job) error {
+// func (s *PdfService) createPdfFromMd(logger *slog.Logger, job Job) error {
 
-	requestID := job.requestID
+// 	requestID := job.requestID
 
-	log := logger.With(
-		slog.String("op", "PdfService.createPdf()"),
-		slog.String("requestID", requestID.String()),
-	)
+// 	log := logger.With(
+// 		slog.String("op", "PdfService.createPdf()"),
+// 		slog.String("requestID", requestID.String()),
+// 	)
 
-	httpClient := &http.Client{
-		Timeout: timeout,
-	}
+// 	httpClient := &http.Client{
+// 		Timeout: timeout,
+// 	}
 
-	fullPath := fmt.Sprintf("http://%s:%d", m.cfg.PdfConfig.PdfHost, m.cfg.PdfConfig.PdfPort)
+// 	fullPath := fmt.Sprintf("http://%s:%d", s.cfg.PdfConfig.PdfHost, s.cfg.PdfConfig.PdfPort)
 
-	client, err := gotenberg.NewClient(httpClient, fullPath)
-	if err != nil {
-		return fmt.Errorf("failed to create gotenberg client: %w", err)
-	}
+// 	client, err := gotenberg.NewClient(httpClient, fullPath)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to create gotenberg client: %w", err)
+// 	}
 
-	// indexHTML, err := markdown.FS.ReadFile("/etc/backend-service-profreport/config/template.html")
-	// if err != nil {
-	// 	return fmt.Errorf("Failed to read template.html: %w", err)
-	// }
+// 	// indexHTML, err := markdown.FS.ReadFile("/etc/backend-service-profreport/config/template.html")
+// 	// if err != nil {
+// 	// 	return fmt.Errorf("Failed to read template.html: %w", err)
+// 	// }
 
-	// markdownContent, err := markdown.FS.ReadFile("content.md")
-	// if err != nil {
-	// 	return fmt.Errorf("Failed to read content.md: %w", err)
-	// }
+// 	// markdownContent, err := markdown.FS.ReadFile("content.md")
+// 	// if err != nil {
+// 	// 	return fmt.Errorf("Failed to read content.md: %w", err)
+// 	// }
 
-	indexHTML, err := os.ReadFile(fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName))
-	if err != nil {
-		return fmt.Errorf("Failed to read template.html: %w", err)
-	}
+// 	indexHTML, err := os.ReadFile(fmt.Sprintf("%s%s", s.cfg.PdfConfig.HtmlTemplateFilePath, s.cfg.PdfConfig.HtmlTemplateFileName))
+// 	if err != nil {
+// 		return fmt.Errorf("Failed to read template.html: %w", err)
+// 	}
 
-	ctx := context.Background()
+// 	ctx := context.Background()
 
-	// log.Debug(
-	// 	"input data",
-	// 	slog.String("indexHTML", string(indexHTML)),
-	// 	slog.String("markdownContent", string(markdownContent)),
-	// )
+// 	// log.Debug(
+// 	// 	"input data",
+// 	// 	slog.String("indexHTML", string(indexHTML)),
+// 	// 	slog.String("markdownContent", string(markdownContent)),
+// 	// )
 
-	response, err := client.Chromium().
-		ConvertMarkdown(ctx, bytes.NewReader(indexHTML)).
-		File("content.md", strings.NewReader(job.input)).
-		PaperSizeA4().
-		Landscape().
-		Margins(1, 1, 1, 1).
-		OutputFilename(fmt.Sprintf("%s.pdf", requestID.String())).
-		Send()
+// 	response, err := client.Chromium().
+// 		ConvertMarkdown(ctx, bytes.NewReader(indexHTML)).
+// 		File("content.md", strings.NewReader(job.input)).
+// 		PaperSizeA4().
+// 		Landscape().
+// 		Margins(1, 1, 1, 1).
+// 		OutputFilename(fmt.Sprintf("%s.pdf", requestID.String())).
+// 		Send()
 
-	if err != nil {
-		return fmt.Errorf("Failed to convert markdown: %w", err)
-	}
-	defer response.Body.Close()
+// 	if err != nil {
+// 		return fmt.Errorf("Failed to convert markdown: %w", err)
+// 	}
+// 	defer response.Body.Close()
 
-	file, err := os.Create(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.PdfFilePath, requestID.String()))
-	if err != nil {
-		return fmt.Errorf("Failed to create output file: %w", err)
-	}
-	defer file.Close()
+// 	file, err := os.Create(fmt.Sprintf("%s%s.pdf", s.cfg.PdfConfig.PdfFilePath, requestID.String()))
+// 	if err != nil {
+// 		return fmt.Errorf("Failed to create output file: %w", err)
+// 	}
+// 	defer file.Close()
 
-	_, err = file.ReadFrom(response.Body)
-	if err != nil {
-		return fmt.Errorf("Failed to write PDF: %w", err)
-	}
+// 	_, err = file.ReadFrom(response.Body)
+// 	if err != nil {
+// 		return fmt.Errorf("Failed to write PDF: %w", err)
+// 	}
 
-	log.Info(
-		"Markdown converted to PDF successfully",
-		slog.String("output pdf", fmt.Sprintf("%s.pdf", requestID.String())),
-		slog.String("Gotenberg trace: %s", response.GotenbergTrace),
-	)
+// 	log.Info(
+// 		"Markdown converted to PDF successfully",
+// 		slog.String("output pdf", fmt.Sprintf("%s.pdf", requestID.String())),
+// 		slog.String("Gotenberg trace: %s", response.GotenbergTrace),
+// 	)
 
-	return nil
-}
+// 	return nil
+// }
 
-func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
+func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 
 	log := logger.With(
 		slog.String("op", "PdfService.createPdfFromHtml()"),
@@ -288,11 +303,15 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 
 	requestID := job.requestID
 
+	if requestID == uuid.Nil {
+		return fmt.Errorf("requestID is null")
+	}
+
 	httpClient := &http.Client{
 		Timeout: timeout,
 	}
 
-	GotenbergURL := fmt.Sprintf("http://%s:%d", m.cfg.PdfConfig.PdfHost, m.cfg.PdfConfig.PdfPort)
+	GotenbergURL := fmt.Sprintf("http://%s:%d", s.cfg.PdfConfig.PdfHost, s.cfg.PdfConfig.PdfPort)
 
 	client, err := gotenberg.NewClient(httpClient, GotenbergURL)
 	if err != nil {
@@ -300,7 +319,7 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 	}
 
 	//htmlTmplFullPath := fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName)
-	htmlTmplFullPath := filepath.Join(m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName)
+	htmlTmplFullPath := filepath.Join(s.cfg.PdfConfig.HtmlTemplateFilePath, s.cfg.PdfConfig.HtmlTemplateFileName)
 
 	user := domain.User{
 		Name:  job.user.Name,
@@ -308,9 +327,10 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 	}
 
 	//dataBuf := []byte(job.input)
+
 	data := ViewData{
 		User:           user,
-		AiHtmlResponse: template.HTML(job.input),
+		AiHtmlResponse: template.HTML(template.HTMLEscapeString(job.input)),
 	}
 
 	log.Debug(
@@ -332,7 +352,7 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 		return fmt.Errorf("failed to execute html template \"%s\": %w", htmlTmplFullPath, err)
 	}
 
-	logoHeaderPath := filepath.Join(m.cfg.PdfConfig.HtmlTemplateFilePath, "logo_header.png")
+	logoHeaderPath := filepath.Join(s.cfg.PdfConfig.HtmlTemplateFilePath, "logo_header.png")
 	logoHeaderBuf, err := os.ReadFile(logoHeaderPath)
 	if err != nil {
 		log.Error(
@@ -342,7 +362,8 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 	}
 	logoHeaderBuffer := bytes.NewBuffer(logoHeaderBuf)
 
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
 
 	response, err := client.Chromium().
 		ConvertHTML(ctx, buffer).
@@ -358,7 +379,7 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 	}
 	defer response.Body.Close()
 
-	file, err := os.Create(fmt.Sprintf("%s%s.pdf", m.cfg.PdfConfig.PdfFilePath, requestID.String()))
+	file, err := os.Create(filepath.Clean(fmt.Sprintf("%s%s.pdf", s.cfg.PdfConfig.PdfFilePath, requestID.String())))
 	if err != nil {
 		return fmt.Errorf("Failed to create output file: %w", err)
 	}
@@ -378,14 +399,14 @@ func (m *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 	return nil
 }
 
-func (m *PdfService) Shutdown(ctx context.Context) error {
+func (s *PdfService) Shutdown(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("exit Pdf service: %w", ctx.Err())
 		default:
-			close(m.shutdownChannel)
-			close(m.jobs)
+			close(s.shutdownChannel)
+			close(s.jobs)
 			return nil
 		}
 	}

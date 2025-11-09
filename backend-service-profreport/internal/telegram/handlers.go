@@ -42,7 +42,7 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 
 		if isAdmin {
 
-			bot.cfg.BotConfig.AI.SystemRolePromt = strings.TrimPrefix(
+			bot.cfg.BotConfig.AI.SystemRolePrompt = strings.TrimPrefix(
 				update.Message.Text, "/setsystempromt ")
 
 			err = bot.cfg.Write()
@@ -52,7 +52,7 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 
 			log.Debug(
 				"system promt changed",
-				slog.String("promt", bot.cfg.BotConfig.AI.SystemRolePromt),
+				slog.String("promt", bot.cfg.BotConfig.AI.SystemRolePrompt),
 			)
 
 			replyText = "👍 System role promt changed 👍"
@@ -125,7 +125,7 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 
 		if isAdmin {
 
-			replyText = bot.cfg.BotConfig.AI.SystemRolePromt
+			replyText = bot.cfg.BotConfig.AI.SystemRolePrompt
 			err := sendFunc(update.Message, replyText)
 			if err != nil {
 				return fmt.Errorf("%s: %w", op, err)

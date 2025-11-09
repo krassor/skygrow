@@ -33,7 +33,7 @@ type AIConfig struct {
 	Timeout            int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"300"`
 	ModelName          string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
 	AIApiToken         string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
-	SystemRolePromt    string  `yaml:"systemRolePromt" env-default:""`
+	SystemRolePrompt   string  `yaml:"systemRolePromt" env-default:""`
 	PromtFilePath      string  `yaml:"promtFilePath" env:"PROMT_FILEPATH" env-required:"true" env-default:""`
 	PromtFileName      string  `yaml:"promtFileName" env:"PROMT_FILENAME" env-required:"true" env-default:""`
 	AiResponseFilePath string  `yaml:"AiResponseFilePath" env:"AI_RESPONSE_FILEPATH" env-required:"true" env-default:""`

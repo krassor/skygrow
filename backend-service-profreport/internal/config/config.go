@@ -100,7 +100,7 @@ func (cfg *Config) ReadPromtFromFile() error {
 		return fmt.Errorf("failed to read system prompt file: %s: %w", fullPath, err)
 	}
 
-	cfg.BotConfig.AI.SystemRolePromt = string(systemPrompt)
+	cfg.BotConfig.AI.SystemRolePrompt = string(systemPrompt)
 
 	err = cfg.Write()
 	if err != nil {
