@@ -330,7 +330,7 @@ func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 
 	data := ViewData{
 		User:           user,
-		AiHtmlResponse: template.HTML(template.HTMLEscapeString(job.input)),
+		AiHtmlResponse: template.HTML(job.input),
 	}
 
 	log.Debug(
