@@ -287,7 +287,8 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 // Временное решение по анализу строки ошибки — менее надёжно, чем проверка кода.
 func isRateLimitError(err error) bool {
 	if err != nil {
-		return strings.Contains(err.Error(), "HTTP 429")
+		//return strings.Contains(err.Error(), "HTTP 429")
+		return strings.Contains(err.Error(), "429")
 	}
 	return false
 }
