@@ -13,7 +13,7 @@ db:
 bot:
   admins:
     - KrAssor
-  tgbot_apitoken: 
+  tgbot_apitoken: 7674327428:AAFU5izycaN3AjKJAtfVVejaJ8sNQfWS2H8
   AI:
     timeout: 300
     #deepseek 

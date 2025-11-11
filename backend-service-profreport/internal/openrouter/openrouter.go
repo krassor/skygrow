@@ -177,7 +177,7 @@ func (s *Openrouter) handleJob(id int) {
 				return
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), s.cfg.BotConfig.AI.GetTimeout())
 
 			response, err := s.CreateChatCompletion(ctx, joblog, requestID, questionnaire)
 

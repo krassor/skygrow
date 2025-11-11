@@ -30,7 +30,7 @@ type DBConfig struct {
 }
 
 type AIConfig struct {
-	Timeout            int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"300"`
+	Timeout            int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"600"` //in seconds
 	ModelName          string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
 	AIApiToken         string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
 	SystemRolePrompt   string  `yaml:"systemRolePromt" env-default:""`
