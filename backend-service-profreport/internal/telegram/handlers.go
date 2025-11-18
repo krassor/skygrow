@@ -492,7 +492,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
 			),
 		)
-		editMsg.ReplyMarkup = &inlineKeyboard
+		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 	case "SCHOOLCHILD":
 		responseText = "Вы выбрали: Опрос для школьника.\n\rВыберите тип файла:"
 		bot.UsersState[userID] = UserState{
@@ -506,7 +506,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
 			),
 		)
-		editMsg.ReplyMarkup = &inlineKeyboard
+		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 	case "PROMPT":
 		responseText = "Загрузите md файл."
 		// Здесь можно сохранить выбор в state:
@@ -514,6 +514,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 			AwaitingFile: true,
 			FileType:     "PROMPT",
 		}
+		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 	case "TEMPLATE":
 		responseText = "Загрузите html файл."
 		// Здесь можно сохранить выбор в state:
@@ -521,13 +522,12 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 			AwaitingFile: true,
 			FileType:     "TEMPLATE",
 		}
+		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 
 	default:
 		responseText = "Неизвестный тип опроса."
 	}
 
-	// Редактируем сообщение или отправляем ответ
-	editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 	_, err = bot.tgbot.Send(editMsg)
 	if err != nil {
 		log.Error(
