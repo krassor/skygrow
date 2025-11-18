@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"log/slog"
 
@@ -26,44 +27,46 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 	msg := update.Message
 
 	switch update.Message.Command() {
-	case "setsystempromt":
-		replyText := ""
-		isAdmin, err := bot.isAdmin(update.Message)
+	// case "setsystemprompt":
+	// 	replyText := ""
+	// 	isAdmin, err := bot.isAdmin(update.Message)
+	//
+	// 	log.Debug("setsystemprompt",
+	// 		slog.String("user name", update.Message.From.UserName),
+	// 		slog.String("message", update.Message.Text),
+	// 		slog.String("is admin", strconv.FormatBool(isAdmin)),
+	// 	)
+	//
+	// 	if err != nil {
+	// 		return fmt.Errorf("%s: %w", op, err)
+	// 	}
+	//
+	// 	if isAdmin {
+	//
+	// 		prompt := strings.TrimPrefix(
+	// 			update.Message.Text, "/setsystemprompt ")
+	//
+	//
+	//
+	// 		err = bot.cfg.Write()
+	// 		if err != nil {
+	// 			return fmt.Errorf("%s: %w", op, err)
+	// 		}
+	//
+	// 		log.Debug(
+	// 			"system prompt changed",
+	// 			slog.String("user", update.Message.From.UserName),
+	// 		)
+	//
+	// 		replyText = "👍 System role prompt changed 👍"
+	// 		err := sendFunc(update.Message, replyText)
+	// 		if err != nil {
+	// 			return fmt.Errorf("%s: %w", op, err)
+	// 		}
+	// 	}
 
-		log.Debug("setsystempromt",
-			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
-			slog.String("is admin", strconv.FormatBool(isAdmin)),
-		)
-
-		if err != nil {
-			return fmt.Errorf("%s: %w", op, err)
-		}
-
-		if isAdmin {
-
-			bot.cfg.BotConfig.AI.SystemRolePrompt = strings.TrimPrefix(
-				update.Message.Text, "/setsystempromt ")
-
-			err = bot.cfg.Write()
-			if err != nil {
-				return fmt.Errorf("%s: %w", op, err)
-			}
-
-			log.Debug(
-				"system promt changed",
-				slog.String("promt", bot.cfg.BotConfig.AI.SystemRolePrompt),
-			)
-
-			replyText = "👍 System role promt changed 👍"
-			err := sendFunc(update.Message, replyText)
-			if err != nil {
-				return fmt.Errorf("%s: %w", op, err)
-			}
-		}
-
-	case "setpromtfile":
-		replyText := ""
+	case "setpromptfile":
+		//replyText := ""
 		isAdmin, err := bot.isAdmin(update.Message)
 
 		log.Debug("setpromtfile",
@@ -76,61 +79,65 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 			return fmt.Errorf("%s: %w", op, err)
 		}
 
-		if isAdmin {
-			replyText = "Attach a file"
-			err = sendFunc(update.Message, replyText)
-			if err != nil {
-				return fmt.Errorf("%s: %w", op, err)
-			}
-			bot.UsersState[update.Message.From.ID] = UserState{AwaitingFile: true}
+		if !isAdmin {
+			return fmt.Errorf("user is not admin")
 		}
 
-	case "settemplate":
-		replyText := ""
-		isAdmin, err := bot.isAdmin(update.Message)
-
-		log.Debug("settemplate",
-			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
-			slog.String("is admin", strconv.FormatBool(isAdmin)),
-		)
-
+		err = bot.sendSurveyTypeMessage(update)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
 		}
 
-		if isAdmin {
-			replyText = "Attach a template file"
-			err = sendFunc(update.Message, replyText)
-			if err != nil {
-				return fmt.Errorf("%s: %w", op, err)
-			}
-			bot.UsersState[update.Message.From.ID] = UserState{AwaitingFile: true}
-		}
+		// replyText = "Attach a file"
+		// err = sendFunc(update.Message, replyText)
+		// if err != nil {
+		// 	return fmt.Errorf("%s: %w", op, err)
+		// }
+		// bot.UsersState[update.Message.From.ID] = UserState{AwaitingFile: true}
 
-	case "getsystempromt":
+	/*case "settemplate":
+	isAdmin, err := bot.isAdmin(update.Message)
 
-		replyText := ""
-		isAdmin, err := bot.isAdmin(update.Message)
+	log.Debug("setpromtfile",
+		slog.String("user name", update.Message.From.UserName),
+		slog.String("message", update.Message.Text),
+		slog.String("is admin", strconv.FormatBool(isAdmin)),
+	)
 
-		log.Debug("getsystempromt",
-			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
-			slog.String("is admin", strconv.FormatBool(isAdmin)),
-		)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
+	if !isAdmin {
+		return fmt.Errorf("user is not admin")
+	}
+
+	bot.sendSurveyTypeMessage(update)*/
+
+	/*case "getsystempromt":
+
+	replyText := ""
+	isAdmin, err := bot.isAdmin(update.Message)
+
+	log.Debug("getsystempromt",
+		slog.String("user name", update.Message.From.UserName),
+		slog.String("message", update.Message.Text),
+		slog.String("is admin", strconv.FormatBool(isAdmin)),
+	)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if isAdmin {
+
+		replyText = bot.cfg.BotConfig.AI.SystemRolePrompt
+		err := sendFunc(update.Message, replyText)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
 		}
-
-		if isAdmin {
-
-			replyText = bot.cfg.BotConfig.AI.SystemRolePrompt
-			err := sendFunc(update.Message, replyText)
-			if err != nil {
-				return fmt.Errorf("%s: %w", op, err)
-			}
-		}
+	}
+	*/
 
 	case "setmodel":
 		replyText := ""
@@ -193,7 +200,7 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 		}
 
 	case "start":
-		replyText := fmt.Sprintf("Hi, %s! Ask your questions.", msg.From.UserName)
+		replyText := fmt.Sprintf("Hi, %s! Send a command.", msg.From.UserName)
 		err := sendFunc(update.Message, replyText)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
@@ -219,13 +226,12 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 
 	replyText := ""
 	isAdmin, err := bot.isAdmin(update.Message)
-
-	log.Debug("file handler",
+	log.Debug(
+		"file handler",
 		slog.String("user name", update.Message.From.UserName),
 		slog.String("message", update.Message.Text),
 		slog.String("is admin", strconv.FormatBool(isAdmin)),
 	)
-
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -234,8 +240,10 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		return fmt.Errorf("User dont have admin permission")
 	}
 
-	// Проверка наличия файла в сообщении
-	if !bot.UsersState[update.Message.From.ID].AwaitingFile {
+	userState := bot.UsersState[update.Message.From.ID]
+
+	// Проверка ожидания файла в сообщении
+	if !userState.AwaitingFile {
 		replyText = "File not awaiting"
 		err := sendFunc(update.Message, replyText)
 		e := fmt.Errorf("File not awaiting")
@@ -245,25 +253,72 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		return fmt.Errorf("%s: %w", op, e)
 	}
 
-	// Обработка файла
+	// Получение id файла
 	fileID := update.Message.Document.FileID
 	log.Info(
-		"Received command with file",
+		"Received message with file",
 		slog.String("user name", update.Message.From.UserName),
 		slog.String("message", update.Message.Text),
 		slog.String("file_id", fileID),
 	)
 
-	//проверяем имя файла
-	if (update.Message.Document.FileName != bot.cfg.BotConfig.AI.PromtFileName) && (update.Message.Document.FileName != bot.cfg.PdfConfig.HtmlTemplateFileName) {
-		replyText = "wrong file name. PLease try again"
-		err := fmt.Errorf("wrong file name: %s", update.Message.Document.FileName)
-		e := sendFunc(update.Message, replyText)
-		if e != nil {
-			return fmt.Errorf("%s: %w", op, e)
+	fileExt := strings.ToLower(filepath.Ext(update.Message.Document.FileName))
+	filePath := ""
+	fileName := ""
+	isPromtFile := false
+	isTmplFile := false
+
+	switch userState.FileType {
+	case "PROMPT":
+		if fileExt != ".md" {
+			replyText = "wrong file extension. PLease try again"
+			err := fmt.Errorf("wrong file extention: %s", update.Message.Document.FileName)
+			e := sendFunc(update.Message, replyText)
+			if e != nil {
+				return fmt.Errorf("%s: %w", op, e)
+			}
+			return fmt.Errorf("%s: %w", op, err)
 		}
-		return fmt.Errorf("%s: %w", op, err)
+		isPromtFile = true
+		fileName = bot.cfg.BotConfig.AI.PromptFileName
+
+	case "TEMPLATE":
+		if fileExt != ".html" {
+			replyText = "wrong file extension. PLease try again"
+			err := fmt.Errorf("wrong file extention: %s", update.Message.Document.FileName)
+			e := sendFunc(update.Message, replyText)
+			if e != nil {
+				return fmt.Errorf("%s: %w", op, e)
+			}
+			return fmt.Errorf("%s: %w", op, err)
+		}
+		isTmplFile = true
+		fileName = bot.cfg.PdfConfig.HtmlTemplateFileName
+	default:
+		return fmt.Errorf("unknown file type state")
 	}
+
+	switch userState.SurveyType {
+	case "ADULT":
+		if isPromtFile {
+			filePath = bot.cfg.BotConfig.AI.AdultPromptFilePath
+		} else if isTmplFile {
+			filePath = bot.cfg.PdfConfig.AdultHtmlTemplateFilePath
+		} else {
+			return fmt.Errorf("unknown file type state")
+		}
+
+	case "SCHOOLCHILD":
+		if isPromtFile {
+			filePath = bot.cfg.BotConfig.AI.SchoolchildPromptFilePath
+		} else if isTmplFile {
+			filePath = bot.cfg.PdfConfig.SchoolchildHtmlTemplateFilePath
+		} else {
+			return fmt.Errorf("unknown file type state")
+		}
+	}
+
+	fullFilePath := filepath.Join(filePath, fileName)
 
 	//Получаем file_path
 	fileURL, err := bot.tgbot.GetFileDirectURL(fileID)
@@ -277,7 +332,9 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 	}
 
 	// Делаем HTTP GET-запрос по URL
-	resp, err := http.Get(fileURL)
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+	resp, err := httpClient.Get(fileURL)
+	//resp, err := http.Get(fileURL)
 	if err != nil {
 		replyText = "Cannot download file. PLease try again"
 		e := sendFunc(update.Message, replyText)
@@ -290,7 +347,6 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 
 	//Сохраняем файл на диск
 	buf := make([]byte, resp.ContentLength)
-
 	_, err = resp.Body.Read(buf)
 	if err != nil {
 		replyText = "Cannot download file. PLease try again"
@@ -300,20 +356,7 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
-
-	filePath := ""
-	isPromtFile := false
-	isTmplFile := false
-	if update.Message.Document.FileName == bot.cfg.BotConfig.AI.PromtFileName {
-		filePath = filepath.Join(bot.cfg.BotConfig.AI.PromtFilePath, bot.cfg.BotConfig.AI.PromtFileName)
-		isPromtFile = true
-	}
-	if update.Message.Document.FileName == bot.cfg.PdfConfig.HtmlTemplateFileName {
-		filePath = filepath.Join(bot.cfg.PdfConfig.HtmlTemplateFilePath, bot.cfg.PdfConfig.HtmlTemplateFileName)
-		isTmplFile = true
-	}
-
-	err = os.WriteFile(filePath, buf, 0775)
+	err = os.WriteFile(fullFilePath, buf, 0775)
 	if err != nil {
 		replyText = "Cannot save file. PLease try again"
 		e := sendFunc(update.Message, replyText)
@@ -328,7 +371,7 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		slog.String("user name", update.Message.From.UserName),
 		slog.String("message", update.Message.Text),
 		slog.String("file_id", fileID),
-		slog.String("file_path", filePath),
+		slog.String("file_path", fullFilePath),
 	)
 
 	//Перечитываем заново промт из файла для применения изменений
@@ -342,7 +385,6 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 			}
 			return fmt.Errorf("%s: %w", op, err)
 		}
-
 		log.Info(
 			"Promt file saved. Config updated.",
 			slog.String("user name", update.Message.From.UserName),
@@ -350,22 +392,20 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 			slog.String("file_id", fileID),
 			slog.String("file_path", filePath),
 		)
-
 		replyText = "👍 Promt file saved. Config updated 👍"
 		err = sendFunc(update.Message, replyText)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
 		}
-	} else if isTmplFile {
 
+	} else if isTmplFile {
 		log.Info(
 			"Template file saved.",
 			slog.String("user name", update.Message.From.UserName),
 			slog.String("message", update.Message.Text),
 			slog.String("file_id", fileID),
-			slog.String("file_path", filePath),
+			slog.String("file_path", fullFilePath),
 		)
-
 		replyText = "👍 Template file saved. Config updated 👍"
 		err = sendFunc(update.Message, replyText)
 		if err != nil {
@@ -373,31 +413,130 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		}
 	}
 
-	bot.UsersState[update.Message.From.ID] = UserState{AwaitingFile: false}
+	//сбрасываем состояния по этому пользователю, т.к. операция прошла успешно
+	bot.UsersState[update.Message.From.ID] = UserState{
+		AwaitingFile: false,
+		FileType:     "",
+		SurveyType:   "",
+	}
 	return nil
 }
 
-// // textFilter processes the input message by removing the "/askbot" prefix
-// // and filtering out words that start with "@". This function is used to
-// // clean up user input before processing it further.
-// //
-// // Parameters:
-// //   - msg: A string containing the original message text.
-// //
-// // Returns:
-// //
-// //	A string with the "/askbot" prefix removed and any words starting with "@" filtered out.
-// func (bot *Bot) textFilter(msg string) string {
+func (bot *Bot) sendSurveyTypeMessage(update *tgbotapi.Update) error {
+	chatID := update.Message.Chat.ID
 
-// 	msgText := strings.TrimPrefix(msg, "/askbot ")
+	text := "Выберите тип опроса:"
 
-// 	words := strings.Split(msgText, " ")
-// 	var filteredWords []string
-// 	for _, word := range words {
-// 		if !strings.HasPrefix(word, "@") {
-// 			filteredWords = append(filteredWords, word)
-// 		}
-// 	}
-// 	msgText = strings.Join(filteredWords, " ")
-// 	return msgText
-// }
+	// Создаём инлайн-кнопки
+	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Adult", "ADULT"),
+			tgbotapi.NewInlineKeyboardButtonData("Schoolchild", "SCHOOLCHILD"),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = inlineKeyboard
+
+	_, err := bot.tgbot.Send(msg)
+	if err != nil {
+		return fmt.Errorf("failed to send survey type message: %w", err)
+	}
+
+	return nil
+}
+
+func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
+	op := "bot.handleCallbackQuery"
+	log := bot.log.With(
+		slog.String("op", op),
+	)
+
+	if update.CallbackQuery == nil {
+		log.Error(
+			"callback query is nil",
+		)
+		return
+	}
+
+	callback := update.CallbackQuery
+	data := callback.Data
+	chatID := callback.Message.Chat.ID
+	userID := callback.From.ID
+
+	// Отправляем "секретный" ответ, чтобы скрыть часики у кнопки
+	callbackConfig := tgbotapi.NewCallback(callback.ID, "")
+	callbackConfig.ShowAlert = false
+	_, err := bot.tgbot.Request(callbackConfig)
+	if err != nil {
+		log.Error(
+			"failed to send callback response",
+			slog.String("error", err.Error()),
+		)
+	}
+
+	var responseText string
+	var editMsg tgbotapi.EditMessageTextConfig
+	switch data {
+	case "ADULT":
+		responseText = "Вы выбрали: Взрослый опрос.\n\rВыберите тип файла:"
+		// Здесь можно сохранить выбор в state:
+		bot.UsersState[userID] = UserState{
+			SurveyType:   "ADULT",
+			AwaitingFile: false,
+			FileType:     "",
+		}
+		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
+				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
+			),
+		)
+		editMsg.ReplyMarkup = &inlineKeyboard
+	case "SCHOOLCHILD":
+		responseText = "Вы выбрали: Опрос для школьника.\n\rВыберите тип файла:"
+		bot.UsersState[userID] = UserState{
+			SurveyType:   "SCHOOLCHILD",
+			AwaitingFile: false,
+			FileType:     "",
+		}
+		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
+				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
+			),
+		)
+		editMsg.ReplyMarkup = &inlineKeyboard
+	case "PROMPT":
+		responseText = "Загрузите md файл."
+		// Здесь можно сохранить выбор в state:
+		bot.UsersState[userID] = UserState{
+			AwaitingFile: true,
+			FileType:     "PROMPT",
+		}
+	case "TEMPLATE":
+		responseText = "Загрузите html файл."
+		// Здесь можно сохранить выбор в state:
+		bot.UsersState[userID] = UserState{
+			AwaitingFile: true,
+			FileType:     "TEMPLATE",
+		}
+
+	default:
+		responseText = "Неизвестный тип опроса."
+	}
+
+	// Редактируем сообщение или отправляем ответ
+	editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+	_, err = bot.tgbot.Send(editMsg)
+	if err != nil {
+		log.Error(
+			"failed to send callback response",
+			slog.String("error", err.Error()),
+		)
+	}
+
+	// Или отправить новое сообщение:
+	// msg := tgbotapi.NewMessage(chatID, responseText)
+	// _, _ = bot.tgbot.Send(msg)
+}

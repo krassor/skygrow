@@ -87,20 +87,29 @@ func (cfg *Config) Write() error {
 }
 
 func (cfg *Config) ReadPromtFromFile() error {
-	if cfg.BotConfig.AI.PromtFilePath == "" {
-		return fmt.Errorf("promt filepath is emtpy")
-	}
-	if cfg.BotConfig.AI.PromtFileName == "" {
+	switch {
+	case cfg.BotConfig.AI.AdultPromptFilePath == "":
+		return fmt.Errorf("adult promt filepath is emtpy")
+	case cfg.BotConfig.AI.PromptFileName == "":
 		return fmt.Errorf("promt filename is emtpy")
+	case cfg.BotConfig.AI.SchoolchildPromptFilePath == "":
+		return fmt.Errorf("schoolchild promt filepath is emtpy")
 	}
-	fullPath := cfg.BotConfig.AI.PromtFilePath + cfg.BotConfig.AI.PromtFileName
 
-	systemPrompt, err := os.ReadFile(fullPath)
+	adultFullPath := cfg.BotConfig.AI.AdultPromptFilePath + cfg.BotConfig.AI.PromptFileName
+	schoolchildFullPath := cfg.BotConfig.AI.SchoolchildPromptFilePath + cfg.BotConfig.AI.PromptFileName
+
+	adultSystemPrompt, err := os.ReadFile(adultFullPath)
 	if err != nil {
-		return fmt.Errorf("failed to read system prompt file: %s: %w", fullPath, err)
+		return fmt.Errorf("failed to read system prompt file: %s: %w", adultFullPath, err)
+	}
+	schoolchildSystemPrompt, err := os.ReadFile(schoolchildFullPath)
+	if err != nil {
+		return fmt.Errorf("failed to read system prompt file: %s: %w", schoolchildFullPath, err)
 	}
 
-	cfg.BotConfig.AI.SystemRolePrompt = string(systemPrompt)
+	cfg.BotConfig.AI.AdultSystemRolePrompt = string(adultSystemPrompt)
+	cfg.BotConfig.AI.SchoolchildSystemRolePrompt = string(schoolchildSystemPrompt)
 
 	err = cfg.Write()
 	if err != nil {

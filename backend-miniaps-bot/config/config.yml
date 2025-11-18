@@ -16,15 +16,9 @@ bot:
   tgbot_apitoken: 7674327428:AAFU5izycaN3AjKJAtfVVejaJ8sNQfWS2H8
   AI:
     timeout: 300
-    #deepseek 
-    #aiapitoken: 
-    #openai
-    # aiapitoken: 
-    #openrouter
     aiapitoken: 
-    systemRolePromt: 'ты На любой запрос отвечай "Ответ" и копируй сообщение пользователя. Например: пользователь написал "1", ты должен ответить "Ответ 1".'
+    systemRolePromt: ''
     maxTokens: 4096
-    temperature: 0.1
+    temperature: 0.5
     n: 1
-    baseURL: https://openrouter.ai/api/v1/
     modelName: deepseek/deepseek-r1-0528:free

@@ -36,12 +36,14 @@ type PdfService interface {
 		requestId uuid.UUID,
 		input string,
 		user domain.User,
+		jobType string,
 	) (chan struct{}, error)
 }
 
 // Job представляет задачу, передаваемую в воркер.
 type Job struct {
 	requestID     uuid.UUID     // Уникальный идентификатор запроса
+	jobType       string        // Тип запроса
 	questionnaire string        // Текст анкеты для обработки ИИ
 	user          domain.User   // Данные пользователя
 	Done          chan struct{} // Канал для сигнала завершения
@@ -117,17 +119,19 @@ func (s *Openrouter) Start() {
 //   - requestID: уникальный идентификатор запроса.
 //   - questionnaire: текст анкеты для анализа.
 //   - user: данные пользователя.
+//   - jobType: тип запроса: ADULT, SCHOOLCHILD
 //
 // Возвращает:
 //   - Канал Done для ожидания завершения задачи.
 //   - Ошибку, если буфер задач переполнен.
 //
 // Если буфер заполнен, задача не добавляется.
-func (s *Openrouter) AddJob(requestID uuid.UUID, questionnaire string, user domain.User) (chan struct{}, error) {
+func (s *Openrouter) AddJob(requestID uuid.UUID, questionnaire string, user domain.User, jobType string) (chan struct{}, error) {
 	newJob := Job{
 		requestID:     requestID,
 		questionnaire: questionnaire,
 		user:          user,
+		jobType:       jobType,
 		Done:          make(chan struct{}),
 	}
 	select {
@@ -179,7 +183,7 @@ func (s *Openrouter) handleJob(id int) {
 
 			ctx, cancel := context.WithTimeout(context.Background(), s.cfg.BotConfig.AI.GetTimeout())
 
-			response, err := s.CreateChatCompletion(ctx, joblog, requestID, questionnaire)
+			response, err := s.CreateChatCompletion(ctx, joblog, requestID, questionnaire, job.jobType)
 
 			cancel()
 			if err != nil {
@@ -189,7 +193,7 @@ func (s *Openrouter) handleJob(id int) {
 				continue
 			}
 
-			_, err = s.pdfService.AddJob(requestID, response, user)
+			_, err = s.pdfService.AddJob(requestID, response, user, job.jobType)
 			if err != nil {
 				joblog.Error("failed add job to pdf service",
 					slog.String("error", err.Error()),
@@ -212,13 +216,14 @@ func (s *Openrouter) handleJob(id int) {
 //   - logger: логгер с контекстом.
 //   - requestId: UUID запроса.
 //   - message: пользовательское сообщение (анкета).
+//   - jobType: тип запроса: ADULT, SCHOOLCHILD
 //
 // Возвращает:
 //   - Строка с ответом ИИ.
 //   - Ошибка, если запрос не удался.
 //
 // Повторяет запрос до retryCount раз при ошибках 429 или EOF.
-func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logger, requestId uuid.UUID, message string) (string, error) {
+func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logger, requestId uuid.UUID, message string, jobType string) (string, error) {
 	op := "openrouter.CreateChatCompletion()"
 	log := logger.With(
 		slog.String("op", op),
@@ -228,6 +233,20 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 
 	var resp openrouter.ChatCompletionResponse
 	var err error
+	var prompt string
+
+	switch  jobType{
+	case "ADULT":
+		prompt = s.cfg.BotConfig.AI.AdultSystemRolePrompt
+	case "SCHOOLCHILD":
+		prompt = s.cfg.BotConfig.AI.SchoolchildSystemRolePrompt
+	default:
+		log.Error(
+			"unknown job type",
+		)
+		return "", fmt.Errorf("unknown job type")
+	}
+
 	for retry := range retryCount {
 		var r openrouter.ChatCompletionResponse
 		var e error
@@ -240,7 +259,7 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 				openrouter.ChatCompletionRequest{
 					Model: s.cfg.BotConfig.AI.ModelName,
 					Messages: []openrouter.ChatCompletionMessage{
-						openrouter.SystemMessage(s.cfg.BotConfig.AI.SystemRolePrompt),
+						openrouter.SystemMessage(prompt),
 						openrouter.UserMessage(message),
 					},
 				},

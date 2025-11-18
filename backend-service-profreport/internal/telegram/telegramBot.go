@@ -30,8 +30,12 @@ type Bot struct {
 }
 
 // UserState хранит состояние пользователя
+// AwaitingFile - ожидание файла
+// SurveyType - тип опроса: ADULT, SCHOOLCHILD
 type UserState struct {
 	AwaitingFile bool
+	SurveyType string
+	FileType string
 }
 
 func New(logger *slog.Logger, cfg *config.Config /*AIBot AIBotApi*/) *Bot {
@@ -122,6 +126,8 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 			if err := bot.fileHandler(bot.ctx, update, bot.sendReplyMessage); err != nil {
 				sl.Err(err)
 			}
+		case update.CallbackQuery != nil :
+			bot.handleCallbackQuery(update)
 		// // Проверяем, если сообщение адресовано самому боту
 		// case update.Message.Chat.IsPrivate():
 		// 	bot.defaultHandler(bot.ctx, update, bot.sendMessage)

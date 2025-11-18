@@ -30,18 +30,20 @@ type DBConfig struct {
 }
 
 type AIConfig struct {
-	Timeout            int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"600"` //in seconds
-	ModelName          string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
-	AIApiToken         string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
-	SystemRolePrompt   string  `yaml:"systemRolePromt" env-default:""`
-	PromtFilePath      string  `yaml:"promtFilePath" env:"PROMT_FILEPATH" env-required:"true" env-default:""`
-	PromtFileName      string  `yaml:"promtFileName" env:"PROMT_FILENAME" env-required:"true" env-default:""`
-	AiResponseFilePath string  `yaml:"AiResponseFilePath" env:"AI_RESPONSE_FILEPATH" env-required:"true" env-default:""`
-	MaxTokens          int     `yaml:"maxTokens" env-default:"65000"`
-	Temperature        float32 `yaml:"temperature" env-default:"0.5"`
-	N                  int     `yaml:"n" env-default:"1"`
-	JobBufferSize      int     `yaml:"jobBufferSize" env:"AI_BUFFER_SIZE" env-default:"10"`
-	WorkersCount       int     `yaml:"workersCount" env:"AI_WORKERS_COUNT" env-default:"1"`
+	Timeout                     int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"600"` //in seconds
+	ModelName                   string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
+	AIApiToken                  string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
+	AdultSystemRolePrompt       string  `yaml:"adultSystemRolePromt" env-default:""`
+	AdultPromptFilePath         string  `yaml:"AdultPromptFilePath" env:"ADULT_PROMT_FILEPATH" env-required:"true" env-default:""`
+	SchoolchildSystemRolePrompt string  `yaml:"schoolchildSystemRolePromt" env-default:""`
+	SchoolchildPromptFilePath   string  `yaml:"schoolchildPromptFilePath" env:"SCHOOLCHILD_PROMT_FILEPATH" env-required:"true" env-default:""`
+	PromptFileName              string  `yaml:"promptFileName" env:"PROMT_FILENAME" env-required:"true" env-default:""`
+	AiResponseFilePath          string  `yaml:"aiResponseFilePath" env:"AI_RESPONSE_FILEPATH" env-required:"true" env-default:""`
+	MaxTokens                   int     `yaml:"maxTokens" env-default:"65000"`
+	Temperature                 float32 `yaml:"temperature" env-default:"0.5"`
+	N                           int     `yaml:"n" env-default:"1"`
+	JobBufferSize               int     `yaml:"jobBufferSize" env:"AI_BUFFER_SIZE" env-default:"10"`
+	WorkersCount                int     `yaml:"workersCount" env:"AI_WORKERS_COUNT" env-default:"1"`
 }
 
 type BotConfig struct {
@@ -65,9 +67,10 @@ type PdfConfig struct {
 	PdfPort int    `yaml:"pdfPort" env:"PDF_PORT" env-required:"true" env-default:"3000"`
 	// Username      string `yaml:"username" env:"MAIL_USERNAME" env-required:"true" env-default:"proffreport@rambler.ru"`
 	// Password      string `yaml:"password" env:"MAIL_PASSWORD" env-required:"true" env-default:""`
-	HtmlTemplateFilePath string `yaml:"htmlTemplateFilePath" env:"HTML_TEMPLATE_FILEPATH" env-required:"true" env-default:""`
-	HtmlTemplateFileName string `yaml:"htmlTemplateFileName" env:"HTML_TEMPLATE_FILENAME" env-required:"true" env-default:""`
-	PdfFilePath          string `yaml:"pdfFilePath" env:"PDF_FILEPATH" env-required:"true" env-default:""`
-	JobBufferSize        int    `yaml:"jobBufferSize" env:"PDF_JOB_BUFFER_SIZE" env-default:"10"`
-	WorkersCount         int    `yaml:"workersCount" env:"PDF_WORKERS_COUNT" env-default:"3"`
+	AdultHtmlTemplateFilePath       string `yaml:"adultHtmlTemplateFilePath" env:"ADULT_HTML_TEMPLATE_FILEPATH" env-required:"true" env-default:""`
+	SchoolchildHtmlTemplateFilePath string `yaml:"schoolchildHtmlTemplateFilePath" env:"SCHOOLCHILD_HTML_TEMPLATE_FILEPATH" env-required:"true" env-default:""`
+	HtmlTemplateFileName            string `yaml:"htmlTemplateFileName" env:"HTML_TEMPLATE_FILENAME" env-required:"true" env-default:""`
+	PdfFilePath                     string `yaml:"pdfFilePath" env:"PDF_FILEPATH" env-required:"true" env-default:""`
+	JobBufferSize                   int    `yaml:"jobBufferSize" env:"PDF_JOB_BUFFER_SIZE" env-default:"10"`
+	WorkersCount                    int    `yaml:"workersCount" env:"PDF_WORKERS_COUNT" env-default:"3"`
 }

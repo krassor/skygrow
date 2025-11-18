@@ -40,6 +40,7 @@ type MailService interface {
 
 type Job struct {
 	requestID uuid.UUID
+	jobType   string // Тип запроса
 	input     string
 	user      domain.User
 	Done      chan struct{}
@@ -94,6 +95,7 @@ func (s *PdfService) Start() {
 // Параметры:
 //   - requestID: уникальный идентификатор запроса (UUID).
 //   - inputMarkdown: строка с содержимым Markdown, которое необходимо обработать.
+//   - jobType: тип запроса: ADULT, SCHOOLCHILD
 //
 // Возвращает:
 //   - Канал `chan struct{}` для отслеживания завершения обработки задачи.
@@ -113,9 +115,10 @@ func (s *PdfService) Start() {
 //	    log.Fatal(err)
 //	}
 //	<-done // Ждём завершения обработки
-func (s *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string, user domain.User) (chan struct{}, error) {
+func (s *PdfService) AddJob(requestID uuid.UUID, inputMarkdown string, user domain.User, jobType string) (chan struct{}, error) {
 	newJob := Job{
 		requestID: requestID,
+		jobType:   jobType,
 		input:     inputMarkdown,
 		user:      user,
 		Done:      make(chan struct{}),
@@ -290,6 +293,7 @@ func (s *PdfService) handleJob(id int) {
 // 	return nil
 // }
 
+//   - jobType: тип запроса: ADULT, SCHOOLCHILD
 func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 
 	log := logger.With(
@@ -318,8 +322,22 @@ func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 		return fmt.Errorf("failed to create gotenberg client: %w", err)
 	}
 
-	//htmlTmplFullPath := fmt.Sprintf("%s%s", m.cfg.PdfConfig.HtmlTemplateFilePath, m.cfg.PdfConfig.HtmlTemplateFileName)
-	htmlTmplFullPath := filepath.Join(s.cfg.PdfConfig.HtmlTemplateFilePath, s.cfg.PdfConfig.HtmlTemplateFileName)
+	var htmlTmplFullPath string
+	var logoHeaderPath string
+
+		switch  job.jobType{
+	case "ADULT":
+		htmlTmplFullPath = filepath.Join(s.cfg.PdfConfig.AdultHtmlTemplateFilePath, s.cfg.PdfConfig.HtmlTemplateFileName)
+		logoHeaderPath = filepath.Join(s.cfg.PdfConfig.AdultHtmlTemplateFilePath, "logo_header.png")
+	case "SCHOOLCHILD":
+		htmlTmplFullPath = filepath.Join(s.cfg.PdfConfig.SchoolchildHtmlTemplateFilePath, s.cfg.PdfConfig.HtmlTemplateFileName)
+		logoHeaderPath = filepath.Join(s.cfg.PdfConfig.SchoolchildHtmlTemplateFilePath, "logo_header.png")
+	default:
+		log.Error(
+			"unknown job type",
+		)
+		return fmt.Errorf("unknown job type")
+	}
 
 	user := domain.User{
 		Name:  job.user.Name,
@@ -352,7 +370,6 @@ func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 		return fmt.Errorf("failed to execute html template \"%s\": %w", htmlTmplFullPath, err)
 	}
 
-	logoHeaderPath := filepath.Join(s.cfg.PdfConfig.HtmlTemplateFilePath, "logo_header.png")
 	logoHeaderBuf, err := os.ReadFile(logoHeaderPath)
 	if err != nil {
 		log.Error(

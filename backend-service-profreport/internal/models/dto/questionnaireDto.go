@@ -1,19 +1,37 @@
 package dto
 
-type QuestionAnswer struct {
+type AdultQuestionAnswer struct {
 	Number   int    `json:"number"`
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
 }
 
-type QuestionnaireDto struct {
-	User                    UserDto          `json:"user"`
-	Values                  []QuestionAnswer `json:"values"`
-	PersonalQualities       []QuestionAnswer `json:"personalQualities"`
-	ObjectsOfActivityKlimov []QuestionAnswer `json:"objectsOfActivityKlimov"`
-	RIASEC                  []QuestionAnswer `json:"RIASEC"`
+type AdultQuestionnaireDto struct {
+	User                    UserDto               `json:"user"`
+	Values                  []AdultQuestionAnswer `json:"values"`
+	PersonalQualities       []AdultQuestionAnswer `json:"personalQualities"`
+	ObjectsOfActivityKlimov []AdultQuestionAnswer `json:"objectsOfActivityKlimov"`
+	RIASEC                  []AdultQuestionAnswer `json:"RIASEC"`
 }
 
-type ResponseQuestionnaireDto struct {
+type AdultResponseQuestionnaireDto struct {
+	RequestID string `json:"requestID"`
+}
+
+type SchoolchildQuestionAnswer struct {
+	Number   int    `json:"number"`
+	Question string `json:"question"`
+	Answer   string `json:"answer"`
+}
+
+type SchoolchildQuestionnaireDto struct {
+	User                    UserDto                     `json:"user"`
+	Values                  []SchoolchildQuestionAnswer `json:"values"`
+	PersonalQualities       []SchoolchildQuestionAnswer `json:"personalQualities"`
+	ObjectsOfActivityKlimov []SchoolchildQuestionAnswer `json:"objectsOfActivityKlimov"`
+	RIASEC                  []SchoolchildQuestionAnswer `json:"RIASEC"`
+}
+
+type SchoolchildResponseQuestionnaireDto struct {
 	RequestID string `json:"requestID"`
 }

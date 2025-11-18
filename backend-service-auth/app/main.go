@@ -27,6 +27,7 @@ var Version = "dev"
 func main() {
 	cfg := config.MustLoad()
 
+
 	log := setupLogger(cfg.Env)
 
 	log.Info(
@@ -39,7 +40,6 @@ func main() {
 	repository := repositories.NewRepository(cfg)
 
 	userService := userServices.NewUser(repository, cfg.HttpServer.Secret)
-
 	userHandler := handlers.NewUserHandler(userService)
 
 	router := routers.NewRouter(userHandler)
