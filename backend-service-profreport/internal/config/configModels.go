@@ -33,11 +33,11 @@ type AIConfig struct {
 	Timeout                     int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"600"` //in seconds
 	ModelName                   string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
 	AIApiToken                  string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
-	AdultSystemRolePrompt       string  `yaml:"adultSystemRolePromt" env-default:""`
-	AdultPromptFilePath         string  `yaml:"AdultPromptFilePath" env:"ADULT_PROMT_FILEPATH" env-required:"true" env-default:""`
-	SchoolchildSystemRolePrompt string  `yaml:"schoolchildSystemRolePromt" env-default:""`
-	SchoolchildPromptFilePath   string  `yaml:"schoolchildPromptFilePath" env:"SCHOOLCHILD_PROMT_FILEPATH" env-required:"true" env-default:""`
-	PromptFileName              string  `yaml:"promptFileName" env:"PROMT_FILENAME" env-required:"true" env-default:""`
+	AdultSystemRolePrompt       string  `yaml:"adultSystemRolePrompt" env-default:""`
+	AdultPromptFilePath         string  `yaml:"AdultPromptFilePath" env:"ADULT_PROMPT_FILEPATH" env-required:"true" env-default:""`
+	SchoolchildSystemRolePrompt string  `yaml:"schoolchildSystemRolePrompt" env-default:""`
+	SchoolchildPromptFilePath   string  `yaml:"schoolchildPromptFilePath" env:"SCHOOLCHILD_PROMPT_FILEPATH" env-required:"true" env-default:""`
+	PromptFileName              string  `yaml:"promptFileName" env:"PROMPT_FILENAME" env-required:"true" env-default:""`
 	AiResponseFilePath          string  `yaml:"aiResponseFilePath" env:"AI_RESPONSE_FILEPATH" env-required:"true" env-default:""`
 	MaxTokens                   int     `yaml:"maxTokens" env-default:"65000"`
 	Temperature                 float32 `yaml:"temperature" env-default:"0.5"`
