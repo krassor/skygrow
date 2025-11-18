@@ -241,7 +241,12 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 	}
 
 	userState := bot.UsersState[update.Message.From.ID]
-
+	log.Info(
+		"User state",
+		slog.String("file type", userState.FileType),
+		slog.String("survey type", userState.SurveyType),
+		slog.Bool("awaiting file", userState.AwaitingFile),
+	)
 	// Проверка ожидания файла в сообщении
 	if !userState.AwaitingFile {
 		replyText = "File not awaiting"
@@ -281,6 +286,12 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		}
 		isPromptFile = true
 		fileName = bot.cfg.BotConfig.AI.PromptFileName
+		log.Debug(
+			"case PROMPT",
+			slog.String("file ext", fileExt),
+			slog.Bool("isPromptFile", isPromptFile),
+			slog.String("fileName", fileName),
+		)
 
 	case "TEMPLATE":
 		if fileExt != ".html" {
@@ -294,7 +305,16 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		}
 		isTmplFile = true
 		fileName = bot.cfg.PdfConfig.HtmlTemplateFileName
+		log.Debug(
+			"case TEMPLATE",
+			slog.String("file ext", fileExt),
+			slog.Bool("isPromptFile", isPromptFile),
+			slog.String("fileName", fileName),
+		)
 	default:
+		log.Error(
+			"case default: unknown file type state",
+		)
 		return fmt.Errorf("unknown file type state")
 	}
 
@@ -305,8 +325,15 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		} else if isTmplFile {
 			filePath = bot.cfg.PdfConfig.AdultHtmlTemplateFilePath
 		} else {
-			return fmt.Errorf("unknown file type state")
+			log.Error(
+				"case default: unknown survey type state",
+			)
+			return fmt.Errorf("unknown survey type state")
 		}
+		log.Debug(
+			"case ADULT",
+			slog.String("filePath", filePath),
+		)
 
 	case "SCHOOLCHILD":
 		if isPromptFile {
@@ -314,11 +341,22 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		} else if isTmplFile {
 			filePath = bot.cfg.PdfConfig.SchoolchildHtmlTemplateFilePath
 		} else {
+			log.Error(
+				"case default: unknown survey type state",
+			)
 			return fmt.Errorf("unknown file type state")
 		}
+		log.Debug(
+			"case SCHOOLCHILD",
+			slog.String("filePath", filePath),
+		)
 	}
 
 	fullFilePath := filepath.Join(filePath, fileName)
+	log.Debug(
+		"Join filePath and fileName",
+		slog.String("fullFilePath", fullFilePath),
+	)
 
 	//Получаем file_path
 	fileURL, err := bot.tgbot.GetFileDirectURL(fileID)
@@ -330,6 +368,11 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
+
+	log.Debug(
+		"Get file URL",
+		slog.String("fileURL", fileURL),
+	)
 
 	// Делаем HTTP GET-запрос по URL
 	httpClient := &http.Client{Timeout: 30 * time.Second}
