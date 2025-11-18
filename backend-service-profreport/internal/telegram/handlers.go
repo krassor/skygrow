@@ -65,11 +65,11 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 	// 		}
 	// 	}
 
-	case "setpromptfile":
+	case "setfile":
 		//replyText := ""
 		isAdmin, err := bot.isAdmin(update.Message)
 
-		log.Debug("setpromtfile",
+		log.Debug("setfile",
 			slog.String("user name", update.Message.From.UserName),
 			slog.String("message", update.Message.Text),
 			slog.String("is admin", strconv.FormatBool(isAdmin)),
