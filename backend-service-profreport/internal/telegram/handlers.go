@@ -98,7 +98,7 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 	/*case "settemplate":
 	isAdmin, err := bot.isAdmin(update.Message)
 
-	log.Debug("setpromtfile",
+	log.Debug("setpromptfile",
 		slog.String("user name", update.Message.From.UserName),
 		slog.String("message", update.Message.Text),
 		slog.String("is admin", strconv.FormatBool(isAdmin)),
@@ -114,12 +114,12 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 
 	bot.sendSurveyTypeMessage(update)*/
 
-	/*case "getsystempromt":
+	/*case "getsystemprompt":
 
 	replyText := ""
 	isAdmin, err := bot.isAdmin(update.Message)
 
-	log.Debug("getsystempromt",
+	log.Debug("getsystemprompt",
 		slog.String("user name", update.Message.From.UserName),
 		slog.String("message", update.Message.Text),
 		slog.String("is admin", strconv.FormatBool(isAdmin)),
@@ -265,7 +265,7 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 	fileExt := strings.ToLower(filepath.Ext(update.Message.Document.FileName))
 	filePath := ""
 	fileName := ""
-	isPromtFile := false
+	isPromptFile := false
 	isTmplFile := false
 
 	switch userState.FileType {
@@ -279,7 +279,7 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 			}
 			return fmt.Errorf("%s: %w", op, err)
 		}
-		isPromtFile = true
+		isPromptFile = true
 		fileName = bot.cfg.BotConfig.AI.PromptFileName
 
 	case "TEMPLATE":
@@ -300,7 +300,7 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 
 	switch userState.SurveyType {
 	case "ADULT":
-		if isPromtFile {
+		if isPromptFile {
 			filePath = bot.cfg.BotConfig.AI.AdultPromptFilePath
 		} else if isTmplFile {
 			filePath = bot.cfg.PdfConfig.AdultHtmlTemplateFilePath
@@ -309,7 +309,7 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		}
 
 	case "SCHOOLCHILD":
-		if isPromtFile {
+		if isPromptFile {
 			filePath = bot.cfg.BotConfig.AI.SchoolchildPromptFilePath
 		} else if isTmplFile {
 			filePath = bot.cfg.PdfConfig.SchoolchildHtmlTemplateFilePath
@@ -369,16 +369,15 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 	log.Info(
 		"file saved",
 		slog.String("user name", update.Message.From.UserName),
-		slog.String("message", update.Message.Text),
 		slog.String("file_id", fileID),
 		slog.String("file_path", fullFilePath),
 	)
 
 	//Перечитываем заново промт из файла для применения изменений
-	if isPromtFile {
-		err = bot.cfg.ReadPromtFromFile()
+	if isPromptFile {
+		err = bot.cfg.ReadPromptFromFile()
 		if err != nil {
-			replyText = "Promt file saved. But config file not updated. PLease try again"
+			replyText = "Prompt file saved. But config file not updated. PLease try again"
 			e := sendFunc(update.Message, replyText)
 			if e != nil {
 				return fmt.Errorf("%s: %w", op, e)
@@ -386,13 +385,12 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 			return fmt.Errorf("%s: %w", op, err)
 		}
 		log.Info(
-			"Promt file saved. Config updated.",
+			"Prompt file saved. Config updated.",
 			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
 			slog.String("file_id", fileID),
-			slog.String("file_path", filePath),
+			slog.String("file_path", fullFilePath),
 		)
-		replyText = "👍 Promt file saved. Config updated 👍"
+		replyText = "👍 Prompt file saved. Config updated 👍"
 		err = sendFunc(update.Message, replyText)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
@@ -402,7 +400,6 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 		log.Info(
 			"Template file saved.",
 			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
 			slog.String("file_id", fileID),
 			slog.String("file_path", fullFilePath),
 		)
@@ -425,13 +422,13 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 func (bot *Bot) sendSurveyTypeMessage(update *tgbotapi.Update) error {
 	chatID := update.Message.Chat.ID
 
-	text := "Выберите тип опроса:"
+	text := "Выберите тип файла:"
 
 	// Создаём инлайн-кнопки
 	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Adult", "ADULT"),
-			tgbotapi.NewInlineKeyboardButtonData("Schoolchild", "SCHOOLCHILD"),
+			tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
+			tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
 		),
 	)
 
@@ -479,53 +476,90 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 	var editMsg tgbotapi.EditMessageTextConfig
 	switch data {
 	case "ADULT":
-		responseText = "Вы выбрали: Взрослый опрос.\n\rВыберите тип файла:"
-		// Здесь можно сохранить выбор в state:
-		bot.UsersState[userID] = UserState{
-			SurveyType:   "ADULT",
-			AwaitingFile: false,
-			FileType:     "",
+		switch bot.UsersState[userID].FileType {
+		case "PROMPT":
+			responseText = "Загрузите md файл."
+			bot.UsersState[userID] = UserState{
+				AwaitingFile: true,
+				SurveyType:   "ADULT",
+			}
+		case "TEMPLATE":
+			responseText = "Загрузите html файл."
+			bot.UsersState[userID] = UserState{
+				AwaitingFile: true,
+				SurveyType:   "ADULT",
+			}
+		default:
+			responseText = "ошибка при передача типа файла"
+			bot.UsersState[userID] = UserState{
+				AwaitingFile: false,
+				SurveyType:   "",
+				FileType:     "",
+			}
 		}
-		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
-				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
-			),
-		)
-		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
+
+		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+
 	case "SCHOOLCHILD":
-		responseText = "Вы выбрали: Опрос для школьника.\n\rВыберите тип файла:"
-		bot.UsersState[userID] = UserState{
-			SurveyType:   "SCHOOLCHILD",
-			AwaitingFile: false,
-			FileType:     "",
+		switch bot.UsersState[userID].FileType {
+		case "PROMPT":
+			responseText = "Загрузите md файл."
+			bot.UsersState[userID] = UserState{
+				AwaitingFile: true,
+				SurveyType:   "SCHOOLCHILD",
+			}
+		case "TEMPLATE":
+			responseText = "Загрузите html файл."
+			bot.UsersState[userID] = UserState{
+				AwaitingFile: true,
+				SurveyType:   "SCHOOLCHILD",
+			}
+		default:
+			responseText = "ошибка при передача типа файла"
+			bot.UsersState[userID] = UserState{
+				AwaitingFile: false,
+				SurveyType:   "",
+				FileType:     "",
+			}
 		}
-		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
-				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
-			),
-		)
-		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
+
+		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+
 	case "PROMPT":
-		responseText = "Загрузите md файл."
-		// Здесь можно сохранить выбор в state:
+		responseText = "Вы выбрали: файл prompt.\n\rВыберите тип опроса:"
+
 		bot.UsersState[userID] = UserState{
-			AwaitingFile: true,
+			SurveyType:   "",
+			AwaitingFile: false,
 			FileType:     "PROMPT",
 		}
-		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Adult", "ADULT"),
+				tgbotapi.NewInlineKeyboardButtonData("Schoolchild", "SCHOOLCHILD"),
+			),
+		)
+		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
+
 	case "TEMPLATE":
-		responseText = "Загрузите html файл."
-		// Здесь можно сохранить выбор в state:
+		responseText = "Вы выбрали: файл template.\n\rВыберите тип опроса:"
+
 		bot.UsersState[userID] = UserState{
-			AwaitingFile: true,
+			SurveyType:   "",
+			AwaitingFile: false,
 			FileType:     "TEMPLATE",
 		}
-		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Adult", "ADULT"),
+				tgbotapi.NewInlineKeyboardButtonData("Schoolchild", "SCHOOLCHILD"),
+			),
+		)
+		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	default:
 		responseText = "Неизвестный тип опроса."
+		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 	}
 
 	_, err = bot.tgbot.Send(editMsg)

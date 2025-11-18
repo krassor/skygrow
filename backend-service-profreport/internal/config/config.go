@@ -86,14 +86,14 @@ func (cfg *Config) Write() error {
 	return nil
 }
 
-func (cfg *Config) ReadPromtFromFile() error {
+func (cfg *Config) ReadPromptFromFile() error {
 	switch {
 	case cfg.BotConfig.AI.AdultPromptFilePath == "":
-		return fmt.Errorf("adult promt filepath is emtpy")
+		return fmt.Errorf("adult prompt filepath is emtpy")
 	case cfg.BotConfig.AI.PromptFileName == "":
-		return fmt.Errorf("promt filename is emtpy")
+		return fmt.Errorf("prompt filename is emtpy")
 	case cfg.BotConfig.AI.SchoolchildPromptFilePath == "":
-		return fmt.Errorf("schoolchild promt filepath is emtpy")
+		return fmt.Errorf("schoolchild prompt filepath is emtpy")
 	}
 
 	adultFullPath := cfg.BotConfig.AI.AdultPromptFilePath + cfg.BotConfig.AI.PromptFileName

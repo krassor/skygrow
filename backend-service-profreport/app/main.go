@@ -38,7 +38,7 @@ func main() {
 	)
 	log.Debug("debug messages are enabled")
 
-	err := cfg.ReadPromtFromFile()
+	err := cfg.ReadPromptFromFile()
 	if err != nil {
 		log.Error(
 			"main read prompt error",
