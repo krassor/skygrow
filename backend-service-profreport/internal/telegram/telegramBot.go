@@ -125,11 +125,11 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 	default:
 		switch {
 		//Check if message is a command
-		case update.Message.IsCommand():
+		case (update.Message != nil && update.Message.IsCommand()):
 			if err := bot.commandHandler(bot.ctx, update, bot.sendReplyMessage); err != nil {
 				sl.Err(err)
 			}
-		case update.Message.Document != nil:
+		case (update.Message != nil && update.Message.Document != nil):
 			if err := bot.fileHandler(bot.ctx, update, bot.sendReplyMessage); err != nil {
 				sl.Err(err)
 			}
