@@ -84,10 +84,6 @@ func (bot *Bot) Update(updateTimeout int) {
 
 	for update := range updates {
 		log.Info("start update processing")
-		if update.Message == nil { // ignore any non-Message updates
-			log.Debug("received non-Message update", slog.String("user name", update.FromChat().UserName))
-			continue
-		}
 
 		go bot.processingMessages(&update)
 	}
