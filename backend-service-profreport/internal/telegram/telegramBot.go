@@ -34,8 +34,8 @@ type Bot struct {
 // SurveyType - тип опроса: ADULT, SCHOOLCHILD
 type UserState struct {
 	AwaitingFile bool
-	SurveyType string
-	FileType string
+	SurveyType   string
+	FileType     string
 }
 
 func New(logger *slog.Logger, cfg *config.Config /*AIBot AIBotApi*/) *Bot {
@@ -97,14 +97,25 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 		slog.String("op", op),
 	)
 
-	log.Info(
-		"Input message",
-		slog.String("user id", strconv.FormatInt(update.Message.From.ID, 10)),
-		slog.String("user name", update.Message.From.UserName),
-		slog.String("first name", update.Message.From.FirstName),
-		slog.String("last name", update.Message.From.LastName),
-		slog.String("msg", update.Message.Text),
-	)
+	if update.Message != nil {
+		log.Info(
+			"Input message",
+			slog.String("user id", strconv.FormatInt(update.Message.From.ID, 10)),
+			slog.String("user name", update.Message.From.UserName),
+			slog.String("first name", update.Message.From.FirstName),
+			slog.String("last name", update.Message.From.LastName),
+			slog.String("msg", update.Message.Text),
+		)
+	}
+	if update.CallbackQuery != nil {
+		log.Info(
+			"Input callback",
+			slog.String("user id", strconv.FormatInt(update.CallbackQuery.From.ID, 10)),
+			slog.String("user name", update.CallbackQuery.From.UserName),
+			slog.String("first name", update.CallbackQuery.From.FirstName),
+			slog.String("last name", update.CallbackQuery.From.LastName),
+		)
+	}
 
 	select {
 	case <-bot.shutdownChannel:
@@ -118,11 +129,11 @@ func (bot *Bot) processingMessages(update *tgbotapi.Update) {
 			if err := bot.commandHandler(bot.ctx, update, bot.sendReplyMessage); err != nil {
 				sl.Err(err)
 			}
-		case update.Message.Document != nil :
+		case update.Message.Document != nil:
 			if err := bot.fileHandler(bot.ctx, update, bot.sendReplyMessage); err != nil {
 				sl.Err(err)
 			}
-		case update.CallbackQuery != nil :
+		case update.CallbackQuery != nil:
 			bot.handleCallbackQuery(update)
 		// // Проверяем, если сообщение адресовано самому боту
 		// case update.Message.Chat.IsPrivate():
