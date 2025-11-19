@@ -552,7 +552,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "PROMPT":
-		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите <b>.md</b> файл:"
+		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите *.md* файл:"
 		userState.FileType = "PROMPT"
 		userState.AwaitingFile = true
 		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
@@ -563,7 +563,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "TEMPLATE":
-		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите <b>.html</b> файл:"
+		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите *.html* файл:"
 		userState.FileType = "TEMPLATE"
 		userState.AwaitingFile = true
 		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
@@ -589,6 +589,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 	}
 
 	bot.UsersState[userID] = userState
+	editMsg.ParseMode = tgbotapi.ModeMarkdownV2
 
 	_, err = bot.tgbot.Send(editMsg)
 	if err != nil {

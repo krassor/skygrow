@@ -175,7 +175,7 @@ func (s *Mailer) handleJob(id int) {
 			mailBody := "Здравствуйте, " + job.user.Name + "!\r\n" +
 				"По Вашему запросу был сгенерирован отчет\r\n" +
 				"Отчет прикреплен к письму во вложении.\r\n" +
-				"\r\n\r\nС уважением, команда proffreport."
+				"\r\n\r\nС уважением, команда Profreport."
 
 			mailBody, err = mdToHTML(mailBody)
 			if err != nil {
