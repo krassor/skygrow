@@ -465,13 +465,13 @@ func (bot *Bot) fileHandler(ctx context.Context, update *tgbotapi.Update, sendFu
 func (bot *Bot) sendSurveyTypeMessage(update *tgbotapi.Update) error {
 	chatID := update.Message.Chat.ID
 
-	text := "Выберите тип файла:"
+	text := "Выберите тип опроса:"
 
 	// Создаём инлайн-кнопки
 	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
-			tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
+			tgbotapi.NewInlineKeyboardButtonData("Adult", "ADULT"),
+			tgbotapi.NewInlineKeyboardButtonData("Schoolchild", "SCHOOLCHILD"),
 		),
 	)
 
@@ -543,13 +543,13 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "PROMPT":
-		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите **.md** файл:"
+		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите *.md* файл:"
 		userState.FileType = "PROMPT"
 		userState.AwaitingFile = true
 		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 
 	case "TEMPLATE":
-		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите **.html** файл:"
+		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите *.html* файл:"
 		userState.FileType = "TEMPLATE"
 		userState.AwaitingFile = true
 		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
