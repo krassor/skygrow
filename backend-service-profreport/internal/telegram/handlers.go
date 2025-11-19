@@ -531,6 +531,9 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 				tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
 				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
 			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Cancel", "CANCEL"),
+			),
 		)
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
@@ -542,6 +545,9 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 				tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
 				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
 			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Cancel", "CANCEL"),
+			),
 		)
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
@@ -549,13 +555,23 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите <b>.md</b> файл:"
 		userState.FileType = "PROMPT"
 		userState.AwaitingFile = true
-		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Cancel", "CANCEL"),
+			),
+		)
+		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "TEMPLATE":
 		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите <b>.html</b> файл:"
 		userState.FileType = "TEMPLATE"
 		userState.AwaitingFile = true
-		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Cancel", "CANCEL"),
+			),
+		)
+		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "CANCEL":
 		responseText = "Команда отменена"
