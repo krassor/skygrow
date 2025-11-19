@@ -473,6 +473,9 @@ func (bot *Bot) sendSurveyTypeMessage(update *tgbotapi.Update) error {
 			tgbotapi.NewInlineKeyboardButtonData("Adult", "ADULT"),
 			tgbotapi.NewInlineKeyboardButtonData("Schoolchild", "SCHOOLCHILD"),
 		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Cancel", "CANCEL"),
+		),
 	)
 
 	msg := tgbotapi.NewMessage(chatID, text)
@@ -543,15 +546,22 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "PROMPT":
-		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите *.md* файл:"
+		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите <b>.md</b> файл:"
 		userState.FileType = "PROMPT"
 		userState.AwaitingFile = true
 		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 
 	case "TEMPLATE":
-		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите *.html* файл:"
+		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите <b>.html</b> файл:"
 		userState.FileType = "TEMPLATE"
 		userState.AwaitingFile = true
+		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+
+	case "CANCEL":
+		responseText = "Команда отменена"
+		userState.AwaitingFile = false
+		userState.SurveyType = ""
+		userState.FileType = ""
 		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 
 	default:
