@@ -524,7 +524,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 
 	switch data {
 	case "ADULT":
-		responseText = "Вы выбрали: тип опроса Adult.\n\rВыберите тип файла:"
+		responseText = "Вы выбрали: тип опроса Adult\\.\n\rВыберите тип файла:"
 		userState.SurveyType = "ADULT"
 		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -538,7 +538,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "SCHOOLCHILD":
-		responseText = "Вы выбрали: тип опроса Schoolchild.\n\rВыберите тип файла:"
+		responseText = "Вы выбрали: тип опроса Schoolchild\\.\n\rВыберите тип файла:"
 		userState.SurveyType = "SCHOOLCHILD"
 		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -552,7 +552,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "PROMPT":
-		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите *\\.md* файл:"
+		responseText = "Вы выбрали: тип файла prompt\\.\n\rЗагрузите *\\.md* файл:"
 		userState.FileType = "PROMPT"
 		userState.AwaitingFile = true
 		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
@@ -563,7 +563,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "TEMPLATE":
-		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите *\\.html* файл:"
+		responseText = "Вы выбрали: тип файла template\\.\n\rЗагрузите *\\.html* файл:"
 		userState.FileType = "TEMPLATE"
 		userState.AwaitingFile = true
 		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
@@ -581,7 +581,7 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 
 	default:
-		responseText = "Неизвестный тип опроса/файла."
+		responseText = "Неизвестный тип опроса/файла\\."
 		userState.AwaitingFile = false
 		userState.SurveyType = ""
 		userState.FileType = ""
