@@ -517,93 +517,52 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 
 	var responseText string
 	var editMsg tgbotapi.EditMessageTextConfig
+	userState := bot.UsersState[userID]
+
 	switch data {
 	case "ADULT":
-		switch bot.UsersState[userID].FileType {
-		case "PROMPT":
-			responseText = "Загрузите md файл."
-			bot.UsersState[userID] = UserState{
-				AwaitingFile: true,
-				SurveyType:   "ADULT",
-			}
-		case "TEMPLATE":
-			responseText = "Загрузите html файл."
-			bot.UsersState[userID] = UserState{
-				AwaitingFile: true,
-				SurveyType:   "ADULT",
-			}
-		default:
-			responseText = "ошибка при передача типа файла"
-			bot.UsersState[userID] = UserState{
-				AwaitingFile: false,
-				SurveyType:   "",
-				FileType:     "",
-			}
-		}
-
-		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+		responseText = "Вы выбрали: тип опроса Adult.\n\rВыберите тип файла:"
+		userState.SurveyType = "ADULT"
+		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
+				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
+			),
+		)
+		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "SCHOOLCHILD":
-		switch bot.UsersState[userID].FileType {
-		case "PROMPT":
-			responseText = "Загрузите md файл."
-			bot.UsersState[userID] = UserState{
-				AwaitingFile: true,
-				SurveyType:   "SCHOOLCHILD",
-			}
-		case "TEMPLATE":
-			responseText = "Загрузите html файл."
-			bot.UsersState[userID] = UserState{
-				AwaitingFile: true,
-				SurveyType:   "SCHOOLCHILD",
-			}
-		default:
-			responseText = "ошибка при передача типа файла"
-			bot.UsersState[userID] = UserState{
-				AwaitingFile: false,
-				SurveyType:   "",
-				FileType:     "",
-			}
-		}
-
-		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
+		responseText = "Вы выбрали: тип опроса Schoolchild.\n\rВыберите тип файла:"
+		userState.SurveyType = "SCHOOLCHILD"
+		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Prompt", "PROMPT"),
+				tgbotapi.NewInlineKeyboardButtonData("Template", "TEMPLATE"),
+			),
+		)
+		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
 
 	case "PROMPT":
-		responseText = "Вы выбрали: файл prompt.\n\rВыберите тип опроса:"
-
-		bot.UsersState[userID] = UserState{
-			SurveyType:   "",
-			AwaitingFile: false,
-			FileType:     "PROMPT",
-		}
-		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Adult", "ADULT"),
-				tgbotapi.NewInlineKeyboardButtonData("Schoolchild", "SCHOOLCHILD"),
-			),
-		)
-		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
+		responseText = "Вы выбрали: тип файла prompt.\n\rЗагрузите **.md** файл:"
+		userState.FileType = "PROMPT"
+		userState.AwaitingFile = true
+		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 
 	case "TEMPLATE":
-		responseText = "Вы выбрали: файл template.\n\rВыберите тип опроса:"
-
-		bot.UsersState[userID] = UserState{
-			SurveyType:   "",
-			AwaitingFile: false,
-			FileType:     "TEMPLATE",
-		}
-		inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Adult", "ADULT"),
-				tgbotapi.NewInlineKeyboardButtonData("Schoolchild", "SCHOOLCHILD"),
-			),
-		)
-		editMsg = tgbotapi.NewEditMessageTextAndMarkup(chatID, callback.Message.MessageID, responseText, inlineKeyboard)
+		responseText = "Вы выбрали: тип файла template.\n\rЗагрузите **.html** файл:"
+		userState.FileType = "TEMPLATE"
+		userState.AwaitingFile = true
+		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 
 	default:
-		responseText = "Неизвестный тип опроса."
+		responseText = "Неизвестный тип опроса/файла."
+		userState.AwaitingFile = false
+		userState.SurveyType = ""
+		userState.FileType = ""
 		editMsg = tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, responseText)
 	}
+
+	bot.UsersState[userID] = userState
 
 	_, err = bot.tgbot.Send(editMsg)
 	if err != nil {

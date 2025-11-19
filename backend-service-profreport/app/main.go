@@ -36,7 +36,6 @@ func main() {
 		slog.String("env", cfg.Env),
 		slog.String("version", Version),
 	)
-	log.Debug("debug messages are enabled")
 
 	err := cfg.ReadPromptFromFile()
 	if err != nil {
