@@ -45,13 +45,14 @@ func Authorization(secret string) func(next http.Handler) http.Handler {
 
 func LoggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		buf := make([]byte, r.ContentLength)
-		_, _ = r.Body.Read(buf)
+		// buf := make([]byte, r.ContentLength)
+		// _, _ = r.Body.Read(buf)
 		slog.Info("",
 			slog.String("remote_addr", r.RemoteAddr),
 			slog.String("method", r.Method),
 			slog.String("url", r.RequestURI),
-			slog.Any("body", string(buf)))
+			//slog.Any("body", string(buf)),
+		)
 		next.ServeHTTP(w, r)
 	})
 }
