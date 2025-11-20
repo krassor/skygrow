@@ -21,3 +21,9 @@ letsencrypt
 config/
 app/test/
 backend-service-profreport/app/test/
+prometheus/prometheus.yml
+.idea
+.agent
+nginx/
+portainer-data/
+prometheus/

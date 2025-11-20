@@ -6,6 +6,7 @@ import (
 	"app/main.go/internal/mail"
 	"app/main.go/internal/openrouter"
 	"app/main.go/internal/pdf"
+	"app/main.go/internal/repositories"
 	telegramBot "app/main.go/internal/telegram"
 	"app/main.go/internal/transport/httpServer"
 	"app/main.go/internal/transport/httpServer/handlers"
@@ -48,6 +49,9 @@ func main() {
 
 	tgBot := telegramBot.New(log, cfg)
 
+	// инициализируем репозиторий для работы с БД
+	repository := repositories.NewCalendarRepository(log, cfg)
+
 	mailService := mail.NewMailer(log, cfg)
 	pdfService := pdf.New(log, cfg, mailService)
 	openRouterService := openrouter.NewClient(log, cfg, pdfService)
@@ -55,6 +59,7 @@ func main() {
 		log,
 		cfg,
 		openRouterService,
+		repository,
 	)
 
 	router := routers.NewRouter(questionnaireHandler, "TODO")

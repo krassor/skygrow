@@ -1,7 +1,0 @@
-admins:
-    - 
-openAI:
-    systemRolePromt: 
-    maxTokens: 512
-    temperature: 0.3
-    "n": 1

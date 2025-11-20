@@ -4,8 +4,10 @@ import (
 	"app/main.go/internal/config"
 	"app/main.go/internal/models/domain"
 	"app/main.go/internal/models/dto"
+	"app/main.go/internal/models/repositories"
 	"app/main.go/internal/utils"
 	"app/main.go/internal/utils/logger/sl"
+	"context"
 
 	//"bytes"
 	"encoding/json"
@@ -34,7 +36,14 @@ type LLMService interface {
 	) (chan struct{}, error)
 }
 
+// Repository интерфейс для работы с БД
+type Repository interface {
+	FindOrCreateUser(ctx context.Context, user repositories.User) (repositories.User, error)
+	CreateQuestionnaire(ctx context.Context, questionnaire repositories.Questionnaire) (repositories.Questionnaire, error)
+}
+
 type QuestionnaireHandler struct {
+	Repository Repository
 	LLMService LLMService
 	cfg        *config.Config
 	log        *slog.Logger
@@ -44,8 +53,10 @@ func NewQuestionnaireHandler(
 	log *slog.Logger,
 	cfg *config.Config,
 	LLMService LLMService,
+	repo Repository,
 ) *QuestionnaireHandler {
 	return &QuestionnaireHandler{
+		Repository: repo,
 		LLMService: LLMService,
 		log:        log,
 		cfg:        cfg,
@@ -98,15 +109,46 @@ func (h *QuestionnaireHandler) AdultCreate(w http.ResponseWriter, r *http.Reques
 		"start http handler Create",
 	)
 
+	ctx := r.Context()
+
+	// создаем или находим пользователя в БД
+	dbUser := repositories.User{
+		Name:  questionnaireDto.User.Name,
+		Email: questionnaireDto.User.Email,
+	}
+
+	dbUser, err = h.Repository.FindOrCreateUser(ctx, dbUser)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("failed to save user"), w, http.StatusInternalServerError)
+		return
+	}
+
+	// создаем запись опросника в БД
+	dbQuestionnaire := repositories.Questionnaire{
+		BaseModel: repositories.BaseModel{
+			ID: requestID, // используем requestID как ID опросника
+		},
+		UserID:            dbUser.ID,
+		PaymentID:         uuid.New(), // генерируем новый payment ID
+		PaymentSuccess:    false,
+		QuestionnaireType: "ADULT",
+	}
+
+	_, err = h.Repository.CreateQuestionnaire(ctx, dbQuestionnaire)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("failed to save questionnaire"), w, http.StatusInternalServerError)
+		return
+	}
+
+	// создаем джобу для обработки
 	user := domain.User{
 		Email: questionnaireDto.User.Email,
 		Name:  questionnaireDto.User.Name,
 	}
 
 	_, err = h.LLMService.AddJob(requestID, h.splitAdultQuestionnaire(&questionnaireDto), user, "ADULT")
-
 	if err != nil {
-		h.err(log, err, fmt.Errorf("Internal server error"), w, http.StatusBadRequest)
+		h.err(log, err, fmt.Errorf("Internal server error"), w, http.StatusInternalServerError)
 		return
 	}
 
@@ -163,15 +205,46 @@ func (h *QuestionnaireHandler) SchoolchildCreate(w http.ResponseWriter, r *http.
 		"start http handler Create",
 	)
 
+	ctx := r.Context()
+
+	// создаем или находим пользователя в БД
+	dbUser := repositories.User{
+		Name:  questionnaireDto.User.Name,
+		Email: questionnaireDto.User.Email,
+	}
+
+	dbUser, err = h.Repository.FindOrCreateUser(ctx, dbUser)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("failed to save user"), w, http.StatusInternalServerError)
+		return
+	}
+
+	// создаем запись опросника в БД
+	dbQuestionnaire := repositories.Questionnaire{
+		BaseModel: repositories.BaseModel{
+			ID: requestID, // используем requestID как ID опросника
+		},
+		UserID:            dbUser.ID,
+		PaymentID:         uuid.New(), // генерируем новый payment ID
+		PaymentSuccess:    false,
+		QuestionnaireType: "SCHOOLCHILD",
+	}
+
+	_, err = h.Repository.CreateQuestionnaire(ctx, dbQuestionnaire)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("failed to save questionnaire"), w, http.StatusInternalServerError)
+		return
+	}
+
+	// создаем джобу для обработки
 	user := domain.User{
 		Email: questionnaireDto.User.Email,
 		Name:  questionnaireDto.User.Name,
 	}
 
 	_, err = h.LLMService.AddJob(requestID, h.splitSchoolchildQuestionnaire(&questionnaireDto), user, "SCHOOLCHILD")
-
 	if err != nil {
-		h.err(log, err, fmt.Errorf("Internal server error"), w, http.StatusBadRequest)
+		h.err(log, err, fmt.Errorf("Internal server error"), w, http.StatusInternalServerError)
 		return
 	}
 
@@ -237,11 +310,3 @@ func splitSchoolchildTest(testHeader string, answers []dto.SchoolchildQuestionAn
 	}
 	return result
 }
-
-// func mdToHTML(md string) (string, error) {
-// 	var buf bytes.Buffer
-// 	if err := goldmark.Convert([]byte(md), &buf); err != nil {
-// 		return "", err
-// 	}
-// 	return buf.String(), nil
-// }
