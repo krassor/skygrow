@@ -25,5 +25,5 @@ prometheus/prometheus.yml
 .idea
 .agent
 nginx/
-portainer-data/
-prometheus/
+portainer-data
+prometheus
