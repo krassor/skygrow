@@ -27,3 +27,5 @@ nginx/
 portainer-data/
 prometheus/
 bin/
+ssh pg.txt
+
