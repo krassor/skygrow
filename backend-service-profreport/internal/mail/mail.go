@@ -235,17 +235,22 @@ func (s *Mailer) sendWithGomail(requestID uuid.UUID, to string, subject string, 
 	msg.SetHeader("From", s.cfg.MailConfig.FromAddress)
 	msg.SetHeader("To", to)
 	msg.SetHeader("Subject", subject)
-	msg.SetHeader("MIME-Version", "1.0")
-	msg.SetHeader("Content-Type", "text/html; charset=\"UTF-8\"")
-	msg.SetHeader("Content-Transfer-Encoding", "8bit")
 	msg.SetHeader("Date", time.Now().UTC().In(location).Format(time.RFC1123Z))
 	msg.SetHeader("Message-ID", fmt.Sprintf("<%d.%s>", time.Now().UnixNano(), s.cfg.MailConfig.FromAddress))
-	msg.SetHeader("X-Mailer", "proffreportServiceApp/1.0")
+	msg.SetHeader("X-Mailer", "Profreport Service/1.0")
+	msg.SetHeader("X-Priority", "3")
+	msg.SetHeader("Importance", "normal")
 	msg.SetHeader("List-Unsubscribe", fmt.Sprintf("mailto:%s?subject=unsubscribe", s.cfg.MailConfig.FromAddress))
 
+	// Устанавливаем HTML тело письма (gomail автоматически установит правильные MIME заголовки)
 	msg.SetBody("text/html", body)
 
-	msg.Attach(filepath.Clean(fmt.Sprintf("%s%s.pdf", s.cfg.PdfConfig.PdfFilePath, requestID)))
+	// Прикрепляем PDF файл с явным указанием, что это вложение
+	pdfPath := filepath.Clean(fmt.Sprintf("%s%s.pdf", s.cfg.PdfConfig.PdfFilePath, requestID))
+	msg.Attach(pdfPath, gomail.SetHeader(map[string][]string{
+		"Content-Disposition": {fmt.Sprintf(`attachment; filename="report_%s.pdf"`, requestID.String())},
+		"Content-Type":        {"application/pdf"},
+	}))
 
 	d := gomail.NewDialer(
 		s.cfg.MailConfig.SMTPHost,
