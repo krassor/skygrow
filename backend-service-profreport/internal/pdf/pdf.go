@@ -293,7 +293,7 @@ func (s *PdfService) handleJob(id int) {
 // 	return nil
 // }
 
-//   - jobType: тип запроса: ADULT, SCHOOLCHILD
+// - jobType: тип запроса: ADULT, SCHOOLCHILD
 func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 
 	log := logger.With(
@@ -325,7 +325,7 @@ func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 	var htmlTmplFullPath string
 	var logoHeaderPath string
 
-		switch  job.jobType{
+	switch job.jobType {
 	case "ADULT":
 		htmlTmplFullPath = filepath.Join(s.cfg.PdfConfig.AdultHtmlTemplateFilePath, s.cfg.PdfConfig.HtmlTemplateFileName)
 		logoHeaderPath = filepath.Join(s.cfg.PdfConfig.AdultHtmlTemplateFilePath, "logo_header.png")
@@ -354,7 +354,7 @@ func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 	log.Debug(
 		"Parsing info",
 		slog.String("html template path", htmlTmplFullPath),
-		slog.Any("Data for execute template", data),
+		//slog.Any("Data for execute template", data),
 	)
 
 	var tmplBuf []byte
@@ -392,19 +392,19 @@ func (s *PdfService) createPdfFromHtml(logger *slog.Logger, job Job) error {
 		Send()
 
 	if err != nil {
-		return fmt.Errorf("Failed to convert html: %w", err)
+		return fmt.Errorf("failed to convert html: %w", err)
 	}
 	defer response.Body.Close()
 
 	file, err := os.Create(filepath.Clean(fmt.Sprintf("%s%s.pdf", s.cfg.PdfConfig.PdfFilePath, requestID.String())))
 	if err != nil {
-		return fmt.Errorf("Failed to create output file: %w", err)
+		return fmt.Errorf("failed to create output file: %w", err)
 	}
 	defer file.Close()
 
 	_, err = file.ReadFrom(response.Body)
 	if err != nil {
-		return fmt.Errorf("Failed to write PDF: %w", err)
+		return fmt.Errorf("failed to write PDF: %w", err)
 	}
 
 	log.Info(

@@ -1,6 +1,6 @@
 module app/main.go
 
-go 1.23.5
+go 1.23.3
 
 require github.com/ilyakaznacheev/cleanenv v1.5.0
 

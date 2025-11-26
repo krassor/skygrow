@@ -6,94 +6,93 @@ import (
 	"sync"
 )
 
+// InMemoryCache представляет потокобезопасное хранилище данных в памяти.
+// Ключом является ID пользователя, значением - слайс произвольных данных.
 type InMemoryCache struct {
 	InMemoryMap map[int64][]any
 	mutex       sync.RWMutex
 }
 
+// NewInMemoryRepository создаёт и возвращает новый экземпляр InMemoryCache.
 func NewInMemoryRepository() *InMemoryCache {
-	m := make(map[int64][]interface{})
+	m := make(map[int64][]any)
 	return &InMemoryCache{
 		InMemoryMap: m,
 	}
 }
 
-func (r *InMemoryCache) Save(ctx context.Context, userID int64, history []any) error {
+// Save добавляет данные history в кэш для указанного пользователя.
+// Если данные для пользователя уже существуют, новые данные добавляются к существующим.
+func (r *InMemoryCache) Save(_ context.Context, userID int64, history []any) error {
 	if r.InMemoryMap == nil {
-		return fmt.Errorf("SaveUserMessage error: Map is not initializate")
+		return fmt.Errorf("save: map is not initialized")
 	}
 
 	if userID <= 0 {
-		return fmt.Errorf("Save error: Empty key \"userID\"")
+		return fmt.Errorf("save: invalid userID %d", userID)
 	}
 
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	
+
 	r.InMemoryMap[userID] = append(r.InMemoryMap[userID], history...)
 
 	return nil
 }
 
-func (r *InMemoryCache) IsUserExist(ctx context.Context, userID int64) (bool, error) {
+// IsUserExist проверяет, существует ли пользователь с указанным ID в кэше.
+func (r *InMemoryCache) IsUserExist(_ context.Context, userID int64) (bool, error) {
 	if r.InMemoryMap == nil {
-		return false, fmt.Errorf("IsUserExist error: Map is not initializate")
+		return false, fmt.Errorf("isUserExist: map is not initialized")
 	}
 
 	if userID <= 0 {
-		return false, fmt.Errorf("IsUserExist error: Empty key \"userID\"")
+		return false, fmt.Errorf("isUserExist: invalid userID %d", userID)
 	}
 
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
 	_, ok := r.InMemoryMap[userID]
-	if ok {
-		return true, nil
-	} else {
-		return false, nil
-	}
-
+	return ok, nil
 }
 
-func (r *InMemoryCache) Get(ctx context.Context, userID int64) ([]any, error) {
+// Get возвращает данные для указанного пользователя.
+// Если пользователь не найден, возвращается ошибка.
+func (r *InMemoryCache) Get(_ context.Context, userID int64) ([]any, error) {
 	if r.InMemoryMap == nil {
-		return nil, fmt.Errorf("Load error: Map is not initializate")
+		return nil, fmt.Errorf("get: map is not initialized")
 	}
 
 	if userID <= 0 {
-		return nil, fmt.Errorf("Load error: Empty key \"userID\"")
+		return nil, fmt.Errorf("get: invalid userID %d", userID)
 	}
 
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
 	val, ok := r.InMemoryMap[userID]
-	if ok {
-		return val, nil
-	} else {
-		return nil, fmt.Errorf("Load error: userID not found")
+	if !ok {
+		return nil, fmt.Errorf("get: userID %d not found", userID)
 	}
+
+	return val, nil
 }
 
-func (r *InMemoryCache) Delete(ctx context.Context, userID int64) error {
+// Delete удаляет данные пользователя из кэша.
+// Если пользователь не существует, операция завершается успешно без ошибки.
+func (r *InMemoryCache) Delete(_ context.Context, userID int64) error {
 	if r.InMemoryMap == nil {
-		return fmt.Errorf("Delete error: Map is not initializate")
+		return fmt.Errorf("delete: map is not initialized")
 	}
 
 	if userID <= 0 {
-		return fmt.Errorf("DeleteFirstPromt error: Empty key \"userID\"")
+		return fmt.Errorf("delete: invalid userID %d", userID)
 	}
 
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	_, ok := r.InMemoryMap[userID]
-	if ok {
-		delete(r.InMemoryMap, userID)
-		return nil
-	}
-
+	delete(r.InMemoryMap, userID)
 	return nil
-
 }

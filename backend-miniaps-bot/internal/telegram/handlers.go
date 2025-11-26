@@ -29,27 +29,26 @@ func (bot *Bot) defaultHandler(ctx context.Context, update *tgbotapi.Update, sen
 		slog.String("message id", strconv.Itoa(update.Message.MessageID)),
 	)
 
-	ctxTimeout, cancel := context.WithTimeout(ctx, bot.cfg.BotConfig.AI.GetTimeout())
+	ctxTimeout, cancel := context.WithTimeout(ctx, time.Duration(bot.cfg.AIConfig.Timeout)*time.Second)
 	defer cancel()
 
-// Этот анонимный функциональный литерал используется для отправки сообщения о наборе текста в чате.
-// Он запускается в отдельной горутине, чтобы не блокировать основной поток выполнения.
-//
-// Функция использует `select` для проверки, не был ли контекст отменен.
-// Если контекст был отменен, функция возвращает управление.
-// В противном случае, функция отправляет сообщение о наборе текста в чате.
-//
-// После отправки сообщения, функция "спит" на 2 секунды, чтобы имитировать задержку при наборе текста.
-go func() {
-   select {
-   case <-ctx.Done():
-       return
-   default:
-       bot.tgbot.Send(tgbotapi.NewChatAction(update.FromChat().ID, tgbotapi.ChatTyping))
-   }
-   time.Sleep(2 * time.Second)
-}()
-
+	// Этот анонимный функциональный литерал используется для отправки сообщения о наборе текста в чате.
+	// Он запускается в отдельной горутине, чтобы не блокировать основной поток выполнения.
+	//
+	// Функция использует `select` для проверки, не был ли контекст отменен.
+	// Если контекст был отменен, функция возвращает управление.
+	// В противном случае, функция отправляет сообщение о наборе текста в чате.
+	//
+	// После отправки сообщения, функция "спит" на 2 секунды, чтобы имитировать задержку при наборе текста.
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			bot.tgbot.Send(tgbotapi.NewChatAction(update.FromChat().ID, tgbotapi.ChatTyping))
+		}
+		time.Sleep(2 * time.Second)
+	}()
 
 	response, err := bot.AIBot.ProcessMessage(
 		ctxTimeout,
@@ -95,70 +94,15 @@ func (bot *Bot) stubHandler(ctx context.Context, update *tgbotapi.Update) {
 }
 
 func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sendFunc sendFunction) error {
-	op := "bot.commandHandle"
+	// op := "bot.commandHandle"
 	// Extract the command from the Message.
-	log := bot.log.With(
-		slog.String("op", op),
-	)
+	// log := bot.log.With(
+	// 	slog.String("op", op),
+	// )
 
 	msg := update.Message
 
 	switch update.Message.Command() {
-	case "setsystempromt":
-		replyText := ""
-		isAdmin, err := bot.isAdmin(update.Message)
-
-		log.Debug("setsystempromt",
-			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
-			slog.String("is admin", strconv.FormatBool(isAdmin)),
-		)
-
-		if err != nil {
-			return fmt.Errorf("bot.commandHandle: %w", err)
-		}
-
-		if isAdmin {
-
-			bot.cfg.BotConfig.AI.SystemRolePromt = strings.TrimPrefix(
-				update.Message.Text, "/setsystempromt ")
-
-			err = bot.cfg.Write()
-			if err != nil {
-				return fmt.Errorf("bot.commandHandle: %w", err)
-			}
-
-			replyText = "👍 System role promt changed 👍"
-			err = bot.sendReplyMessage(update.Message, replyText)
-			if err != nil {
-				return fmt.Errorf("tgbot.commandHandle: %w", err)
-			}
-		}
-
-	case "getsystempromt":
-
-		replyText := ""
-		isAdmin, err := bot.isAdmin(update.Message)
-
-		log.Debug("getsystempromt",
-			slog.String("user name", update.Message.From.UserName),
-			slog.String("message", update.Message.Text),
-			slog.String("is admin", strconv.FormatBool(isAdmin)),
-		)
-
-		if err != nil {
-			return fmt.Errorf("tgbot.commandHandle: %w", err)
-		}
-
-		if isAdmin {
-
-			replyText = bot.cfg.BotConfig.AI.SystemRolePromt
-
-			err = bot.sendReplyMessage(update.Message, replyText)
-			if err != nil {
-				return fmt.Errorf("tgbot.commandHandle: %w", err)
-			}
-		}
 
 	case "askbot":
 		ctxTimeout, cancel := context.WithTimeout(ctx, 60*time.Second)
@@ -183,7 +127,7 @@ func (bot *Bot) commandHandler(ctx context.Context, update *tgbotapi.Update, sen
 		if err != nil {
 			return fmt.Errorf("tgbot.commandHandle: %w", err)
 		}
-	
+
 	case "calendar":
 		err := bot.sendMenu(msg, "Calendar")
 		if err != nil {

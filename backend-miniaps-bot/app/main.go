@@ -3,16 +3,14 @@ package main
 import (
 	"app/main.go/internal/config"
 	"app/main.go/internal/graceful"
-	telegramBot "app/main.go/internal/telegram"
+
+	//telegramBot "app/main.go/internal/telegram"
 	"app/main.go/internal/utils/logger/handlers/slogpretty"
 	"context"
 	"log/slog"
 	"os"
 	"time"
-
-	deepseek "app/main.go/internal/deepseek"
-	inMemory "app/main.go/internal/cache/inMemory"
-	//openai "app/main.go/internal/openai"
+	//inMemory "app/main.go/internal/cache/inMemory"
 )
 
 const (
@@ -35,11 +33,6 @@ func main() {
 	)
 	log.Debug("debug messages are enabled")
 
-	inMemoryCache := inMemory.NewInMemoryRepository()
-	AIBot := deepseek.NewClient(log, cfg, inMemoryCache)
-	//AIBot := openai.NewClient(log, cfg, inMemoryCache)
-	tgBot := telegramBot.New(log, cfg, AIBot)
-
 	maxSecond := 15 * time.Second
 	waitShutdown := graceful.GracefulShutdown(
 		context.Background(),
@@ -48,13 +41,13 @@ func main() {
 			// "http": func(ctx context.Context) error {
 			// 	return httpServer.Shutdown(ctx)
 			// },
-			"tgBot": func(ctx context.Context) error {
-				return tgBot.Shutdown(ctx)
-			},
+			// "tgBot": func(ctx context.Context) error {
+			// 	return tgBot.Shutdown(ctx)
+			// },
 		},
 		log,
 	)
-	go tgBot.Update(60)
+
 	// go httpServer.Listen()
 	<-waitShutdown
 }

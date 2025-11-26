@@ -27,4 +27,7 @@ ENV HTTP_SERVER_PORT=8080
 ENV HTTP_SERVER_ADDRESS_LISTEN=0.0.0.0
 
 EXPOSE $HTTP_SERVER_PORT
-ENTRYPOINT ["/bin/backend-miniaps-bot"]
+# Устанавливаем наш скрипт как точку входа
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# CMD будет пустым, так как все управляется скриптом
+CMD []
