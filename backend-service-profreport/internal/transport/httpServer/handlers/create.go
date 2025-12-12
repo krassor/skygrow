@@ -2,14 +2,11 @@ package handlers
 
 import (
 	"app/main.go/internal/config"
-	"app/main.go/internal/models/domain"
 	"app/main.go/internal/models/dto"
 	"app/main.go/internal/models/repositories"
 	"app/main.go/internal/utils"
 	"app/main.go/internal/utils/logger/sl"
-	"context"
 
-	//"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,30 +14,11 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	//"github.com/yuin/goldmark"
 )
 
 var (
 	ErrInternalServer = errors.New("internal server error")
 )
-
-// Параметры:
-//   - requestID: уникальный идентификатор запроса (UUID).
-//   - jobType: тип запроса: ADULT, SCHOOLCHILD
-type LLMService interface {
-	AddJob(
-		reqyestID uuid.UUID,
-		questionnaire string,
-		user domain.User,
-		jobType string,
-	) (chan struct{}, error)
-}
-
-// Repository интерфейс для работы с БД
-type Repository interface {
-	FindOrCreateUser(ctx context.Context, user repositories.User) (repositories.User, error)
-	CreateQuestionnaire(ctx context.Context, questionnaire repositories.Questionnaire) (repositories.Questionnaire, error)
-}
 
 type QuestionnaireHandler struct {
 	Repository Repository
@@ -81,27 +59,9 @@ func (h *QuestionnaireHandler) AdultCreate(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if questionnaireDto.User.Email == "" {
-		h.err(log, fmt.Errorf("email is empty"), fmt.Errorf("email is empty"), w, http.StatusBadRequest)
-		return
-	}
-	if !utils.IsEmailValid(questionnaireDto.User.Email) {
-		h.err(log, fmt.Errorf("email is wrong"), fmt.Errorf("email is wrong: %s", questionnaireDto.User.Email), w, http.StatusBadRequest)
-		return
-	}
-	if len(questionnaireDto.RIASEC) == 0 {
-		h.err(log, fmt.Errorf("RIASEC test is empty"), fmt.Errorf("RIASEC test is empty"), w, http.StatusBadRequest)
-		return
-	}
-	if len(questionnaireDto.ObjectsOfActivityKlimov) == 0 {
-		h.err(log, fmt.Errorf("ObjectsOfActivityKlimov test is empty"), fmt.Errorf("ObjectsOfActivityKlimov test is empty"), w, http.StatusBadRequest)
-	}
-	if len(questionnaireDto.PersonalQualities) == 0 {
-		h.err(log, fmt.Errorf("PersonalQualities test is empty"), fmt.Errorf("PersonalQualities test is empty"), w, http.StatusBadRequest)
-		return
-	}
-	if len(questionnaireDto.Values) == 0 {
-		h.err(log, fmt.Errorf("Values test is empty"), fmt.Errorf("Values test is empty"), w, http.StatusBadRequest)
+	err = checkAdultQuestionnaire(&questionnaireDto)
+	if err != nil {
+		h.err(log, err, err, w, http.StatusBadRequest)
 		return
 	}
 
@@ -124,31 +84,11 @@ func (h *QuestionnaireHandler) AdultCreate(w http.ResponseWriter, r *http.Reques
 	}
 
 	// создаем запись опросника в БД
-	dbQuestionnaire := repositories.Questionnaire{
-		BaseModel: repositories.BaseModel{
-			ID: requestID, // используем requestID как ID опросника
-		},
-		UserID:            dbUser.ID,
-		PaymentID:         uuid.New(), // генерируем новый payment ID
-		PaymentSuccess:    false,
-		QuestionnaireType: "ADULT",
-	}
+	dbQuestionnaire := MapAdultQuestionnaireToRepository(&questionnaireDto, requestID, dbUser.ID)
 
 	_, err = h.Repository.CreateQuestionnaire(ctx, dbQuestionnaire)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("failed to save questionnaire"), w, http.StatusInternalServerError)
-		return
-	}
-
-	// создаем джобу для обработки
-	user := domain.User{
-		Email: questionnaireDto.User.Email,
-		Name:  questionnaireDto.User.Name,
-	}
-
-	_, err = h.LLMService.AddJob(requestID, h.splitAdultQuestionnaire(&questionnaireDto), user, "ADULT")
-	if err != nil {
-		h.err(log, err, fmt.Errorf("Internal server error"), w, http.StatusInternalServerError)
 		return
 	}
 
@@ -177,27 +117,9 @@ func (h *QuestionnaireHandler) SchoolchildCreate(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if questionnaireDto.User.Email == "" {
-		h.err(log, fmt.Errorf("email is empty"), fmt.Errorf("email is empty"), w, http.StatusBadRequest)
-		return
-	}
-	if !utils.IsEmailValid(questionnaireDto.User.Email) {
-		h.err(log, fmt.Errorf("email is wrong"), fmt.Errorf("email is wrong: %s", questionnaireDto.User.Email), w, http.StatusBadRequest)
-		return
-	}
-	if len(questionnaireDto.RIASEC) == 0 {
-		h.err(log, fmt.Errorf("RIASEC test is empty"), fmt.Errorf("RIASEC test is empty"), w, http.StatusBadRequest)
-		return
-	}
-	if len(questionnaireDto.ObjectsOfActivityKlimov) == 0 {
-		h.err(log, fmt.Errorf("ObjectsOfActivityKlimov test is empty"), fmt.Errorf("ObjectsOfActivityKlimov test is empty"), w, http.StatusBadRequest)
-	}
-	if len(questionnaireDto.PersonalQualities) == 0 {
-		h.err(log, fmt.Errorf("PersonalQualities test is empty"), fmt.Errorf("PersonalQualities test is empty"), w, http.StatusBadRequest)
-		return
-	}
-	if len(questionnaireDto.Values) == 0 {
-		h.err(log, fmt.Errorf("Values test is empty"), fmt.Errorf("Values test is empty"), w, http.StatusBadRequest)
+	err = checkSchoolchildQuestionnaire(&questionnaireDto)
+	if err != nil {
+		h.err(log, err, err, w, http.StatusBadRequest)
 		return
 	}
 
@@ -220,31 +142,11 @@ func (h *QuestionnaireHandler) SchoolchildCreate(w http.ResponseWriter, r *http.
 	}
 
 	// создаем запись опросника в БД
-	dbQuestionnaire := repositories.Questionnaire{
-		BaseModel: repositories.BaseModel{
-			ID: requestID, // используем requestID как ID опросника
-		},
-		UserID:            dbUser.ID,
-		PaymentID:         uuid.New(), // генерируем новый payment ID
-		PaymentSuccess:    false,
-		QuestionnaireType: "SCHOOLCHILD",
-	}
+	dbQuestionnaire := MapSchoolchildQuestionnaireToRepository(&questionnaireDto, requestID, dbUser.ID)
 
 	_, err = h.Repository.CreateQuestionnaire(ctx, dbQuestionnaire)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("failed to save questionnaire"), w, http.StatusInternalServerError)
-		return
-	}
-
-	// создаем джобу для обработки
-	user := domain.User{
-		Email: questionnaireDto.User.Email,
-		Name:  questionnaireDto.User.Name,
-	}
-
-	_, err = h.LLMService.AddJob(requestID, h.splitSchoolchildQuestionnaire(&questionnaireDto), user, "SCHOOLCHILD")
-	if err != nil {
-		h.err(log, err, fmt.Errorf("Internal server error"), w, http.StatusInternalServerError)
 		return
 	}
 
@@ -309,4 +211,48 @@ func splitSchoolchildTest(testHeader string, answers []dto.SchoolchildQuestionAn
 			fmt.Sprintf("Ответ: %s\n\n", answer.Answer)
 	}
 	return result
+}
+
+func checkAdultQuestionnaire(questionnaireDto *dto.AdultQuestionnaireDto) error {
+	if questionnaireDto.User.Email == "" {
+		return fmt.Errorf("email is empty")
+	}
+	if !utils.IsEmailValid(questionnaireDto.User.Email) {
+		return fmt.Errorf("email is wrong: %s", questionnaireDto.User.Email)
+	}
+	if len(questionnaireDto.RIASEC) == 0 {
+		return fmt.Errorf("RIASEC test is empty")
+	}
+	if len(questionnaireDto.ObjectsOfActivityKlimov) == 0 {
+		return fmt.Errorf("ObjectsOfActivityKlimov test is empty")
+	}
+	if len(questionnaireDto.PersonalQualities) == 0 {
+		return fmt.Errorf("PersonalQualities test is empty")
+	}
+	if len(questionnaireDto.Values) == 0 {
+		return fmt.Errorf("Values test is empty")
+	}
+	return nil
+}
+
+func checkSchoolchildQuestionnaire(questionnaireDto *dto.SchoolchildQuestionnaireDto) error {
+	if questionnaireDto.User.Email == "" {
+		return fmt.Errorf("email is empty")
+	}
+	if !utils.IsEmailValid(questionnaireDto.User.Email) {
+		return fmt.Errorf("email is wrong: %s", questionnaireDto.User.Email)
+	}
+	if len(questionnaireDto.RIASEC) == 0 {
+		return fmt.Errorf("RIASEC test is empty")
+	}
+	if len(questionnaireDto.ObjectsOfActivityKlimov) == 0 {
+		return fmt.Errorf("ObjectsOfActivityKlimov test is empty")
+	}
+	if len(questionnaireDto.PersonalQualities) == 0 {
+		return fmt.Errorf("PersonalQualities test is empty")
+	}
+	if len(questionnaireDto.Values) == 0 {
+		return fmt.Errorf("Values test is empty")
+	}
+	return nil
 }

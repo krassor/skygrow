@@ -28,22 +28,31 @@ type DBConfig struct {
 	User     string `yaml:"user" env:"DB_USER" env-default:"user"`
 	Password string `yaml:"password" env:"DB_PASSWORD" env-default:"password"`
 }
+type AIConfigStructuredOutputs struct {
+	AdultSystemRolePrompt       string `yaml:"adultSystemRolePrompt" env-default:""`
+	AdultPromptFilePath         string `yaml:"AdultPromptFilePath" env:"ADULT_PROMPT_SO_FILEPATH" env-required:"true" env-default:""`
+	SchoolchildSystemRolePrompt string `yaml:"schoolchildSystemRolePrompt" env-default:""`
+	SchoolchildPromptFilePath   string `yaml:"schoolchildPromptFilePath" env:"SCHOOLCHILD_PROMPT_SO_FILEPATH" env-required:"true" env-default:""`
+	PromptFileName              string `yaml:"promptFileName" env:"PROMPT_SO_FILENAME" env-required:"true" env-default:""`
+	AiResponseFilePath          string `yaml:"aiResponseFilePath" env:"AI_RESPONSE_SO_FILEPATH" env-required:"true" env-default:""`
+}
 
 type AIConfig struct {
-	Timeout                     int     `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"600"` //in seconds
-	ModelName                   string  `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
-	AIApiToken                  string  `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
-	AdultSystemRolePrompt       string  `yaml:"adultSystemRolePrompt" env-default:""`
-	AdultPromptFilePath         string  `yaml:"AdultPromptFilePath" env:"ADULT_PROMPT_FILEPATH" env-required:"true" env-default:""`
-	SchoolchildSystemRolePrompt string  `yaml:"schoolchildSystemRolePrompt" env-default:""`
-	SchoolchildPromptFilePath   string  `yaml:"schoolchildPromptFilePath" env:"SCHOOLCHILD_PROMPT_FILEPATH" env-required:"true" env-default:""`
-	PromptFileName              string  `yaml:"promptFileName" env:"PROMPT_FILENAME" env-required:"true" env-default:""`
-	AiResponseFilePath          string  `yaml:"aiResponseFilePath" env:"AI_RESPONSE_FILEPATH" env-required:"true" env-default:""`
-	MaxTokens                   int     `yaml:"maxTokens" env-default:"65000"`
-	Temperature                 float32 `yaml:"temperature" env-default:"0.5"`
-	N                           int     `yaml:"n" env-default:"1"`
-	JobBufferSize               int     `yaml:"jobBufferSize" env:"AI_BUFFER_SIZE" env-default:"10"`
-	WorkersCount                int     `yaml:"workersCount" env:"AI_WORKERS_COUNT" env-default:"1"`
+	StructuredOutputs           AIConfigStructuredOutputs `yaml:"structuredOutputs"  env-required:"false"`
+	Timeout                     int                       `yaml:"timeout" env:"AI_TIMEOUT" env-required:"true" env-default:"600"` //in seconds
+	ModelName                   string                    `yaml:"modelName" env:"AI_MODEL_NAME" env-required:"true"`
+	AIApiToken                  string                    `yaml:"aiapitoken" env:"AI_API_TOKEN" env-required:"true"`
+	AdultSystemRolePrompt       string                    `yaml:"adultSystemRolePrompt" env-default:""`
+	AdultPromptFilePath         string                    `yaml:"AdultPromptFilePath" env:"ADULT_PROMPT_FILEPATH" env-required:"true" env-default:""`
+	SchoolchildSystemRolePrompt string                    `yaml:"schoolchildSystemRolePrompt" env-default:""`
+	SchoolchildPromptFilePath   string                    `yaml:"schoolchildPromptFilePath" env:"SCHOOLCHILD_PROMPT_FILEPATH" env-required:"true" env-default:""`
+	PromptFileName              string                    `yaml:"promptFileName" env:"PROMPT_FILENAME" env-required:"true" env-default:""`
+	AiResponseFilePath          string                    `yaml:"aiResponseFilePath" env:"AI_RESPONSE_FILEPATH" env-required:"true" env-default:""`
+	MaxTokens                   int                       `yaml:"maxTokens" env-default:"65000"`
+	Temperature                 float32                   `yaml:"temperature" env-default:"0.5"`
+	N                           int                       `yaml:"n" env-default:"1"`
+	JobBufferSize               int                       `yaml:"jobBufferSize" env:"AI_BUFFER_SIZE" env-default:"10"`
+	WorkersCount                int                       `yaml:"workersCount" env:"AI_WORKERS_COUNT" env-default:"1"`
 }
 
 type BotConfig struct {

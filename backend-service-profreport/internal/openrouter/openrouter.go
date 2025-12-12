@@ -2,6 +2,7 @@ package openrouter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,11 +13,13 @@ import (
 
 	"app/main.go/internal/config"
 	"app/main.go/internal/models/domain"
+	"app/main.go/internal/models/dto"
 
 	"app/main.go/internal/utils/logger/sl"
 
 	"github.com/google/uuid"
 	openrouter "github.com/revrost/go-openrouter"
+	"github.com/revrost/go-openrouter/jsonschema"
 )
 
 const (
@@ -235,7 +238,7 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 	var err error
 	var prompt string
 
-	switch  jobType{
+	switch jobType {
 	case "ADULT":
 		prompt = s.cfg.BotConfig.AI.AdultSystemRolePrompt
 	case "SCHOOLCHILD":
@@ -290,6 +293,116 @@ func (s *Openrouter) CreateChatCompletion(ctx context.Context, logger *slog.Logg
 		return "", fmt.Errorf("empty AI response (no resp.Choices)")
 	}
 	responseText := resp.Choices[0].Message.Content.Text
+
+	err = s.writeResponseInFile(requestId.String(), responseText, "html")
+	if err != nil {
+		log.Error(
+			"error write response in file",
+			sl.Err(err),
+		)
+	}
+
+	return responseText, nil
+}
+
+func (s *Openrouter) CreateChatCompletionWithStructuredOutputs(ctx context.Context, logger *slog.Logger, requestId uuid.UUID, message string, jobType string) (string, error) {
+	op := "openrouter.CreateChatCompletion()"
+	log := logger.With(
+		slog.String("op", op),
+		slog.String("requestID", requestId.String()),
+	)
+	log.Info("start create chat completion")
+
+	//log.Debug("input message", slog.String("message", message))
+	var responseSchema dto.StructuredResponseSchema
+	var resp openrouter.ChatCompletionResponse
+	var err error
+	var prompt string
+
+	switch jobType {
+	case "ADULT":
+		prompt = s.cfg.BotConfig.AI.StructuredOutputs.AdultSystemRolePrompt
+	case "SCHOOLCHILD":
+		prompt = s.cfg.BotConfig.AI.SchoolchildSystemRolePrompt
+	default:
+		log.Error(
+			"unknown job type",
+		)
+		return "", fmt.Errorf("unknown job type")
+	}
+
+	for retry := range retryCount {
+		var r openrouter.ChatCompletionResponse
+		var e error
+		select {
+		case <-s.shutdownChannel:
+			return "", fmt.Errorf("shutdown openrouter client")
+		default:
+
+			schema, err := jsonschema.GenerateSchemaForType(responseSchema)
+			if err != nil {
+				log.Error(
+					"GenerateSchemaForType error",
+					sl.Err(err),
+				)
+				return "", fmt.Errorf("GenerateSchemaForType error: %w", err)
+			}
+
+			r, e = s.Client.CreateChatCompletion(
+				ctx,
+				openrouter.ChatCompletionRequest{
+					Model: s.cfg.BotConfig.AI.ModelName,
+					Messages: []openrouter.ChatCompletionMessage{
+						openrouter.SystemMessage(prompt),
+						openrouter.UserMessage(message),
+					},
+					ResponseFormat: &openrouter.ChatCompletionResponseFormat{
+						Type: "json_schema",
+						JSONSchema: &openrouter.ChatCompletionResponseFormatJSONSchema{
+							Name:   "nameTODO",
+							Strict: true,
+							Schema: schema,
+						},
+					},
+				},
+			)
+		}
+		if e != nil && (isRateLimitError(e) || isEOFError(e)) {
+			err = e
+			log.Error(
+				"Openrouter chat completion response error",
+				slog.String("error", err.Error()),
+				slog.Int("retry", retry),
+			)
+			time.Sleep(retryDuration)
+			continue
+		}
+		resp = r
+		err = e
+		break
+	}
+
+	if err != nil {
+		// log.Error("error creating chat completion request", slog.String("error", err.Error()))
+		return "", fmt.Errorf("return error creating chat completion request: %w", err)
+	}
+
+	log.Debug("received chat completion response", slog.Any("response: ", resp))
+
+	//responseText := resp.Choices[0].Message.Content.Text
+	b := []byte(resp.Choices[0].Message.Content.Text)
+	err = json.Unmarshal(b, &responseSchema)
+	if err != nil {
+		log.Error(
+			"error unmarshal response",
+			sl.Err(err),
+		)
+	}
+	log.Debug(
+		"response schema",
+		slog.Any("schema", responseSchema),
+	)
+	responseText := responseSchema.InterpretationRIASEC + "/r/n" + responseSchema.InterpretationRIASEC
 
 	err = s.writeResponseInFile(requestId.String(), responseText, "html")
 	if err != nil {

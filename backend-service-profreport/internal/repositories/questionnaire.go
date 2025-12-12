@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"app/main.go/internal/models/repositories"
@@ -47,15 +48,23 @@ func (r *Repository) CreateQuestionnaire(ctx context.Context, questionnaire repo
 		questionnaire.ID = uuid.New()
 	}
 
-	insertQuery := `INSERT INTO questionnaires (id, user_id, payment_id, payment_success, questionnaire_type) 
-	                VALUES ($1, $2, $3, $4, $5)`
+	// Сериализуем ответы в JSON
+	answersJSON, err := json.Marshal(questionnaire.Answers)
+	if err != nil {
+		return repositories.Questionnaire{}, fmt.Errorf("%s: error marshaling answers: %w", op, err)
+	}
 
-	_, err := r.DB.ExecContext(ctx, insertQuery,
+	insertQuery := `INSERT INTO questionnaires (id, user_id, payment_id, payment_success, amount, questionnaire_type, answers) 
+	                VALUES ($1, $2, $3, $4, $5, $6, $7)`
+
+	_, err = r.DB.ExecContext(ctx, insertQuery,
 		questionnaire.ID,
 		questionnaire.UserID,
 		questionnaire.PaymentID,
 		questionnaire.PaymentSuccess,
+		questionnaire.Amount,
 		questionnaire.QuestionnaireType,
+		answersJSON,
 	)
 	if err != nil {
 		return repositories.Questionnaire{}, fmt.Errorf("%s: %w", op, err)
@@ -111,12 +120,12 @@ func (r *Repository) DeleteQuestionnaire(ctx context.Context, id uuid.UUID) erro
 	return nil
 }
 
-func (r *Repository) UpdatePaymentStatus(ctx context.Context, questionnaireID uuid.UUID, paymentSuccess bool) error {
+func (r *Repository) UpdatePaymentStatus(ctx context.Context, questionnaireID uuid.UUID, paymentID int64, paymentSuccess bool) error {
 	updateQuery := `UPDATE questionnaires 
-	                SET payment_success = $1 
-	                WHERE id = $2`
+	                SET payment_success = $1, payment_id = $2 
+	                WHERE id = $3`
 
-	result, err := r.DB.ExecContext(ctx, updateQuery, paymentSuccess, questionnaireID)
+	result, err := r.DB.ExecContext(ctx, updateQuery, paymentSuccess, paymentID, questionnaireID)
 	if err != nil {
 		return fmt.Errorf("error in UpdatePaymentStatus(): %w", err)
 	}

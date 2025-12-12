@@ -18,24 +18,30 @@ CREATE TABLE IF NOT EXISTS profreport.users (
 );
 
 -- Create index on email for faster lookups
-CREATE INDEX IF NOT EXISTS idx_users_email ON profreport.users(email);
+CREATE INDEX IF NOT EXISTS idx_users_email ON profreport.users (email);
 
 -- Create questionnaires table
 CREATE TABLE IF NOT EXISTS profreport.questionnaires (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
-    payment_id UUID NOT NULL,
+    payment_id BIGINT DEFAULT 0,
     payment_success BOOLEAN NOT NULL DEFAULT FALSE,
+    amount INTEGER DEFAULT 0,
     questionnaire_type VARCHAR(50) NOT NULL DEFAULT 'ADULT',
+    answers JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_questionnaires_user FOREIGN KEY (user_id) REFERENCES profreport.users(id) ON DELETE CASCADE
+    CONSTRAINT fk_questionnaires_user FOREIGN KEY (user_id) REFERENCES profreport.users (id) ON DELETE CASCADE
 );
 
 -- Create indexes for faster lookups
-CREATE INDEX IF NOT EXISTS idx_questionnaires_user_id ON profreport.questionnaires(user_id);
-CREATE INDEX IF NOT EXISTS idx_questionnaires_payment_id ON profreport.questionnaires(payment_id);
-CREATE INDEX IF NOT EXISTS idx_questionnaires_type ON profreport.questionnaires(questionnaire_type);
+CREATE INDEX IF NOT EXISTS idx_questionnaires_user_id ON profreport.questionnaires (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_questionnaires_payment_id ON profreport.questionnaires (payment_id);
+
+CREATE INDEX IF NOT EXISTS idx_questionnaires_type ON profreport.questionnaires (questionnaire_type);
+
+CREATE INDEX IF NOT EXISTS idx_questionnaires_payment_success ON profreport.questionnaires (payment_success);
 
 -- Create trigger function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION profreport.update_updated_at_column()
@@ -48,6 +54,7 @@ $$ language 'plpgsql';
 
 -- Create trigger for users table
 DROP TRIGGER IF EXISTS update_users_updated_at ON profreport.users;
+
 CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON profreport.users
     FOR EACH ROW
@@ -55,6 +62,7 @@ CREATE TRIGGER update_users_updated_at
 
 -- Create trigger for questionnaires table
 DROP TRIGGER IF EXISTS update_questionnaires_updated_at ON profreport.questionnaires;
+
 CREATE TRIGGER update_questionnaires_updated_at
     BEFORE UPDATE ON profreport.questionnaires
     FOR EACH ROW

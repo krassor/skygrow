@@ -21,7 +21,22 @@ type User struct {
 type Questionnaire struct {
 	BaseModel
 	UserID            uuid.UUID `db:"user_id"`
-	PaymentID         uuid.UUID `db:"payment_id"`
+	PaymentID         int64     `db:"payment_id"`
 	PaymentSuccess    bool      `db:"payment_success"`
+	Amount            int       `db:"amount"`
 	QuestionnaireType string    `db:"questionnaire_type"`
+	Answers           Answers   `db:"answers"`
+}
+
+type QuestionAnswer struct {
+	Number   int    `db:"number"`
+	Question string `db:"question"`
+	Answer   string `db:"answer"`
+}
+
+type Answers struct {
+	Values                  []QuestionAnswer `db:"values"`
+	PersonalQualities       []QuestionAnswer `db:"personal_qualities"`
+	ObjectsOfActivityKlimov []QuestionAnswer `db:"objects_of_activity_klimov"`
+	RIASEC                  []QuestionAnswer `db:"riasec"`
 }

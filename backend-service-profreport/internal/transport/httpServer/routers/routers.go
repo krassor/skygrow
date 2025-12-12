@@ -32,15 +32,22 @@ func (r *Router) Mount(mux *chi.Mux) {
 			mux.Route("/questionnaire", func(mux chi.Router) {
 				//Private
 				mux.Group(func(mux chi.Router) {
-					//Для отладки временно без авторизации
-					//mux.Use(myMiddleware.Authorization(r.secret))
 					mux.Post("/adult", r.questionnaireHandler.AdultCreate)
 				},
 				)
 				mux.Group(func(mux chi.Router) {
-					//Для отладки временно без авторизации
-					//mux.Use(myMiddleware.Authorization(r.secret))
 					mux.Post("/schoolchild", r.questionnaireHandler.SchoolchildCreate)
+				},
+				)
+			},
+			)
+
+			mux.Route("/callback", func(mux chi.Router) {
+				mux.Route("/cloudpayments", func(mux chi.Router) {
+					mux.Group(func(mux chi.Router) {
+						mux.Post("/pay", r.questionnaireHandler.Payment)
+					},
+					)
 				},
 				)
 			},
