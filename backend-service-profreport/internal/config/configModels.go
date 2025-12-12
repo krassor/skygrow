@@ -29,12 +29,12 @@ type DBConfig struct {
 	Password string `yaml:"password" env:"DB_PASSWORD" env-default:"password"`
 }
 type AIConfigStructuredOutputs struct {
-	AdultSystemRolePrompt       string `yaml:"adultSystemRolePrompt" env-default:""`
-	AdultPromptFilePath         string `yaml:"AdultPromptFilePath" env:"ADULT_PROMPT_SO_FILEPATH" env-required:"true" env-default:""`
-	SchoolchildSystemRolePrompt string `yaml:"schoolchildSystemRolePrompt" env-default:""`
-	SchoolchildPromptFilePath   string `yaml:"schoolchildPromptFilePath" env:"SCHOOLCHILD_PROMPT_SO_FILEPATH" env-required:"true" env-default:""`
-	PromptFileName              string `yaml:"promptFileName" env:"PROMPT_SO_FILENAME" env-required:"true" env-default:""`
-	AiResponseFilePath          string `yaml:"aiResponseFilePath" env:"AI_RESPONSE_SO_FILEPATH" env-required:"true" env-default:""`
+	AdultSOSystemRolePrompt       string `yaml:"adultSOSystemRolePrompt" env-default:""`
+	AdultSOPromptFilePath         string `yaml:"adultSOPromptFilePath" env:"ADULT_PROMPT_SO_FILEPATH" env-required:"false" env-default:""`
+	SchoolchildSOSystemRolePrompt string `yaml:"schoolchildSOSystemRolePrompt" env-default:""`
+	SchoolchildSOPromptFilePath   string `yaml:"schoolchildSOPromptFilePath" env:"SCHOOLCHILD_PROMPT_SO_FILEPATH" env-required:"false" env-default:""`
+	PromptSOFileName              string `yaml:"promptSOFileName" env:"PROMPT_SO_FILENAME" env-required:"true" env-default:""`
+	AiResponseSOFilePath          string `yaml:"aiResponseSOFilePath" env:"AI_RESPONSE_SO_FILEPATH" env-required:"true" env-default:""`
 }
 
 type AIConfig struct {
