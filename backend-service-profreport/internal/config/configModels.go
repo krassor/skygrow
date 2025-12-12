@@ -30,11 +30,11 @@ type DBConfig struct {
 }
 type AIConfigStructuredOutputs struct {
 	AdultSOSystemRolePrompt       string `yaml:"adultSOSystemRolePrompt" env-default:""`
-	AdultSOPromptFilePath         string `yaml:"adultSOPromptFilePath" env:"ADULT_PROMPT_SO_FILEPATH" env-required:"false" env-default:""`
+	AdultSOPromptFilePath         string `yaml:"adultSOPromptFilePath" env:"ADULT_PROMPT_SO_FILEPATH" env-default:""`
 	SchoolchildSOSystemRolePrompt string `yaml:"schoolchildSOSystemRolePrompt" env-default:""`
-	SchoolchildSOPromptFilePath   string `yaml:"schoolchildSOPromptFilePath" env:"SCHOOLCHILD_PROMPT_SO_FILEPATH" env-required:"false" env-default:""`
-	PromptSOFileName              string `yaml:"promptSOFileName" env:"PROMPT_SO_FILENAME" env-required:"false" env-default:""`
-	AiResponseSOFilePath          string `yaml:"aiResponseSOFilePath" env:"AI_RESPONSE_SO_FILEPATH" env-required:"false" env-default:""`
+	SchoolchildSOPromptFilePath   string `yaml:"schoolchildSOPromptFilePath" env:"SCHOOLCHILD_PROMPT_SO_FILEPATH" env-default:""`
+	PromptSOFileName              string `yaml:"promptSOFileName" env:"PROMPT_SO_FILENAME" env-default:""`
+	AiResponseSOFilePath          string `yaml:"aiResponseSOFilePath" env:"AI_RESPONSE_SO_FILEPATH" env-default:""`
 }
 
 type AIConfig struct {
