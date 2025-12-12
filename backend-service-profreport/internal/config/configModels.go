@@ -33,8 +33,8 @@ type AIConfigStructuredOutputs struct {
 	AdultSOPromptFilePath         string `yaml:"adultSOPromptFilePath" env:"ADULT_PROMPT_SO_FILEPATH" env-required:"false" env-default:""`
 	SchoolchildSOSystemRolePrompt string `yaml:"schoolchildSOSystemRolePrompt" env-default:""`
 	SchoolchildSOPromptFilePath   string `yaml:"schoolchildSOPromptFilePath" env:"SCHOOLCHILD_PROMPT_SO_FILEPATH" env-required:"false" env-default:""`
-	PromptSOFileName              string `yaml:"promptSOFileName" env:"PROMPT_SO_FILENAME" env-required:"true" env-default:""`
-	AiResponseSOFilePath          string `yaml:"aiResponseSOFilePath" env:"AI_RESPONSE_SO_FILEPATH" env-required:"true" env-default:""`
+	PromptSOFileName              string `yaml:"promptSOFileName" env:"PROMPT_SO_FILENAME" env-required:"false" env-default:""`
+	AiResponseSOFilePath          string `yaml:"aiResponseSOFilePath" env:"AI_RESPONSE_SO_FILEPATH" env-required:"false" env-default:""`
 }
 
 type AIConfig struct {

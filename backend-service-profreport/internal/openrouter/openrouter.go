@@ -321,9 +321,9 @@ func (s *Openrouter) CreateChatCompletionWithStructuredOutputs(ctx context.Conte
 
 	switch jobType {
 	case "ADULT":
-		prompt = s.cfg.BotConfig.AI.StructuredOutputs.AdultSystemRolePrompt
+		prompt = s.cfg.BotConfig.AI.StructuredOutputs.AdultSOSystemRolePrompt
 	case "SCHOOLCHILD":
-		prompt = s.cfg.BotConfig.AI.SchoolchildSystemRolePrompt
+		prompt = s.cfg.BotConfig.AI.StructuredOutputs.SchoolchildSOSystemRolePrompt
 	default:
 		log.Error(
 			"unknown job type",
