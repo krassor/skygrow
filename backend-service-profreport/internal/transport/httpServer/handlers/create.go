@@ -173,45 +173,45 @@ func (h *QuestionnaireHandler) err(log *slog.Logger, err error, httpErr error, w
 
 }
 
-func (h *QuestionnaireHandler) splitAdultQuestionnaire(questionnaire *dto.AdultQuestionnaireDto) string {
-	header := "Результат опроса пользователя:\n"
-	result := fmt.Sprintf("%s\n", header) +
-		splitAdultTest("Тест: Интересы (RIASEC)", questionnaire.RIASEC) +
-		splitAdultTest("Тест: Объекты деятельности (Климов)", questionnaire.ObjectsOfActivityKlimov) +
-		splitAdultTest("Тест: Личностные качества", questionnaire.PersonalQualities) +
-		splitAdultTest("Тест: Ценности", questionnaire.Values)
+// func (h *QuestionnaireHandler) splitAdultQuestionnaire(questionnaire *dto.AdultQuestionnaireDto) string {
+// 	header := "Результат опроса пользователя:\n"
+// 	result := fmt.Sprintf("%s\n", header) +
+// 		splitAdultTest("Тест: Интересы (RIASEC)", questionnaire.RIASEC) +
+// 		splitAdultTest("Тест: Объекты деятельности (Климов)", questionnaire.ObjectsOfActivityKlimov) +
+// 		splitAdultTest("Тест: Личностные качества", questionnaire.PersonalQualities) +
+// 		splitAdultTest("Тест: Ценности", questionnaire.Values)
 
-	return result
-}
+// 	return result
+// }
 
-func (h *QuestionnaireHandler) splitSchoolchildQuestionnaire(questionnaire *dto.SchoolchildQuestionnaireDto) string {
-	header := "Результат опроса пользователя:\n"
-	result := fmt.Sprintf("%s\n", header) +
-		splitSchoolchildTest("Тест: Интересы (RIASEC)", questionnaire.RIASEC) +
-		splitSchoolchildTest("Тест: Объекты деятельности (Климов)", questionnaire.ObjectsOfActivityKlimov) +
-		splitSchoolchildTest("Тест: Личностные качества", questionnaire.PersonalQualities) +
-		splitSchoolchildTest("Тест: Ценности", questionnaire.Values)
+// func (h *QuestionnaireHandler) splitSchoolchildQuestionnaire(questionnaire *dto.SchoolchildQuestionnaireDto) string {
+// 	header := "Результат опроса пользователя:\n"
+// 	result := fmt.Sprintf("%s\n", header) +
+// 		splitSchoolchildTest("Тест: Интересы (RIASEC)", questionnaire.RIASEC) +
+// 		splitSchoolchildTest("Тест: Объекты деятельности (Климов)", questionnaire.ObjectsOfActivityKlimov) +
+// 		splitSchoolchildTest("Тест: Личностные качества", questionnaire.PersonalQualities) +
+// 		splitSchoolchildTest("Тест: Ценности", questionnaire.Values)
 
-	return result
-}
+// 	return result
+// }
 
-func splitAdultTest(testHeader string, answers []dto.AdultQuestionAnswer) string {
-	result := fmt.Sprintf("%s\n", testHeader)
-	for _, answer := range answers {
-		result += fmt.Sprintf("Вопрос %d: %s\n", answer.Number, answer.Question) +
-			fmt.Sprintf("Ответ: %s\n\n", answer.Answer)
-	}
-	return result
-}
+// func splitAdultTest(testHeader string, answers []dto.AdultQuestionAnswer) string {
+// 	result := fmt.Sprintf("%s\n", testHeader)
+// 	for _, answer := range answers {
+// 		result += fmt.Sprintf("Вопрос %d: %s\n", answer.Number, answer.Question) +
+// 			fmt.Sprintf("Ответ: %s\n\n", answer.Answer)
+// 	}
+// 	return result
+// }
 
-func splitSchoolchildTest(testHeader string, answers []dto.SchoolchildQuestionAnswer) string {
-	result := fmt.Sprintf("%s\n", testHeader)
-	for _, answer := range answers {
-		result += fmt.Sprintf("Вопрос %d: %s\n", answer.Number, answer.Question) +
-			fmt.Sprintf("Ответ: %s\n\n", answer.Answer)
-	}
-	return result
-}
+// func splitSchoolchildTest(testHeader string, answers []dto.SchoolchildQuestionAnswer) string {
+// 	result := fmt.Sprintf("%s\n", testHeader)
+// 	for _, answer := range answers {
+// 		result += fmt.Sprintf("Вопрос %d: %s\n", answer.Number, answer.Question) +
+// 			fmt.Sprintf("Ответ: %s\n\n", answer.Answer)
+// 	}
+// 	return result
+// }
 
 func checkAdultQuestionnaire(questionnaireDto *dto.AdultQuestionnaireDto) error {
 	if questionnaireDto.User.Email == "" {

@@ -27,7 +27,7 @@ func (h *QuestionnaireHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info(
+	log.Debug(
 		"payment notification received",
 		slog.String("request body", string(rBuf)),
 	)
