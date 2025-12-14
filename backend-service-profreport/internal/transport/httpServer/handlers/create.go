@@ -221,16 +221,16 @@ func checkAdultQuestionnaire(questionnaireDto *dto.AdultQuestionnaireDto) error 
 		return fmt.Errorf("email is wrong: %s", questionnaireDto.User.Email)
 	}
 	if len(questionnaireDto.RIASEC) == 0 {
-		return fmt.Errorf("RIASEC test is empty")
+		return fmt.Errorf("riasec test is empty")
 	}
 	if len(questionnaireDto.ObjectsOfActivityKlimov) == 0 {
-		return fmt.Errorf("ObjectsOfActivityKlimov test is empty")
+		return fmt.Errorf("objectsOfActivityKlimov test is empty")
 	}
 	if len(questionnaireDto.PersonalQualities) == 0 {
-		return fmt.Errorf("PersonalQualities test is empty")
+		return fmt.Errorf("personalQualities test is empty")
 	}
 	if len(questionnaireDto.Values) == 0 {
-		return fmt.Errorf("Values test is empty")
+		return fmt.Errorf("values test is empty")
 	}
 	return nil
 }
@@ -243,16 +243,16 @@ func checkSchoolchildQuestionnaire(questionnaireDto *dto.SchoolchildQuestionnair
 		return fmt.Errorf("email is wrong: %s", questionnaireDto.User.Email)
 	}
 	if len(questionnaireDto.RIASEC) == 0 {
-		return fmt.Errorf("RIASEC test is empty")
+		return fmt.Errorf("riasec test is empty")
 	}
 	if len(questionnaireDto.ObjectsOfActivityKlimov) == 0 {
-		return fmt.Errorf("ObjectsOfActivityKlimov test is empty")
+		return fmt.Errorf("objectsOfActivityKlimov test is empty")
 	}
 	if len(questionnaireDto.PersonalQualities) == 0 {
-		return fmt.Errorf("PersonalQualities test is empty")
+		return fmt.Errorf("personalQualities test is empty")
 	}
 	if len(questionnaireDto.Values) == 0 {
-		return fmt.Errorf("Values test is empty")
+		return fmt.Errorf("values test is empty")
 	}
 	return nil
 }
