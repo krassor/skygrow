@@ -5,10 +5,14 @@ import (
 	"app/main.go/internal/models/dto"
 	"app/main.go/internal/utils"
 	"app/main.go/internal/utils/logger/sl"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -20,17 +24,67 @@ func (h *QuestionnaireHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		slog.String("op", op),
 	)
 
+	// Читаем тело запроса для логирования
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("cannot read request body"), w, http.StatusBadRequest)
+		return
+	}
+
 	log.Debug(
 		"payment notification received",
-		slog.Any("request", r),
+		slog.String("content_type", r.Header.Get("Content-Type")),
+		slog.String("body", string(bodyBytes)),
+		slog.Int("content_length", len(bodyBytes)),
 	)
 
 	// Декодируем запрос от CloudPayments
 	payRequestDto := dto.PayRequestDto{}
-	err := json.NewDecoder(r.Body).Decode(&payRequestDto)
-	if err != nil {
-		h.err(log, err, fmt.Errorf("cannot decode json"), w, http.StatusBadRequest)
-		return
+
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(contentType, "application/x-www-form-urlencoded") {
+		// Восстанавливаем тело запроса для ParseForm
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		if err := r.ParseForm(); err != nil {
+			h.err(log, err, fmt.Errorf("failed to parse form"), w, http.StatusBadRequest)
+			return
+		}
+
+		// Маппим основные поля из формы
+		if tId, err := strconv.ParseInt(r.FormValue("TransactionId"), 10, 64); err == nil {
+			payRequestDto.TransactionId = tId
+		}
+		if amt, err := strconv.ParseFloat(r.FormValue("Amount"), 64); err == nil {
+			payRequestDto.Amount = amt
+		}
+		payRequestDto.Currency = r.FormValue("Currency")
+		payRequestDto.DateTime = r.FormValue("DateTime")
+		payRequestDto.CardFirstSix = r.FormValue("CardFirstSix")
+		payRequestDto.CardLastFour = r.FormValue("CardLastFour")
+		payRequestDto.CardType = r.FormValue("CardType")
+		payRequestDto.CardExpDate = r.FormValue("CardExpDate")
+		if tm, err := strconv.Atoi(r.FormValue("TestMode")); err == nil {
+			payRequestDto.TestMode = tm
+		}
+		payRequestDto.Status = r.FormValue("Status")
+		payRequestDto.OperationType = r.FormValue("OperationType")
+		payRequestDto.GatewayName = r.FormValue("GatewayName")
+		payRequestDto.InvoiceId = r.FormValue("InvoiceId")
+		payRequestDto.AccountId = r.FormValue("AccountId")
+		payRequestDto.Name = r.FormValue("Name")
+		payRequestDto.Email = r.FormValue("Email")
+	} else {
+		// Пытаемся распарсить как JSON
+		err = json.Unmarshal(bodyBytes, &payRequestDto)
+		if err != nil {
+			log.Error(
+				"failed to decode payment request",
+				sl.Err(err),
+				slog.String("body_preview", string(bodyBytes[:min(200, len(bodyBytes))])),
+			)
+			h.err(log, err, fmt.Errorf("cannot decode json"), w, http.StatusBadRequest)
+			return
+		}
 	}
 
 	log.Info(

@@ -162,6 +162,7 @@ func (h *QuestionnaireHandler) err(log *slog.Logger, err error, httpErr error, w
 	log.Error(
 		"error",
 		sl.Err(err),
+		slog.String("httpErr", httpErr.Error()),
 	)
 	httpError := utils.Err(w, status, httpErr)
 	if httpError != nil {
