@@ -20,9 +20,21 @@ func (h *QuestionnaireHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		slog.String("op", op),
 	)
 
+	rBuf := make([]byte, r.ContentLength)
+	_, err := r.Body.Read(rBuf)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("cannot read request body"), w, http.StatusBadRequest)
+		return
+	}
+
+	log.Info(
+		"payment notification received",
+		slog.String("request body", string(rBuf)),
+	)
+
 	// Декодируем запрос от CloudPayments
 	payRequestDto := dto.PayRequestDto{}
-	err := json.NewDecoder(r.Body).Decode(&payRequestDto)
+	err = json.NewDecoder(r.Body).Decode(&payRequestDto)
 	if err != nil {
 		h.err(log, err, fmt.Errorf("cannot decode json"), w, http.StatusBadRequest)
 		return

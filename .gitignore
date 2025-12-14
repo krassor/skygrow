@@ -28,4 +28,5 @@ portainer-data/
 prometheus/
 bin/
 ssh pg.txt
+pay.json
 
