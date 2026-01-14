@@ -6,6 +6,7 @@ import (
 	"app/main.go/internal/utils"
 	"app/main.go/internal/utils/logger/sl"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -121,48 +122,15 @@ func (h *QuestionnaireHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Получить данные опросника из БД
-	questionnaire, err := h.Repository.GetQuestionnaire(ctx, requestID)
+	// 2. Запустить процесс генерации отчета
+	err = h.startReportGeneration(ctx, log, requestID)
 	if err != nil {
-		h.err(log, err, fmt.Errorf("failed to get questionnaire"), w, http.StatusInternalServerError)
-		return
-	}
-
-	// 3. Получить данные пользователя из БД
-	user, err := h.Repository.GetUser(ctx, questionnaire.UserID)
-	if err != nil {
-		h.err(log, err, fmt.Errorf("failed to get user"), w, http.StatusInternalServerError)
-		return
-	}
-
-	// 4. Подготовить текст опросника на основе типа и запустить обработку через LLMService
-	var questionnaireText string
-	switch questionnaire.QuestionnaireType {
-	case "ADULT":
-		questionnaireText = buildAdultQuestionnaireText(&questionnaire.Answers)
-	case "SCHOOLCHILD":
-		questionnaireText = buildSchoolchildQuestionnaireText(&questionnaire.Answers)
-	default:
-		h.err(log, fmt.Errorf("unknown questionnaire type: %s", questionnaire.QuestionnaireType), fmt.Errorf("invalid questionnaire type"), w, http.StatusInternalServerError)
-		return
-	}
-
-	// Создаем domain.User для LLM сервиса
-	domainUser := domain.User{
-		Email: user.Email,
-		Name:  user.Name,
-	}
-
-	// Запускаем обработку через LLM
-	_, err = h.LLMService.AddJob(requestID, questionnaireText, domainUser, questionnaire.QuestionnaireType)
-	if err != nil {
-		h.err(log, err, fmt.Errorf("failed to add LLM job"), w, http.StatusInternalServerError)
+		h.err(log, err, fmt.Errorf("failed to start report generation"), w, http.StatusInternalServerError)
 		return
 	}
 
 	log.Info("payment processed successfully",
 		slog.String("request_id", requestID.String()),
-		slog.String("questionnaire_type", questionnaire.QuestionnaireType),
 		slog.Int64("transaction_id", payRequestDto.TransactionId),
 	)
 
@@ -171,4 +139,50 @@ func (h *QuestionnaireHandler) Payment(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("error encode response to json", sl.Err(err))
 	}
+}
+
+// startReportGeneration запускает процесс генерации отчета
+// Используется при успешной оплате и при применении бесплатного промокода
+func (h *QuestionnaireHandler) startReportGeneration(ctx context.Context, log *slog.Logger, requestID uuid.UUID) error {
+	// 1. Получить данные опросника из БД
+	questionnaire, err := h.Repository.GetQuestionnaire(ctx, requestID)
+	if err != nil {
+		return fmt.Errorf("failed to get questionnaire: %w", err)
+	}
+
+	// 2. Получить данные пользователя из БД
+	user, err := h.Repository.GetUser(ctx, questionnaire.UserID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// 3. Подготовить текст опросника на основе типа
+	var questionnaireText string
+	switch questionnaire.QuestionnaireType {
+	case "ADULT":
+		questionnaireText = buildAdultQuestionnaireText(&questionnaire.Answers)
+	case "SCHOOLCHILD":
+		questionnaireText = buildSchoolchildQuestionnaireText(&questionnaire.Answers)
+	default:
+		return fmt.Errorf("unknown questionnaire type: %s", questionnaire.QuestionnaireType)
+	}
+
+	// 4. Создаем domain.User для LLM сервиса
+	domainUser := domain.User{
+		Email: user.Email,
+		Name:  user.Name,
+	}
+
+	// 5. Запускаем обработку через LLM
+	_, err = h.LLMService.AddJob(requestID, questionnaireText, domainUser, questionnaire.QuestionnaireType)
+	if err != nil {
+		return fmt.Errorf("failed to add LLM job: %w", err)
+	}
+
+	log.Info("report generation started",
+		slog.String("request_id", requestID.String()),
+		slog.String("questionnaire_type", questionnaire.QuestionnaireType),
+	)
+
+	return nil
 }

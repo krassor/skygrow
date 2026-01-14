@@ -28,4 +28,7 @@ type Repository interface {
 	GetQuestionnaire(ctx context.Context, id uuid.UUID) (repositories.Questionnaire, error)
 	GetUser(ctx context.Context, id uuid.UUID) (repositories.User, error)
 	UpdatePaymentStatus(ctx context.Context, questionnaireID uuid.UUID, paymentID int64, paymentSuccess bool) error
+	GetPromoCodeByCode(ctx context.Context, code string) (repositories.PromoCode, error)
+	GetTestPriceByType(ctx context.Context, questionnaireType string) (repositories.TestPrice, error)
+	UpdatePaymentStatusWithPromoCode(ctx context.Context, questionnaireID uuid.UUID) error
 }

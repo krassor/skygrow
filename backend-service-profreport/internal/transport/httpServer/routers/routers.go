@@ -42,6 +42,11 @@ func (r *Router) Mount(mux *chi.Mux) {
 			},
 			)
 
+			mux.Route("/promocode", func(mux chi.Router) {
+				mux.Post("/apply", r.questionnaireHandler.ApplyPromoCode)
+			},
+			)
+
 			mux.Route("/callback", func(mux chi.Router) {
 				mux.Route("/cloudpayments", func(mux chi.Router) {
 					mux.Group(func(mux chi.Router) {
