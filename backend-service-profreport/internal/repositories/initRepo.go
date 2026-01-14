@@ -30,7 +30,6 @@ func NewCalendarRepository(logger *slog.Logger, cfg *config.Config) *Repository 
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s search_path=profreport",
 		dbHost, dbPort, username, dbName, password)
-	fmt.Println(dsn)
 
 	conn, err := sqlx.Connect("postgres", dsn)
 	if err != nil {
