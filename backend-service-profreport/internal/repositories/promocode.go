@@ -44,6 +44,20 @@ func (r *Repository) GetTestPriceByType(ctx context.Context, questionnaireType s
 	return testPrice, nil
 }
 
+// GetAllTestPrices retrieves all test prices
+func (r *Repository) GetAllTestPrices(ctx context.Context) ([]repositories.TestPrice, error) {
+	var testPrices []repositories.TestPrice
+	query := `SELECT id, questionnaire_type, price, currency, created_at, updated_at 
+	          FROM test_prices ORDER BY questionnaire_type`
+
+	err := r.DB.SelectContext(ctx, &testPrices, query)
+	if err != nil {
+		return nil, fmt.Errorf("error in GetAllTestPrices(): %w", err)
+	}
+
+	return testPrices, nil
+}
+
 // UpdatePaymentStatusWithPromoCode updates payment status using promo code (payment_id = 0 for promo)
 func (r *Repository) UpdatePaymentStatusWithPromoCode(ctx context.Context, questionnaireID uuid.UUID) error {
 	updateQuery := `UPDATE questionnaires 

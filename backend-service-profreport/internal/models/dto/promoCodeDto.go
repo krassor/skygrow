@@ -18,3 +18,15 @@ type ApplyPromoCodeResponse struct {
 type PromoCodeErrorResponse struct {
 	Error string `json:"error"`
 }
+
+// TestPriceItem represents a single test price entry
+type TestPriceItem struct {
+	QuestionnaireType string `json:"questionnaire_type"`
+	Price             int    `json:"price"`
+	Currency          string `json:"currency"`
+}
+
+// TestPricesResponse represents the response with all test prices
+type TestPricesResponse struct {
+	Prices []TestPriceItem `json:"prices"`
+}

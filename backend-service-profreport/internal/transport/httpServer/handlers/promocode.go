@@ -156,3 +156,41 @@ func (h *QuestionnaireHandler) errJson(log *slog.Logger, err error, w http.Respo
 		log.Error("error sending http response", sl.Err(httpError))
 	}
 }
+
+// GetTestPrices возвращает список стоимости всех типов тестов
+func (h *QuestionnaireHandler) GetTestPrices(w http.ResponseWriter, r *http.Request) {
+	op := "httpServer.handlers.QuestionnaireHandler.GetTestPrices()"
+	log := h.log.With(
+		slog.String("op", op),
+	)
+
+	ctx := r.Context()
+
+	// Получаем все цены тестов
+	testPrices, err := h.Repository.GetAllTestPrices(ctx)
+	if err != nil {
+		h.err(log, err, fmt.Errorf("failed to get test prices"), w, http.StatusInternalServerError)
+		return
+	}
+
+	// Формируем ответ
+	var priceItems []dto.TestPriceItem
+	for _, tp := range testPrices {
+		priceItems = append(priceItems, dto.TestPriceItem{
+			QuestionnaireType: tp.QuestionnaireType,
+			Price:             tp.Price,
+			Currency:          tp.Currency,
+		})
+	}
+
+	response := dto.TestPricesResponse{
+		Prices: priceItems,
+	}
+
+	log.Debug("returning test prices", slog.Int("count", len(priceItems)))
+
+	err = utils.Json(w, http.StatusOK, response)
+	if err != nil {
+		log.Error("error encode response to json", sl.Err(err))
+	}
+}

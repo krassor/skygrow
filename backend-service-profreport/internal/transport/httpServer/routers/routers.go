@@ -47,6 +47,11 @@ func (r *Router) Mount(mux *chi.Mux) {
 			},
 			)
 
+			mux.Route("/prices", func(mux chi.Router) {
+				mux.Get("/", r.questionnaireHandler.GetTestPrices)
+			},
+			)
+
 			mux.Route("/callback", func(mux chi.Router) {
 				mux.Route("/cloudpayments", func(mux chi.Router) {
 					mux.Group(func(mux chi.Router) {
