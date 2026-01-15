@@ -29,4 +29,5 @@ prometheus/
 bin/
 ssh pg.txt
 pay.json
-
+.postman
+postman
